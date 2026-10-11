@@ -4,7 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS, WalkRecord, WalkFeedback } from '../types/storage';
+import { STORAGE_KEYS, STORAGE_PREFIX, WalkRecord, WalkFeedback } from '../types/storage';
 
 export class LocalStorageService {
   static async getItem<T>(key: string): Promise<T | null> {
@@ -34,6 +34,23 @@ export class LocalStorageService {
       return true;
     } catch (e) {
       console.error(`[LocalStorageService] removeItem 실패: ${key}`, e);
+      return false;
+    }
+  }
+
+  /**
+   * 편안하개 네임스페이스(@편안하개:*)의 모든 로컬 데이터 일괄 영구 삭제 (US-23)
+   */
+  static async clearAll(): Promise<boolean> {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const targetKeys = keys.filter((k) => k.startsWith(STORAGE_PREFIX));
+      if (targetKeys.length > 0) {
+        await AsyncStorage.multiRemove(targetKeys);
+      }
+      return true;
+    } catch (e) {
+      console.error('[LocalStorageService] clearAll 실패:', e);
       return false;
     }
   }

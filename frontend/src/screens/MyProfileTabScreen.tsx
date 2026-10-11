@@ -5,7 +5,7 @@
  * 반려견 안심 케어 프로필 편집, Local-First 저장, 피드백 주입 시뮬레이션
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { TOKENS } from '../theme/tokens';
 import { DogProfile, JointCareLevel } from '../types/dogProfile';
@@ -14,12 +14,14 @@ import { GradientButton } from '../components/common/GradientButton';
 import { BackupService } from '../services/backupService';
 import { BookmarkListView } from '../components/bookmark/BookmarkListView';
 import { BookmarkedRoute } from '../types/bookmark';
+import { DataResetCard } from '../components/privacy/DataResetCard';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
   onSaveDog: (fields: Partial<DogProfile>) => void;
   onInjectFeedback: (dissatisfied: boolean) => void;
   onStartBookmark: (bookmark: BookmarkedRoute) => void;
+  onResetData?: () => Promise<void>;
 }
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
@@ -27,7 +29,9 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   onSaveDog,
   onInjectFeedback,
   onStartBookmark,
+  onResetData,
 }) => {
+  const [resetCount, setResetCount] = useState(0);
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -93,7 +97,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
       </CardWrapper>
 
       {/* US-29: 내 보관함 (즐겨찾기 안심 코스) */}
-      <BookmarkListView onStartBookmark={onStartBookmark} />
+      <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} />
 
       {/* US-A2: 프로필 JSON 백업 및 복원 */}
       <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
@@ -142,6 +146,14 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </TouchableOpacity>
         </View>
       </CardWrapper>
+
+      {/* US-23: 로컬 데이터 완전 초기화 */}
+      {onResetData && (
+        <DataResetCard
+          onReset={onResetData}
+          onCompleted={() => setResetCount((c) => c + 1)}
+        />
+      )}
     </View>
   );
 };

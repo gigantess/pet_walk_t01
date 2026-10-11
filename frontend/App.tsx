@@ -23,6 +23,9 @@ import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './src/services/sampleRoute';
 import { useWalkGuidance } from './src/hooks/useWalkGuidance';
 import { BookmarkedRoute, CoursePlan } from './src/types/bookmark';
 import { createBookmark } from './src/services/bookmarkService';
+import { useLocationConsent } from './src/hooks/useLocationConsent';
+import { ConsentService } from './src/services/consentService';
+import { LocationConsentModal } from './src/components/common/LocationConsentModal';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WalkTabScreen } from './src/screens/WalkTabScreen';
@@ -51,6 +54,7 @@ export default function App() {
   const [completedRecord, setCompletedRecord] = useState<WalkRecord | null>(null);
   const walk = useWalkGuidance(SAMPLE_ROUTE, SAMPLE_STEP_PINS);
   const [walkBookmark, setWalkBookmark] = useState<BookmarkedRoute | null>(null);
+  const consent = useLocationConsent();
 
   useEffect(() => {
     async function loadData() {
@@ -81,6 +85,7 @@ export default function App() {
   };
 
   const beginWalk = async (title: string, plan: CoursePlan | undefined, bookmark: BookmarkedRoute | null) => {
+    if (!(await consent.ensureConsent())) return;
     if (plan) walk.loadCourse(plan.route, plan.stepPins);
     const status = await walk.start();
     if (status === 'permission_denied') { Alert.alert('위치 권한 필요', '안심 산책을 위해 위치 권한을 허용해 주세요.'); return; }
@@ -115,7 +120,12 @@ export default function App() {
     setSubScreen('report');
   };
 
-
+  const handleResetAllData = async () => {
+    await ConsentService.resetAllLocalData();
+    setDogs([...DEFAULT_DOGS]);
+    setSelectedDogId(DEFAULT_DOGS[0].id);
+    setFeedbackSummary(null); setCompletedRecord(null); setWalkBookmark(null);
+  };
 
   const handleSaveReportFeedback = async (feedback: WalkFeedback) => {
     if (!completedRecord) return;
@@ -135,11 +145,9 @@ export default function App() {
     const sampleWalk: WalkRecord = {
       id: `walk_${Date.now()}`, dogId: activeDog.id,
       startedAt: new Date(Date.now() - 1800000).toISOString(), completedAt: new Date().toISOString(),
-      durationMinutes: 28, totalDistanceKm: 1.4, averageSpeedKmH: activeDog.speedKmH, safeSurfaceRatio: 0.85,
-      gpsTrack: [],
+      durationMinutes: 28, totalDistanceKm: 1.4, averageSpeedKmH: activeDog.speedKmH, safeSurfaceRatio: 0.85, gpsTrack: [],
       feedback: {
-        comfortScore: dissatisfied ? 2 : 5,
-        tags: dissatisfied ? ['경사가 가팔랐어요'] : ['완만해요', '그늘많아요'],
+        comfortScore: dissatisfied ? 2 : 5, tags: dissatisfied ? ['경사가 가팔랐어요'] : ['완만해요', '그늘많아요'],
         comment: dissatisfied ? '계단과 언덕이 조금 힘들었어요' : '발이 편하고 좋았어요',
       },
     };
@@ -161,8 +169,7 @@ export default function App() {
         {subScreen === 'report' && completedRecord && (
           <WalkReportScreen
             record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
-            onSaveFeedback={handleSaveReportFeedback}
-            onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
+            onSaveFeedback={handleSaveReportFeedback} onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
           />
         )}
         {subScreen === 'dog_selection' && (
@@ -208,12 +215,16 @@ export default function App() {
               )}
               {activeTab === '커뮤니티' && <CommunityTabScreen />}
               {activeTab === '마이' && (
-                <MyProfileTabScreen dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk} onStartBookmark={handleStartBookmark} />
+                <MyProfileTabScreen
+                  dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
+                  onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
+                />
               )}
             </ScrollView>
             <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} onActionPress={() => setSubScreen('walk_settings')} />
           </View>
         )}
+        <LocationConsentModal controller={consent} />
       </SafeAreaView>
     </SafeAreaProvider>
   );
