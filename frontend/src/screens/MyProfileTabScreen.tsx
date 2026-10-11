@@ -5,24 +5,30 @@
  * 반려견 안심 케어 프로필 편집, Local-First 저장, 피드백 주입 시뮬레이션
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { TOKENS } from '../theme/tokens';
 import { DogProfile, JointCareLevel } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
 import { GradientButton } from '../components/common/GradientButton';
+import { BackupService } from '../services/backupService';
+import { BookmarkListView } from '../components/bookmark/BookmarkListView';
+import { BookmarkedRoute } from '../types/bookmark';
+import { DataResetCard } from '../components/privacy/DataResetCard';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
   onSaveDog: (fields: Partial<DogProfile>) => void;
   onInjectFeedback: (dissatisfied: boolean) => void;
+  onStartBookmark: (bookmark: BookmarkedRoute) => void;
+  onResetData?: () => Promise<void>;
+  onOpenOnboarding?: () => void;
 }
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
-  dog,
-  onSaveDog,
-  onInjectFeedback,
+  dog, onSaveDog, onInjectFeedback, onStartBookmark, onResetData, onOpenOnboarding,
 }) => {
+  const [resetCount, setResetCount] = useState(0);
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -87,6 +93,34 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         </GradientButton>
       </CardWrapper>
 
+      {/* US-29: 내 보관함 (즐겨찾기 안심 코스) */}
+      <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} />
+
+      {/* US-A2: 프로필 JSON 백업 및 복원 */}
+      <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
+        <Text style={styles.cardHeaderTitle}>💾 로컬 JSON 백업 및 복원 (US-A2)</Text>
+        <Text style={styles.backupDesc}>
+          개인정보 보호를 위해 외부 서버 전송 없이 기기 파일로 안전하게 보관합니다.
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => {
+            const ok = BackupService.downloadProfileJsonFile(dog);
+            if (ok) {
+              Alert.alert('백업 파일 생성', `🐾 ${dog.name} 프로필 JSON 파일이 다운로드되었습니다.`);
+            } else {
+              const jsonStr = BackupService.exportProfileToJson(dog);
+              Alert.alert('백업 JSON 내보내기', `JSON 데이터가 생성되었습니다:\n${jsonStr.slice(0, 80)}...`);
+            }
+          }}
+          style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', marginTop: 10 }]}
+        >
+          <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '700' }}>
+            📥 프로필 JSON 파일 백업하기
+          </Text>
+        </TouchableOpacity>
+      </CardWrapper>
+
       {/* 피드백 시뮬레이션 */}
       <CardWrapper variant="flat">
         <Text style={styles.cardHeaderTitle}>🧪 피드백 주입 시뮬레이션</Text>
@@ -109,6 +143,29 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </TouchableOpacity>
         </View>
       </CardWrapper>
+
+      {/* US-21: 앱 이용 가이드 다시 보기 */}
+      {onOpenOnboarding && (
+        <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onOpenOnboarding}
+            style={[styles.simButton, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
+          >
+            <Text style={{ color: '#166534', fontSize: 13, fontWeight: '700' }}>
+              📖 앱 이용 가이드 다시 보기 (US-21)
+            </Text>
+          </TouchableOpacity>
+        </CardWrapper>
+      )}
+
+      {/* US-23: 로컬 데이터 완전 초기화 */}
+      {onResetData && (
+        <DataResetCard
+          onReset={onResetData}
+          onCompleted={() => setResetCount((c) => c + 1)}
+        />
+      )}
     </View>
   );
 };
@@ -179,5 +236,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  backupDesc: {
+    fontSize: 12,
+    color: TOKENS.colors.textMuted,
+    lineHeight: 16,
+    marginTop: 4,
   },
 });

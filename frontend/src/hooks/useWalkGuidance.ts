@@ -40,6 +40,7 @@ function computeDistanceKm(track: readonly GpsPoint[]): number {
 
 export function useWalkGuidance(initialRoute: RouteFeatureCollection, pins: readonly RouteStepPin[]) {
   const [route, setRoute] = useState(initialRoute);
+  const [activePins, setActivePins] = useState<readonly RouteStepPin[]>(pins);
   const [status, setStatus] = useState<WalkSessionStatus>('idle');
   const [stats, setStats] = useState<WalkStats>(EMPTY_STATS);
   const guidanceRef = useRef<GuidanceState>(INITIAL_GUIDANCE_STATE);
@@ -49,7 +50,7 @@ export function useWalkGuidance(initialRoute: RouteFeatureCollection, pins: read
 
   const handlePoint = useCallback(
     (point: GpsPoint) => {
-      const result = evaluateGuidance([point.longitude, point.latitude], routeRef.current, pins, guidanceRef.current);
+      const result = evaluateGuidance([point.longitude, point.latitude], routeRef.current, activePins, guidanceRef.current);
       guidanceRef.current = result.nextState;
       result.events.forEach((event) => TTSNavigationService.speak(event.message));
       setStats((prev) => ({
@@ -58,7 +59,7 @@ export function useWalkGuidance(initialRoute: RouteFeatureCollection, pins: read
         speedKmH: Math.round((point.speedMps ?? 0) * MPS_TO_KMH * 10) / 10,
       }));
     },
-    [pins],
+    [activePins],
   );
 
   const lastNotifSecRef = useRef<number>(0);
@@ -108,6 +109,13 @@ export function useWalkGuidance(initialRoute: RouteFeatureCollection, pins: read
     TTSNavigationService.speak(REROUTE_MESSAGE);
   }, []);
 
-  return { route, status, stats, start, stop, applyReroute, getTrackBuffer };
+  /** 저장된(즐겨찾기) 경로와 스텝 핀을 서버 재탐색 없이 그대로 주입한다 (US-29). */
+  const loadCourse = useCallback((newRoute: RouteFeatureCollection, newPins: readonly RouteStepPin[]) => {
+    setRoute(newRoute);
+    setActivePins(newPins);
+    guidanceRef.current = INITIAL_GUIDANCE_STATE;
+  }, []);
+
+  return { route, status, stats, start, stop, applyReroute, loadCourse, getTrackBuffer };
 }
 

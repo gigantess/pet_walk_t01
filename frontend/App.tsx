@@ -21,6 +21,13 @@ import { STORAGE_KEYS, WalkRecord, WalkFeedback } from './src/types/storage';
 import { TTSNavigationService } from './src/services/ttsNavigation';
 import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './src/services/sampleRoute';
 import { useWalkGuidance } from './src/hooks/useWalkGuidance';
+import { BookmarkedRoute, CoursePlan } from './src/types/bookmark';
+import { createBookmark } from './src/services/bookmarkService';
+import { useLocationConsent } from './src/hooks/useLocationConsent';
+import { ConsentService } from './src/services/consentService';
+import { LocationConsentModal } from './src/components/common/LocationConsentModal';
+import { OnboardingService } from './src/services/onboardingService';
+import { OnboardingWizard } from './src/components/onboarding/OnboardingWizard';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WalkTabScreen } from './src/screens/WalkTabScreen';
@@ -32,7 +39,7 @@ import { DogSelectionView } from './src/components/profile/DogSelectionView';
 import { WalkSettingsView } from './src/components/walk/WalkSettingsView';
 import { CourseRecommendationView } from './src/components/walk/CourseRecommendationView';
 
-export type AppSubScreen = 'main' | 'dog_selection' | 'walk_settings' | 'course_recommend' | 'pocket' | 'report';
+export type AppSubScreen = 'main' | 'dog_selection' | 'walk_settings' | 'course_recommend' | 'pocket' | 'report' | 'onboarding';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('홈');
@@ -48,6 +55,8 @@ export default function App() {
   const [feedbackSummary, setFeedbackSummary] = useState<FeedbackSummaryPayload | null>(null);
   const [completedRecord, setCompletedRecord] = useState<WalkRecord | null>(null);
   const walk = useWalkGuidance(SAMPLE_ROUTE, SAMPLE_STEP_PINS);
+  const [walkBookmark, setWalkBookmark] = useState<BookmarkedRoute | null>(null);
+  const consent = useLocationConsent();
 
   useEffect(() => {
     async function loadData() {
@@ -59,31 +68,45 @@ export default function App() {
         await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, DEFAULT_DOGS[0]);
       }
       setFeedbackSummary(await FeedbackContextService.buildRecentFeedbackContext());
+      if (!(await OnboardingService.hasSeenOnboarding())) setSubScreen('onboarding');
     }
     void loadData();
   }, []);
 
   const handleSaveActiveDog = async (fields: Partial<DogProfile>) => {
-    const updated = { ...activeDog, ...fields };
+    const updated = { ...activeDog, ...fields, updatedAt: new Date().toISOString() };
     updated.speedKmH = calculateRecommendedSpeedKmH(updated.weightKg, updated.ageYears, updated.jointCareLevel);
-    updated.updatedAt = new Date().toISOString();
     setDogs(dogs.map((d) => (d.id === updated.id ? updated : d)));
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, updated);
   };
 
   const handleAddDog = async (newDog: DogProfile) => {
-    setDogs([...dogs, newDog]);
-    setSelectedDogId(newDog.id);
+    setDogs([...dogs, newDog]); setSelectedDogId(newDog.id);
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, newDog);
   };
 
-  const handleStartWalk = async (course?: RecommendedCourse) => {
+  const handleCompleteOnboarding = async () => {
+    await OnboardingService.markOnboardingCompleted();
+    setSubScreen('main');
+  };
+
+  const beginWalk = async (title: string, plan: CoursePlan | undefined, bookmark: BookmarkedRoute | null) => {
+    if (!(await consent.ensureConsent())) return;
+    if (plan) walk.loadCourse(plan.route, plan.stepPins);
     const status = await walk.start();
     if (status === 'permission_denied') { Alert.alert('위치 권한 필요', '안심 산책을 위해 위치 권한을 허용해 주세요.'); return; }
     if (status !== 'running') { Alert.alert('안내', '산책을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.'); return; }
-    TTSNavigationService.speak(`${activeDog.name}와 ${course?.name ?? '편안한 숲길 코스'} 산책을 시작합니다.`);
+    setWalkBookmark(bookmark);
+    TTSNavigationService.speak(`${activeDog.name}와 ${title} 산책을 시작합니다.`);
     setSubScreen('pocket');
   };
+
+  const handleStartWalk = (course?: RecommendedCourse, plan?: CoursePlan) =>
+    beginWalk(course?.name ?? '편안한 숲길 코스', plan, course && plan ? createBookmark(course, plan, activeDog.name) : null);
+
+  /** US-29: 즐겨찾기 코스를 서버 재탐색 없이 저장된 경로로 즉시 산책 시작 */
+  const handleStartBookmark = (bm: BookmarkedRoute) =>
+    beginWalk(bm.title, { route: bm.routeGeoJson, stepPins: bm.stepPins }, bm);
 
   const handleStopWalkAndReport = async () => {
     const distKm = walk.stats.distanceKm;
@@ -103,7 +126,11 @@ export default function App() {
     setSubScreen('report');
   };
 
-
+  const handleResetAllData = async () => {
+    await ConsentService.resetAllLocalData();
+    setDogs([...DEFAULT_DOGS]); setSelectedDogId(DEFAULT_DOGS[0].id);
+    setFeedbackSummary(null); setCompletedRecord(null); setWalkBookmark(null);
+  };
 
   const handleSaveReportFeedback = async (feedback: WalkFeedback) => {
     if (!completedRecord) return;
@@ -123,11 +150,9 @@ export default function App() {
     const sampleWalk: WalkRecord = {
       id: `walk_${Date.now()}`, dogId: activeDog.id,
       startedAt: new Date(Date.now() - 1800000).toISOString(), completedAt: new Date().toISOString(),
-      durationMinutes: 28, totalDistanceKm: 1.4, averageSpeedKmH: activeDog.speedKmH, safeSurfaceRatio: 0.85,
-      gpsTrack: [],
+      durationMinutes: 28, totalDistanceKm: 1.4, averageSpeedKmH: activeDog.speedKmH, safeSurfaceRatio: 0.85, gpsTrack: [],
       feedback: {
-        comfortScore: dissatisfied ? 2 : 5,
-        tags: dissatisfied ? ['경사가 가팔랐어요'] : ['완만해요', '그늘많아요'],
+        comfortScore: dissatisfied ? 2 : 5, tags: dissatisfied ? ['경사가 가팔랐어요'] : ['완만해요', '그늘많아요'],
         comment: dissatisfied ? '계단과 언덕이 조금 힘들었어요' : '발이 편하고 좋았어요',
       },
     };
@@ -143,14 +168,12 @@ export default function App() {
           barStyle={subScreen === 'pocket' ? 'light-content' : 'dark-content'}
           backgroundColor={subScreen === 'pocket' ? TOKENS.colors.pocketBg : TOKENS.colors.background}
         />
-        {subScreen === 'pocket' && (
-          <DarkPocketScreen dogName={activeDog.name} stats={walk.stats} onUnlock={handlePocketUnlock} />
-        )}
+        {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
+        {subScreen === 'pocket' && <DarkPocketScreen dogName={activeDog.name} stats={walk.stats} onUnlock={handlePocketUnlock} />}
         {subScreen === 'report' && completedRecord && (
           <WalkReportScreen
-            record={completedRecord} dogName={activeDog.name}
-            onSaveFeedback={handleSaveReportFeedback}
-            onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
+            record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
+            onSaveFeedback={handleSaveReportFeedback} onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
           />
         )}
         {subScreen === 'dog_selection' && (
@@ -196,12 +219,17 @@ export default function App() {
               )}
               {activeTab === '커뮤니티' && <CommunityTabScreen />}
               {activeTab === '마이' && (
-                <MyProfileTabScreen dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk} />
+                <MyProfileTabScreen
+                  dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
+                  onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
+                  onOpenOnboarding={() => setSubScreen('onboarding')}
+                />
               )}
             </ScrollView>
             <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} onActionPress={() => setSubScreen('walk_settings')} />
           </View>
         )}
+        <LocationConsentModal controller={consent} />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -210,15 +238,11 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: TOKENS.colors.background, maxWidth: 480, width: '100%', marginHorizontal: 'auto' },
   safeAreaPocket: { backgroundColor: TOKENS.colors.pocketBg, maxWidth: 480, width: '100%', marginHorizontal: 'auto' },
-
   mainContainer: { flex: 1 },
   header: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: TOKENS.colors.border, backgroundColor: TOKENS.colors.surface },
   logoGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoBadge: { width: 32, height: 32, borderRadius: 10, backgroundColor: TOKENS.colors.primary, alignItems: 'center', justifyContent: 'center' },
-  logoIcon: { fontSize: 16 },
-  appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 18, color: TOKENS.colors.textMain },
-  scrollContent: { padding: 20, paddingBottom: 24 },
+  logoIcon: { fontSize: 16 }, appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 }, iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 18, color: TOKENS.colors.textMain }, scrollContent: { padding: 20, paddingBottom: 24 },
 });

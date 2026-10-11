@@ -66,3 +66,25 @@ jobs:
 
       - name: TypeScript 정적 타입 검사
         run: npx tsc --noEmit
+
+  # ========================================================
+  # Job 3: 모든 CI 테스트 통과 시 자동 머지 (Auto Merge)
+  # ========================================================
+  automerge:
+    name: Auto Merge on CI Success
+    needs: [backend-test, mobile-app-ci]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: PR 자동 머지 활성화 (Squash & Merge)
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" --squash --auto --repo "${{ github.repository }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

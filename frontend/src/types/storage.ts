@@ -3,14 +3,22 @@
  * Local-First 영속성 스토리지 키 및 DTO (US-A2, US-E1)
  */
 
+export const STORAGE_PREFIX = '@편안하개:';
+
 export const STORAGE_KEYS = {
   DOG_PROFILE: '@편안하개:dog_profile',
   WALK_HISTORY: '@편안하개:walk_history',
   APP_SETTINGS: '@편안하개:app_settings',
+  BOOKMARKED_ROUTES: '@편안하개:bookmarked_routes',
+  LOCATION_CONSENT: '@편안하개:location_consent',
+  HAS_SEEN_ONBOARDING: '@편안하개:has_seen_onboarding',
 } as const;
+
+export type SlopeFeedbackLevel = 'gentle' | 'moderate' | 'steep';
 
 export interface WalkFeedback {
   comfortScore: number;
+  slopeRating?: SlopeFeedbackLevel; // 경사도 세부 체감 평가 (완만 / 보통 / 가파름)
   tags: string[];
   comment?: string;
 }
