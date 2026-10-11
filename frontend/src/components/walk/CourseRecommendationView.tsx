@@ -10,7 +10,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { requestWalkPlan, RoutePlanResult } from '../../services/api';
 import { createBookmark } from '../../services/bookmarkService';
-import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from '../../services/sampleRoute';
+import { getCoursePlanById } from '../../services/sampleRoute';
 import { TOKENS } from '../../theme/tokens';
 import { CoursePlan } from '../../types/bookmark';
 import { DogProfile } from '../../types/dogProfile';
@@ -59,8 +59,16 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
   }, [dog, preferences]);
 
   const currentCourse = courses[selectedCourseIndex] ?? courses[0];
-  const activeRoute = planResult?.route ?? SAMPLE_ROUTE;
-  const activePins = planResult?.stepPins ?? SAMPLE_STEP_PINS;
+  const activePlan = useMemo(() => {
+    const isLiveFirstCourse = Boolean(planResult?.isLiveServer && selectedCourseIndex === 0);
+    return getCoursePlanById(
+      currentCourse?.id,
+      isLiveFirstCourse && planResult ? planResult : undefined,
+    );
+  }, [currentCourse?.id, planResult, selectedCourseIndex]);
+
+  const activeRoute = activePlan.route;
+  const activePins = activePlan.stepPins;
   const plan: CoursePlan = useMemo(() => ({ route: activeRoute, stepPins: activePins }), [activeRoute, activePins]);
   const bookmarkCandidate = useMemo(
     () => (currentCourse ? createBookmark(currentCourse, plan, dog.name) : null),
