@@ -49,9 +49,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
       {/* 단계 인디케이터 */}
       <View style={styles.indicatorRow}>
-        {ONBOARDING_SLIDES.map((_, idx) => (
+        {ONBOARDING_SLIDES.map((item, idx) => (
           <View
-            key={`dot_${idx}`}
+            key={item.badge}
             style={[styles.indicatorDot, idx === currentIndex && styles.indicatorDotActive]}
           />
         ))}
