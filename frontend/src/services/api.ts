@@ -23,7 +23,7 @@ export interface RoutePlanResult {
 }
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
-const API_TIMEOUT_MS = 1500;
+const API_TIMEOUT_MS = 3500;
 
 /**
  * 반려견 조건과 피드백을 기반으로 안심 산책 코스를 요청한다.

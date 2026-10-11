@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 
 from agent.walk_planning_agent import run_walk_planning_agent
+from agent.road_network_routes import V1_ROAD_ALIGNED_COORDS
 from agent.supabase_repository import community_repo
 from test_case.test_api_contracts import (
     apply_spatial_masking_to_course,
@@ -207,9 +208,7 @@ def plan_walk_route(req: Dict[str, Any]):
         )
 
         best = agent_result.best_route
-        coords = best.geojson_coordinates if best.geojson_coordinates else [
-            [126.9784, 37.5663], [126.9796, 37.5692], [126.9830, 37.5689], [126.9815, 37.5665], [126.9784, 37.5663]
-        ]
+        coords = best.geojson_coordinates if best.geojson_coordinates else V1_ROAD_ALIGNED_COORDS
 
         geojson = _build_segmented_geojson(coords, best.max_slope_percent)
         step_pins = _build_step_pins(best, coords)
