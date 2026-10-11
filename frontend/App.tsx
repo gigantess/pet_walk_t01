@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { TOKENS } from './src/theme/tokens';
 import { BottomTabBar, TabKey } from './src/components/common/BottomTabBar';
@@ -68,6 +68,7 @@ export default function App() {
         await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, DEFAULT_DOGS[0]);
       }
       setFeedbackSummary(await FeedbackContextService.buildRecentFeedbackContext());
+      if (typeof window !== 'undefined') (window as any).__petWalkNav = { setSubScreen, setActiveTab, setCompletedRecord, handleStopWalkAndReport, consent };
       if (!(await OnboardingService.hasSeenOnboarding())) setSubScreen('onboarding');
     }
     void loadData();
@@ -140,6 +141,11 @@ export default function App() {
   };
 
   const handlePocketUnlock = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const finish = window.confirm('산책을 종료하고 완주 리포트를 확인할까요?');
+      if (finish) void handleStopWalkAndReport(); else setSubScreen('course_recommend');
+      return;
+    }
     Alert.alert('산책을 종료할까요?', '지도를 확인하거나 산책을 마칠 수 있어요.', [
       { text: '지도 보기', onPress: () => setSubScreen('course_recommend') },
       { text: '산책 종료', onPress: () => void handleStopWalkAndReport() },
@@ -164,10 +170,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[styles.safeArea, subScreen === 'pocket' && styles.safeAreaPocket]}>
-        <StatusBar
-          barStyle={subScreen === 'pocket' ? 'light-content' : 'dark-content'}
-          backgroundColor={subScreen === 'pocket' ? TOKENS.colors.pocketBg : TOKENS.colors.background}
-        />
+        <StatusBar barStyle={subScreen === 'pocket' ? 'light-content' : 'dark-content'} backgroundColor={subScreen === 'pocket' ? TOKENS.colors.pocketBg : TOKENS.colors.background} />
         {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
         {subScreen === 'pocket' && <DarkPocketScreen dogName={activeDog.name} stats={walk.stats} onUnlock={handlePocketUnlock} />}
         {subScreen === 'report' && completedRecord && (
