@@ -107,7 +107,7 @@ graph TD
 
 ---
 
-### 🌟 4.1 [US-29] 나만의 안심 코스 즐겨찾기(Bookmark) 로컬 보관함 및 원터치 재산책
+### 🌟 4.1 [US-29] 나만의 안심 코스 즐겨찾기(Bookmark) 로컬 보관함 및 원터치 재산책 — ✅ 구현 완료 (2026-10-11)
 
 #### 🎯 사용자 가치
 견주가 직접 걸어보고 만족했던 안심 코스를 폰에 북마크해두고, 매번 AI 재탐색이나 서버 통신을 거치지 않고 **오프라인에서도 0.1초 만에 저장된 코스로 즉시 음성 안내 산책을 시작**한다.
@@ -120,13 +120,13 @@ graph TD
    - `isBookmarked(routeId: string): Promise<boolean>`: 현재 코스의 즐겨찾기 등록 여부 판별.
 2. **`CourseRecommendationView.tsx` 화면 UI 확장**:
    - 코스 카드 우측 상단에 북마크(🤍 / ❤️) 토글 아이콘 버튼 배치.
-   - 탭 시 햅틱 피드백과 함께 `addBookmark` / `removeBookmark` 즉시 실행.
+   - 탭 시 햅틱 피드백(`expo-haptics`: 저장=Success 알림, 해제=Light 탭)과 함께 `addBookmark` / `removeBookmark` 즉시 실행. ✅
 3. **`BookmarkListView.tsx` 보관함 뷰 컴포넌트 개발**:
    - 마이 탭([`MyProfileTabScreen.tsx`](/frontend/src/screens/MyProfileTabScreen.tsx)) 내 "⭐ 내가 찜한 안심 코스" 섹션 구성.
    - 저장된 코스 카드별 지표(거리, 시간, 경사도, 그늘) 및 3색 Polyline 썸네일 표시.
    - **"바로 산책 시작 🐾" 버튼**: 클릭 시 `requestWalkPlan` 서버 API 호출을 건너뛰고, 저장된 `routeGeoJson`과 `stepPins`를 [`useWalkGuidance.ts`](/frontend/src/hooks/useWalkGuidance.ts)에 직접 주입하여 다크 포켓 모드로 즉시 진입.
 4. **단위 테스트 (`src/services/bookmarkService.test.ts`)**:
-   - 북마크 추가/삭제/목록 조회/중복 방지 4개 테스트 케이스 검증.
+   - 북마크 추가/삭제/목록 조회/중복 방지/토글/최대 30개/GeoJSON 복원 등 **9개** 테스트 케이스 검증. ✅
 
 ---
 
@@ -199,6 +199,8 @@ graph TD
 5. `frontend/src/components/onboarding/OnboardingWizard.tsx`: 3단계 인터랙티브 온보딩 위저드.
 6. `frontend/src/components/common/LocationConsentModal.tsx`: 위치정보 투명 고지 및 개인정보 동의 모달.
 
+> **US-29 구현 시 추가된 파일**: `components/bookmark/BookmarkToggleButton.tsx`(찜하기 토글), `services/haptics.ts`(expo-haptics 래퍼), `components/walk/CourseInfoCard.tsx` · `AlternativeCourseList.tsx` · `PlanSourceBadge.tsx`(CourseRecommendationView 분리). 의존성 `expo-haptics` 설치.
+
 ### 5.2 수정 대상 파일 (5개)
 1. `frontend/src/types/storage.ts`: `BOOKMARKED_ROUTES`, `HAS_SEEN_ONBOARDING`, `poopEvents` 추가.
 2. `frontend/src/screens/MyProfileTabScreen.tsx`: 즐겨찾기 보관함 섹션, 데이터 완전 초기화, 온보딩 다시보기 연동.
@@ -231,10 +233,10 @@ gantt
 
 ## ✅ 7. 완료 정의 (Definition of Done, DoD) 체크리스트
 
-- [ ] **US-29 DoD**:
-  - [ ] 추천 코스 화면에서 북마크 저장 후 앱을 재기동해도 마이 탭 보관함에 온전히 보존되는가?
-  - [ ] 보관함 코스에서 "바로 산책 시작" 클릭 시 외부 API 호출 없이 저장된 GeoJSON으로 즉시 내비게이션/다크 포켓 모드가 시작되는가?
-  - [ ] `bookmarkService.test.ts` 단위 테스트가 100% 통과하는가?
+- [x] **US-29 DoD**:
+  - [x] 추천 코스 화면에서 북마크 저장 후 앱을 재기동해도 마이 탭 보관함에 온전히 보존되는가? *(AsyncStorage 영속성 단위 테스트로 검증 / 실기기 재기동 확인은 CBT에서 수행)*
+  - [x] 보관함 코스에서 "바로 산책 시작" 클릭 시 외부 API 호출 없이 저장된 GeoJSON으로 즉시 내비게이션/다크 포켓 모드가 시작되는가? *(`handleStartBookmark` → `loadCourse`, `requestWalkPlan` 미호출)*
+  - [x] `bookmarkService.test.ts` 단위 테스트가 100% 통과하는가? *(9 / 9 Passed)*
 - [ ] **US-21 DoD**:
   - [ ] 앱을 처음 설치/기동했을 때 3단계 시선 해방·안심 가이드 슬라이드가 부드럽게 표시되는가?
   - [ ] 가이드 완료 후 다시 실행했을 때는 온보딩이 건너뛰어지고, 마이 탭의 "가이드 다시보기"를 통해서만 재진입되는가?
@@ -242,6 +244,6 @@ gantt
   - [ ] 위치 권한 요청 전 Local-First 저장 원칙 및 200m 마스킹 안내 모달이 정상 노출되는가?
   - [ ] 마이 탭에서 "데이터 완전 초기화" 실행 시 기기 내 모든 캐시/프로필/기록이 안전하게 삭제되는가?
 - [ ] **코드 품질 가드레일**:
-  - [ ] 신규 작성된 모든 컴포넌트가 SonarLint 단일 파일 250줄 이하 규칙을 철저히 준수하는가?
-  - [ ] `npx tsc --noEmit` 정적 분석 시 오류가 0건(Clean)인가?
-  - [ ] 모바일 단위 테스트(Vitest) 통과 수가 기존 45건에서 50건 이상으로 순증하는가?
+  - [ ] 신규 작성된 모든 컴포넌트가 SonarLint 단일 파일 250줄 이하 규칙을 철저히 준수하는가? *(US-29 범위 파일은 모두 충족, `CourseRecommendationView.tsx`는 507줄 → 195줄로 리팩토링 / 기존 `WalkSettingsView.tsx`(540줄)는 미조치 / US-21·US-23 구현 후 최종 확인)*
+  - [x] `npx tsc --noEmit` 정적 분석 시 오류가 0건(Clean)인가?
+  - [x] 모바일 단위 테스트(Vitest) 통과 수가 기존 45건에서 50건 이상으로 순증하는가? *(현재 54 / 54 Passed)*

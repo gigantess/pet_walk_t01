@@ -6,10 +6,11 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, Vibration } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { BookmarkedRoute } from '../../types/bookmark';
 import { BookmarkService } from '../../services/bookmarkService';
+import { hapticLight, hapticSuccess } from '../../services/haptics';
 
 export interface BookmarkToggleButtonProps {
   readonly bookmark: BookmarkedRoute | null;
@@ -37,7 +38,7 @@ export const BookmarkToggleButton: React.FC<BookmarkToggleButtonProps> = ({ book
     if (!bookmark) return;
     const next = await BookmarkService.toggleBookmark(bookmark);
     setSaved(next);
-    if (Platform.OS !== 'web') Vibration.vibrate(15);
+    void (next ? hapticSuccess() : hapticLight());
   };
 
   return (
