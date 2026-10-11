@@ -10,7 +10,7 @@ export const PlanSourceBadge: React.FC<{ isLive: boolean }> = ({ isLive }) => (
   <View style={styles.bar}>
     <View style={[styles.badge, isLive ? styles.badgeLive : styles.badgeOffline]}>
       <Text style={[styles.text, isLive ? styles.textLive : styles.textOffline]}>
-        {isLive ? '🌐 실시간 AI 서버 연결됨' : '🌿 로컬 안심 모드 (오프라인)'}
+        {isLive ? '✨ 실시간 AI 맞춤 코스' : '🌿 안심 기본 코스'}
       </Text>
     </View>
   </View>
