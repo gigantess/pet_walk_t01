@@ -5,7 +5,7 @@
  * 지도 프리뷰, 3대 안심 지표(경사/노면/그늘), 추천 사유 카드, 대체 코스 선택
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,9 @@ import {
   RecommendedCourse,
   WalkPreferences,
 } from '../../types/walkSettings';
+import { BookmarkToggleButton } from '../bookmark/BookmarkToggleButton';
+import { createBookmark } from '../../services/bookmarkService';
+import { CoursePlan } from '../../types/bookmark';
 import { RouteMapView } from '../map/RouteMapView';
 import { RouteReasonCard } from '../map/RouteReasonCard';
 import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from '../../services/sampleRoute';
@@ -29,7 +32,7 @@ export interface CourseRecommendationViewProps {
   dog: DogProfile;
   preferences?: WalkPreferences;
   onBack: () => void;
-  onStartWalk: (course: RecommendedCourse) => void;
+  onStartWalk: (course: RecommendedCourse, plan?: CoursePlan) => void;
   onPinSelect?: (instruction: string) => void;
 }
 
@@ -60,6 +63,11 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
   const currentCourse = courses[selectedCourseIndex] ?? courses[0];
   const activeRoute = planResult?.route ?? SAMPLE_ROUTE;
   const activePins = planResult?.stepPins ?? SAMPLE_STEP_PINS;
+  const plan: CoursePlan = useMemo(() => ({ route: activeRoute, stepPins: activePins }), [activeRoute, activePins]);
+  const bookmarkCandidate = useMemo(
+    () => (currentCourse ? createBookmark(currentCourse, plan, dog.name) : null),
+    [currentCourse, plan, dog.name],
+  );
 
   // 조건 태그 목록
   const conditionLabels: string[] = [
@@ -129,7 +137,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
             route={activeRoute}
             stepPins={activePins}
             speedKmH={dog.speedKmH}
-            onStart={() => onStartWalk(currentCourse)}
+            onStart={() => onStartWalk(currentCourse, plan)}
             onPinSelect={onPinSelect}
           />
         </View>
@@ -138,8 +146,11 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
         <View style={styles.summaryCard}>
           <View style={styles.courseHeader}>
             <Text style={styles.courseName}>{currentCourse.name}</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>추천 {selectedCourseIndex + 1}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>추천 {selectedCourseIndex + 1}</Text>
+              </View>
+              <BookmarkToggleButton bookmark={bookmarkCandidate} />
             </View>
           </View>
           <Text style={styles.courseStats}>
@@ -225,7 +236,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
       <View style={styles.bottomBar}>
         <TouchableOpacity
           activeOpacity={0.88}
-          onPress={() => onStartWalk(currentCourse)}
+          onPress={() => onStartWalk(currentCourse, plan)}
           style={styles.startButton}
         >
           <Text style={styles.startButtonText}>이 코스로 산책 시작하기</Text>

@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   DOG_PROFILE: '@편안하개:dog_profile',
   WALK_HISTORY: '@편안하개:walk_history',
   APP_SETTINGS: '@편안하개:app_settings',
+  BOOKMARKED_ROUTES: '@편안하개:bookmarked_routes',
 } as const;
 
 export type SlopeFeedbackLevel = 'gentle' | 'moderate' | 'steep';

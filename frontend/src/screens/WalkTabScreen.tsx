@@ -11,12 +11,13 @@ import { TOKENS } from '../theme/tokens';
 import { DogProfile } from '../types/dogProfile';
 import { WalkPreferences, RecommendedCourse } from '../types/walkSettings';
 import { CourseRecommendationView } from '../components/walk/CourseRecommendationView';
+import { CoursePlan } from '../types/bookmark';
 
 export interface WalkTabScreenProps {
   dog: DogProfile;
   preferences: WalkPreferences;
   onBack: () => void;
-  onStartWalk: (course?: RecommendedCourse) => void;
+  onStartWalk: (course?: RecommendedCourse, plan?: CoursePlan) => void;
   onPinSelect: (instruction: string) => void;
 }
 

@@ -12,17 +12,21 @@ import { DogProfile, JointCareLevel } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
 import { GradientButton } from '../components/common/GradientButton';
 import { BackupService } from '../services/backupService';
+import { BookmarkListView } from '../components/bookmark/BookmarkListView';
+import { BookmarkedRoute } from '../types/bookmark';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
   onSaveDog: (fields: Partial<DogProfile>) => void;
   onInjectFeedback: (dissatisfied: boolean) => void;
+  onStartBookmark: (bookmark: BookmarkedRoute) => void;
 }
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog,
   onSaveDog,
   onInjectFeedback,
+  onStartBookmark,
 }) => {
   return (
     <View style={styles.container}>
@@ -87,6 +91,9 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           로컬 프로필 저장 ✓
         </GradientButton>
       </CardWrapper>
+
+      {/* US-29: 내 보관함 (즐겨찾기 안심 코스) */}
+      <BookmarkListView onStartBookmark={onStartBookmark} />
 
       {/* US-A2: 프로필 JSON 백업 및 복원 */}
       <CardWrapper variant="flat" style={{ marginBottom: 16 }}>

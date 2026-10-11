@@ -10,12 +10,15 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { TOKENS } from '../theme/tokens';
 import { WalkRecord, WalkFeedback, SlopeFeedbackLevel } from '../types/storage';
 import { QuickFeedbackModal } from '../components/feedback/QuickFeedbackModal';
+import { BookmarkToggleButton } from '../components/bookmark/BookmarkToggleButton';
+import { BookmarkedRoute } from '../types/bookmark';
 
 export interface WalkReportScreenProps {
   record: WalkRecord;
   dogName: string;
   onSaveFeedback: (feedback: WalkFeedback) => void;
   onGoHome: () => void;
+  bookmarkCandidate?: BookmarkedRoute | null;
 }
 
 function getSlopeRatingLabel(rating?: SlopeFeedbackLevel): string {
@@ -30,6 +33,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
   dogName,
   onSaveFeedback,
   onGoHome,
+  bookmarkCandidate = null,
 }) => {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const safeRatioPercent = Math.round(record.safeSurfaceRatio * 100);
@@ -45,6 +49,14 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
             {dogName}와 함께 발바닥과 관절이 편안한 산책을 완주했습니다.
           </Text>
         </View>
+
+        {/* US-29: 오늘 걸은 코스를 내 보관함에 저장 */}
+        {bookmarkCandidate && (
+          <View style={styles.bookmarkRow}>
+            <Text style={styles.bookmarkLabel}>마음에 든 코스라면 보관함에 담아두세요</Text>
+            <BookmarkToggleButton bookmark={bookmarkCandidate} />
+          </View>
+        )}
 
         {/* 핵심 보행 통계 4분할 그리드 */}
         <View style={styles.statsGrid}>
@@ -167,6 +179,12 @@ const styles = StyleSheet.create({
   },
   congratsTitle: { fontSize: 20, fontWeight: '800', color: TOKENS.colors.textMain, marginBottom: 6, textAlign: 'center' },
   congratsSubtitle: { fontSize: 13, color: TOKENS.colors.textMuted, textAlign: 'center', lineHeight: 18 },
+  bookmarkRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+    backgroundColor: TOKENS.colors.surface, borderRadius: 16, borderWidth: 1,
+    borderColor: TOKENS.colors.border, padding: 12, marginBottom: 16,
+  },
+  bookmarkLabel: { flex: 1, fontSize: 12, fontWeight: '600', color: TOKENS.colors.textMain },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
   statBox: {
     width: '48%', backgroundColor: TOKENS.colors.surface, borderRadius: 16,

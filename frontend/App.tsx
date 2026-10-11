@@ -21,6 +21,8 @@ import { STORAGE_KEYS, WalkRecord, WalkFeedback } from './src/types/storage';
 import { TTSNavigationService } from './src/services/ttsNavigation';
 import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './src/services/sampleRoute';
 import { useWalkGuidance } from './src/hooks/useWalkGuidance';
+import { BookmarkedRoute, CoursePlan } from './src/types/bookmark';
+import { createBookmark } from './src/services/bookmarkService';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WalkTabScreen } from './src/screens/WalkTabScreen';
@@ -48,6 +50,7 @@ export default function App() {
   const [feedbackSummary, setFeedbackSummary] = useState<FeedbackSummaryPayload | null>(null);
   const [completedRecord, setCompletedRecord] = useState<WalkRecord | null>(null);
   const walk = useWalkGuidance(SAMPLE_ROUTE, SAMPLE_STEP_PINS);
+  const [walkBookmark, setWalkBookmark] = useState<BookmarkedRoute | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -77,13 +80,22 @@ export default function App() {
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, newDog);
   };
 
-  const handleStartWalk = async (course?: RecommendedCourse) => {
+  const beginWalk = async (title: string, plan: CoursePlan | undefined, bookmark: BookmarkedRoute | null) => {
+    if (plan) walk.loadCourse(plan.route, plan.stepPins);
     const status = await walk.start();
     if (status === 'permission_denied') { Alert.alert('위치 권한 필요', '안심 산책을 위해 위치 권한을 허용해 주세요.'); return; }
     if (status !== 'running') { Alert.alert('안내', '산책을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.'); return; }
-    TTSNavigationService.speak(`${activeDog.name}와 ${course?.name ?? '편안한 숲길 코스'} 산책을 시작합니다.`);
+    setWalkBookmark(bookmark);
+    TTSNavigationService.speak(`${activeDog.name}와 ${title} 산책을 시작합니다.`);
     setSubScreen('pocket');
   };
+
+  const handleStartWalk = (course?: RecommendedCourse, plan?: CoursePlan) =>
+    beginWalk(course?.name ?? '편안한 숲길 코스', plan, course && plan ? createBookmark(course, plan, activeDog.name) : null);
+
+  /** US-29: 즐겨찾기 코스를 서버 재탐색 없이 저장된 경로로 즉시 산책 시작 */
+  const handleStartBookmark = (bm: BookmarkedRoute) =>
+    beginWalk(bm.title, { route: bm.routeGeoJson, stepPins: bm.stepPins }, bm);
 
   const handleStopWalkAndReport = async () => {
     const distKm = walk.stats.distanceKm;
@@ -148,7 +160,7 @@ export default function App() {
         )}
         {subScreen === 'report' && completedRecord && (
           <WalkReportScreen
-            record={completedRecord} dogName={activeDog.name}
+            record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
             onSaveFeedback={handleSaveReportFeedback}
             onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
           />
@@ -196,7 +208,7 @@ export default function App() {
               )}
               {activeTab === '커뮤니티' && <CommunityTabScreen />}
               {activeTab === '마이' && (
-                <MyProfileTabScreen dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk} />
+                <MyProfileTabScreen dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk} onStartBookmark={handleStartBookmark} />
               )}
             </ScrollView>
             <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} onActionPress={() => setSubScreen('walk_settings')} />
