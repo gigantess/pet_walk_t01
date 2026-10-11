@@ -3,45 +3,95 @@
 > *"견주에게는 시선과 두 손의 자유를, 반려견에게는 관절 안심 발걸음을"*
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Stateless-009688.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-v1.0.0-009688.svg)](https://fastapi.tiangolo.com/)
 [![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB.svg)](https://expo.dev/)
-[![TDD 100% Pass](https://img.shields.io/badge/TDD%20Tests-100%2F100%20Passed-brightgreen.svg)](test_case/README.md)
-[![Mobile Tests](https://img.shields.io/badge/Mobile%20Tests-31%2F31%20Passed-brightgreen.svg)](frontend)
-
+[![TypeScript](https://img.shields.io/badge/TypeScript-0%20Errors%20(Clean)-3178C6.svg)](frontend)
+[![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-103%2F103%20Passed-brightgreen.svg)](test_case)
+[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-70%2F70%20Passed-brightgreen.svg)](frontend)
+[![Code Quality](https://img.shields.io/badge/SonarLint-Line%20%E2%89%A4%20250%20(100%25)-success.svg)](frontend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## ⚡ 빠른 데모 실행 가이드 (Quick Demo Guide)
+## ⚡ 빠른 시작 및 가동 가이드 (Quick Start Guide)
 
-웹 브라우저 및 모바일 환경을 통해 **모바일 네이티브 앱**, **웹 프로토타입 데모**, **6대 핵심 시나리오 목업 갤러리**를 바로 실행하여 체험할 수 있습니다.
+편안하개는 **FastAPI AI 백엔드 서버(포트 8000)**와 **React Native (Expo SDK 57) 모바일 프론트엔드(포트 8081)**, 그리고 **인터랙티브 시나리오 목업 갤러리**로 구성된 풀스택 AI 에이전트 플랫폼입니다.
 
-### 1️⃣ 모바일 앱 실행 가이드 (React Native / Expo SDK)
-편안하개는 스마트폰을 주머니에 넣은 채 산책할 수 있는 **모바일 네이티브 앱**입니다. Expo를 통해 실제 스마트폰(Expo Go 앱) 또는 에뮬레이터에서 즉시 구동할 수 있습니다.
+```mermaid
+graph LR
+    User["📱 사용자 (스마트폰/브라우저)"] <--> FE["⚛️ Frontend (Expo Web:8081 / Expo Go)"]
+    FE <-->|REST API v1| BE["⚡ FastAPI AI Backend (:8000)"]
+    BE <--> Agent["🤖 LangGraph ReAct Walk Agent"]
+    BE <--> GIS["🗺️ OSM 보행망 / DEM / SunCalc"]
+    BE <--> Supa[("🌐 Supabase Cloud / Mock Fallback")]
+```
+
+---
+
+### 1️⃣ ⚡ FastAPI AI 백엔드 서버 가동 방법
+
+FastAPI 백엔드는 LangGraph ReAct 에이전트를 기반으로 맞춤형 안심 산책 경로를 실시간 계산하고, 200m 공간 마스킹된 커뮤니티 피드를 제공합니다.
+
+#### 1) 파이썬 가상환경 준비 및 의존성 패키지 설치
+```bash
+# 저장소 루트(pet_walk_t01)에서 실행
+python -m venv .venv
+
+# 가상환경 활성화
+# Windows PowerShell
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+
+# 백엔드 및 AI 에이전트 필수 패키지 설치
+pip install -r requirements.txt
+```
+
+#### 2) FastAPI 백엔드 서버 가동
+```bash
+# 개발 모드(Hot-Reload)로 서버 실행 (기본 포트: 8000)
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# 또는 python 모듈 직접 실행 방식:
+py -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### 3) 서버 정상 가동 확인 및 API 문서 접속
+- **서버 기본 주소**: `http://localhost:8000`
+- **인터랙티브 Swagger UI (API 문서 및 즉시 테스트)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Redoc 대안 API 문서**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **헬스체크 엔드포인트**: [http://localhost:8000/health](http://localhost:8000/health)
+
+#### 4) 주요 REST API 엔드포인트 규격
+| HTTP 메서드 | 엔드포인트 URI | 기능 설명 |
+| :---: | :--- | :--- |
+| `GET` | `/health` | 서버 가동 상태 및 Supabase 연동 모드(Live / Fallback) 확인 |
+| `POST` | `/api/v1/walk/plan` | 반려견 프로필, 선호 환경, 피드백 기반 **LangGraph ReAct AI 순환 코스 생성** |
+| `GET` | `/api/v1/community/feed` | 이웃 안심 코스 공유 피드 조회 (**200m 자택 마스킹 자동 적용**) |
+| `POST` | `/api/v1/community/share` | 신규 완주 코스 공유 등록 (출발·도착지 200m 자동 블러링) |
+
+---
+
+### 2️⃣ 📱 모바일 앱 & 웹 브라우저 데모 실행 (React Native / Expo)
+
+단일 코드베이스(`frontend`)로 스마트폰 네이티브 앱과 브라우저 데모를 동시에 제공합니다.
 
 ```bash
-# 1. 모바일 앱 폴더 이동 및 패키지 설치
+# 1. 프론트엔드 폴더 이동 및 패키지 설치
 cd frontend
 npm install
 
-# 2. Expo 개발 서버 시작 (QR코드를 스마트폰 카메라로 스캔)
+# 2. 웹 브라우저 모드로 즉시 실행 (접속: http://localhost:8081)
+npm run web
+
+# 3. 실제 스마트폰(Expo Go 앱)에서 실행할 경우 (QR코드 스캔)
 npx expo start
 ```
 
 ---
 
-### 2️⃣ 웹 브라우저 데모 (`frontend` 단일 소스 Expo Web)
-단일 코드베이스(`frontend`)로 모바일 앱과 브라우저 데모를 동시에 제공합니다. 브라우저에서도 반응형 모바일 쉘(Phone Mockup) 형태로 즉시 체험할 수 있습니다.
+### 3️⃣ 🎨 6대 핵심 시나리오 인터랙티브 목업 갤러리 (HTML)
 
-```bash
-cd frontend
-npm run web
-# 접속 URL: http://localhost:8081 (웹 브라우저에서 모바일 쉘 뷰로 즉시 실행)
-```
-
----
-
-### 3️⃣ 6대 핵심 시나리오 인터랙티브 목업 갤러리 (HTML)
 고대비 야외 시인성 및 한 손 조작 Thumb Zone이 적용된 6대 사용자 여정 화면(산책 플래너, 지도, 음성 내비, 피드백 등)을 한눈에 확인할 수 있습니다.
 
 ```bash
@@ -54,29 +104,52 @@ open mockup/index.html
 
 ---
 
-### 4️⃣ TDD 핵심 엔진 전수 검증 (100개 테스트 100% Pass)
+### 4️⃣ 🧪 종합 TDD & 단위 테스트 전수 검증
+
+백엔드와 프론트엔드 모두 100% 통과하는 강력한 품질 가드레일을 갖추고 있습니다.
+
 ```bash
+# 1. 백엔드 Pytest 전수 검증 (103개 테스트 100% Pass)
 python -m pytest test_case/ -v
+
+# 2. 프론트엔드 Vitest 단위 테스트 (14개 파일, 70개 테스트 100% Pass)
+cd frontend && npm test
+
+# 3. 프론트엔드 TypeScript 무결성 검증 (0 Errors)
+cd frontend && npm run check
 ```
 
 ---
 
 ## 📖 목차 (Table of Contents)
-0. [빠른 데모 실행 가이드 (Quick Demo Guide)](#-빠른-데모-실행-가이드-quick-demo-guide)
-1. [프로젝트 개요 (Overview)](#-1-프로젝트-개요-overview)
-2. [해결하고자 하는 핵심 문제 (Problem Statement)](#-2-해결하고자-하는-핵심-문제-problem-statement)
-3. [4대 핵심 엔지니어링 전략 (Engineering Strategy)](#-3-4대-핵심-엔지니어링-전략-engineering-strategy)
-4. [시스템 아키텍처 (System Architecture)](#-4-시스템-아키텍처-system-architecture)
-5. [핵심 사용자 여정 및 화면 시나리오 (User Journey & Screens)](#-5-핵심-사용자-여정-및-화면-시나리오-user-journey--screens)
-6. [5인 팀 R&R, 프로젝트 마일스톤 및 애자일 스펙 (Team Roles, Milestones & Backlog)](#-6-5인-팀-rr-및-애자일-스펙-team-roles--agile-backlog)
 
-7. [TDD 테스트 스위트 및 품질 가드레일 (Test-Driven Development)](#-7-tdd-테스트-스위트-및-품질-가드레일-test-driven-development)
-8. [프로젝트 디렉터리 구조 (Directory Structure)](#-8-프로젝트-디렉터리-구조-directory-structure)
-9. [시작하기 및 실행 방법 (Getting Started)](#-9-시작하기-및-실행-방법-getting-started)
+0. [⚡ 빠른 시작 및 가동 가이드 (Quick Start Guide)](#-빠른-시작-및-가동-가이드-quick-start-guide)
+1. [🌟 프로젝트 개요 및 핵심 철학 (Overview)](#-1-프로젝트-개요-및-핵심-철학-overview)
+2. [🚨 해결하고자 하는 핵심 문제 (Problem Statement)](#-2-해결하고자-하는-핵심-문제-problem-statement)
+3. [💡 4대 핵심 엔지니어링 전략 (Engineering Strategy)](#-3-4대-핵심-엔지니어링-전략-engineering-strategy)
+4. [🏗️ 시스템 아키텍처 (System Architecture)](#-4-시스템-아키텍처-system-architecture)
+5. [📱 핵심 사용자 여정 및 주요 화면 갤러리 (User Journey & Screens)](#-5-핵심-사용자-여정-및-주요-화면-갤러리-user-journey--screens)
+   - [5.1 📸 실제 구동 화면 스크린샷 갤러리 (Key Screenshots Gallery)](#51-📸-실제-구동-화면-스크린샷-갤러리-key-screenshots-gallery)
+   - [5.2 🗺️ 6대 핵심 시나리오 화면 명세 및 사용자 여정](#52-🗺️-6대-핵심-시나리오-화면-명세-및-사용자-여정)
+6. [👥 5인 팀 R&R, 프로젝트 마일스톤 및 개발 현황 (Team Roles, Milestones & Status)](#-6-5인-팀-rr-프로젝트-마일스톤-및-개발-현황-team-roles-milestones--status)
+   - [6.1 5인 전담 R&R 및 협업 체계](#61-5인-전담-rr-및-협업-체계)
+   - [6.2 프로젝트 주요 마일스톤 (수행계획서 정합)](#62-프로젝트-주요-마일스톤-수행계획서-정합)
+   - [6.3 📊 현재 프로젝트 개발 및 구현 현황 (Current Implementation Status)](#63-📊-현재-프로젝트-개발-및-구현-현황-current-implementation-status)
+7. [🧪 TDD 테스트 스위트 및 품질 가드레일 (Test-Driven Development)](#-7-tdd-테스트-스위트-및-품질-가드레일-test-driven-development)
+   - [7.1 테스트 스위트 구성 및 실행 결과](#71-테스트-스위트-구성-및-실행-결과)
+   - [7.2 엄격한 품질 가드레일 (Enforced Guardrails)](#72-엄격한-품질-가드레일-enforced-guardrails)
+8. [📂 프로젝트 디렉터리 구조 및 공식 산출물 문서 (Directory Structure & Docs)](#-8-프로젝트-디렉터리-구조-및-공식-산출물-문서-directory-structure--docs)
+   - [8.1 📚 docs/ 기획 및 공식 엔지니어링 산출물 문서 목록](#81-📚-docs-기획-및-공식-엔지니어링-산출물-문서-목록)
+   - [8.2 전체 프로젝트 디렉터리 트리](#82-전체-프로젝트-디렉터리-트리)
+9. [🚀 시작하기 및 실행 방법 (Getting Started)](#-9-시작하기-및-실행-방법-getting-started)
+   - [9.1 환경 요구사항](#91-환경-요구사항)
+   - [9.2 백엔드 가동 및 API 테스트](#92-백엔드-가동-및-api-테스트)
+   - [9.3 프론트엔드 모바일 앱/웹 가동](#93-프론트엔드-모바일-앱웹-가동)
+10. [📜 라이선스 및 저작권 (License)](#-10-라이선스-및-저작권-license)
 
 ---
 
-## 🌟 1. 프로젝트 개요 (Overview)
+## 🌟 1. 프로젝트 개요 및 핵심 철학 (Overview)
 
 **편안하개(PetWalk)**는 노령견이나 관절 보호가 필요한 반려견을 위해 **계단 회피, 완만 경사(DEM), 실시간 그늘길(SunCalc), 푹신한 노면(흙·잔디·탄성포장)**을 과학적으로 탐색하여 맞춤형 순환 산책 코스를 생성하는 **AI Native 모바일 산책 플랫폼**입니다.
 
@@ -108,12 +181,11 @@ flowchart TD
 
 > [!IMPORTANT]
 > **5대 핵심 해결 영역**
-> 1. **자연어 산책 의도 정밀 구조화**: *"9살 노령 말티즈라 계단 피하고 완만한 길로 20분만"* ➔ LangGraph ReAct Agent가 Pydantic V2 Strict Schema로 변환 ([`US-A1`](docs/03_편안하개_Agile_User_Stories.md)).
+> 1. **자연어 산책 의도 정밀 구조화**: *"초코랑 30분 정도 폭신한 길로 걸을래"* ➔ LangGraph ReAct Agent가 Pydantic V2 Strict Schema로 변환 ([`US-A1`](docs/03_편안하개_Agile_User_Stories.md)).
 > 2. **체급·연령별 적응형 시간-거리 환산**: 소형(2.8), 중형(3.6), 대형(4.2), 노령견(2.2 km/h) 보행 속도 모델 기반 목표 시간 $\pm 15\%$ 수렴 순환 루프 생성 ([`US-A3`](docs/03_편안하개_Agile_User_Stories.md)).
 > 3. **다요소 과학 라우팅 & 종합 채점**: OSM 계단 완전 배제 + 15도 미만 무장애 완만경사 + 기상·노면 연동 지면온도 추정 및 고온 노면 회피 ➔ 100점 만점 최적 코스 도출 ([`US-B1~B3`](docs/03_편안하개_Agile_User_Stories.md)).
-> 4. **현장 시각 위험 분석 & 동적 우회 (Phase 2 차기 고도화)**: Gemini Cascading Vision Pipeline으로 높은 턱 및 공원 종합안내판 판독, 위험 링크 10배 격리 후 3초 이내 대안 우회로 재탐색 ([`US-D1~D2`](docs/03_편안하개_Agile_User_Stories.md)).
-> 5. **프라이버시 바이 디자인(Local-First)**: 자택 좌표 및 상세 GPS 트랙은 모바일 `AsyncStorage` 전용 보관, 커뮤니티 공유 시 출발/도착지 200m 공간 지터링 마스킹 ([`US-E1`](docs/03_편안하개_Agile_User_Stories.md), [`US-G2`](docs/03_편안하개_Agile_User_Stories.md)).
-
+> 4. **초절전 다크 포켓 & 핸즈프리 음성 안내**: True Black OLED 화면과 주머니 속 30m 전 음성 코칭으로 두 손과 시선의 완전한 자유 보장 ([`US-C1~C2`](docs/03_편안하개_Agile_User_Stories.md)).
+> 5. **프라이버시 바이 디자인(Local-First)**: 자택 좌표 및 상세 GPS 트랙은 모바일 기기 `AsyncStorage` 전용 보관, 커뮤니티 공유 시 출발/도착지 200m 공간 지터링 마스킹 ([`US-E1`](docs/03_편안하개_Agile_User_Stories.md), [`US-G2`](docs/03_편안하개_Agile_User_Stories.md), [`US-23`](docs/implementation_plan/frontend_phase2_stories_implementation_plan.md)).
 
 ---
 
@@ -124,14 +196,14 @@ flowchart TD
 |                                 편안하개 4대 핵심 엔지니어링 전략                                  |
 +--------------------------------------------------------------------------------------------------+
   [전략 1] C++ GIS 바닥 코딩 ❌  ➔  AI Agent 외부 도구 제어 & Routing API Adapter 연동 ⭕
-  [전략 2] 화면 주시 보행 위험 ❌  ➔  React Native Expo 시선 해방(Eyes-Free) 음성 안내 & EAS OTA ⭕
-  [전략 3] 소셜 로그인 & 서버 DB ❌ ➔  간편 이메일 가입 & 프라이버시 로컬 저장(Local-First) ⭕
-  [전략 4] 과도한 스트리밍 인프라 ❌ ➔  예측 가능한 Stateless REST API & 5주 애자일 완결 ⭕
+  [전략 2] 화면 주시 보행 위험 ❌  ➔  React Native Expo 시선 해방(Eyes-Free) 음성 안내 & 다크 포켓 ⭕
+  [전략 3] 소셜 로그인 & 서버 DB ❌ ➔  간편 로컬 저장(Local-First) & 200m 공간 마스킹 보호 ⭕
+  [전략 4] 과도한 스트리밍 인프라 ❌ ➔  예측 가능한 Stateless REST API & TDD 100% 가드레일 ⭕
 ```
 
-* **1. AI Agent 도구 오케스트레이션**: 무거운 지리 알고리즘을 직접 구현하지 않고, LangGraph ReAct Agent가 ORS/OSRM 라우팅 어댑터, DEM 고도 래스터, 지면온도 추정 모델을 표준 도구(`@tool`)로 유기적으로 지휘합니다. (Phase 2: Gemini Vision 체인 확장)
-* **2. 시선 해방(Eyes-Free) & 두 손의 자유**: 한 손에 리드줄을 쥐고 화면을 보는 위험을 없애기 위해, Android Foreground Service 기반 백그라운드 GPS 추적과 `expo-speech` TTS 실시간 음성 브리핑(회전 30m 전 안내, 40m 이탈 경고)을 제공합니다.
-* **3. 프라이버시 최우선 Local-First 아키텍처**: 반려견 프로필, 실보행 GPS 트랙, 자택 좌표는 기기 내부 `AsyncStorage`에만 보관하며, 클라우드(Supabase)는 200m 공간 마스킹된 공개 커뮤니티 코스와 현장 제보만 최소한으로 취합합니다.
+* **1. AI Agent 도구 오케스트레이션**: 무거운 지리 알고리즘을 바닥부터 구현하지 않고, LangGraph ReAct Agent가 ORS/OSRM 라우팅 어댑터, DEM 고도 래스터, 지면온도 추정 모델을 표준 도구(`@tool`)로 지휘합니다.
+* **2. 시선 해방(Eyes-Free) & 두 손의 자유**: 한 손에 리드줄을 쥐고 화면을 보는 위험을 없애기 위해, 백그라운드 GPS 추적과 `expo-speech` TTS 실시간 음성 브리핑(회전 30m 전 안내, 40m 이탈 경고)을 제공합니다.
+* **3. 프라이버시 최우선 Local-First 아키텍처**: 반려견 프로필, 실보행 GPS 트랙, 자택 좌표는 기기 내부 `AsyncStorage`에만 보관하며, 클라우드(Supabase)는 200m 공간 마스킹된 공개 커뮤니티 코스만 최소한으로 취합합니다.
 * **4. 무중단 무선 배포 (EAS Build 1회 + EAS Update OTA)**: 번거로운 스토어 재심사나 APK 재설치 없이, `expo-updates` 무선 무점검 OTA를 통해 핫픽스와 UI 개선 사항을 실시간 반영합니다.
 
 ---
@@ -140,16 +212,16 @@ flowchart TD
 
 ```mermaid
 graph TB
-    subgraph Client["📱 모바일 클라이언트 (React Native / Expo SDK 51+)"]
-        UI["UI Screens (핵심 시나리오)"]
-        TTS["expo-speech (핸즈프리 음성 안내)"]
-        GPS["expo-location (Foreground Service)"]
-        Store[("Local AsyncStorage<br/>@pet_walk:dog_profile<br/>@pet_walk:walk_history")]
+    subgraph Client["📱 모바일 클라이언트 (React Native / Expo SDK 57)"]
+        UI["UI Screens (홈, 산책 설정, 추천, 다크포켓, 리포트, 마이, 커뮤니티)"]
+        TTS["expo-speech (30m 전 핸즈프리 음성 코칭)"]
+        GPS["expo-location (Foreground GPS 추적)"]
+        Store[("Local AsyncStorage<br/>@편안하개:dog_profile<br/>@편안하개:walk_history<br/>@편안하개:bookmarked_routes")]
     end
 
     subgraph Backend["⚡ 백엔드 & AI 오케스트레이터 (FastAPI / Stateless)"]
-        Router["FastAPI v1 REST Endpoints"]
-        Agent["LangGraph ReAct Walk Agent"]
+        Router["FastAPI v1 REST Endpoints (:8000)"]
+        Agent["LangGraph ReAct Walk Planning Agent"]
         Scorer["Candidate Route Scorer (100점 만점)"]
         Masker["200m Spatial Jittering Engine"]
         VisionPipe["(Phase 2) Gemini Cascading Chain"]
@@ -160,7 +232,7 @@ graph TB
         DEM["DEM 고도 / OSM 보행망 (무장애길 제약)"]
         TempModel["기상청 단기예보 & 지면온도 추정 모델"]
         Gemini["(Phase 2) Gemini 3.x Flash"]
-        Supa[("Supabase Cloud (Auth & 200m Masked Feed)")]
+        Supa[("Supabase Cloud / Mock Fallback")]
     end
 
     UI --> Store
@@ -175,46 +247,73 @@ graph TB
 
 ---
 
-## 📱 5. 핵심 사용자 여정 및 화면 시나리오 (User Journey & Screens)
+## 📱 5. 핵심 사용자 여정 및 주요 화면 갤러리 (User Journey & Screens)
+
+### 5.1 📸 실제 구동 화면 스크린샷 갤러리 (Key Screenshots Gallery)
+
+편안하개 모바일 애플리케이션의 핵심 사용자 여정(User Journey)을 담은 9종의 실제 구동 화면입니다. (고화질 원본: [`docs/screenshots/`](docs/screenshots/))
+
+| 01. 신규 온보딩 가이드 | 02. 메인 홈 화면 | 03. 맞춤 산책 조건 설정 |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/01_onboarding_wizard.png" width="240" alt="온보딩 가이드"/> | <img src="docs/screenshots/02_home_screen.png" width="240" alt="메인 홈"/> | <img src="docs/screenshots/03_walk_settings.png" width="240" alt="산책 설정"/> |
+| **관절 안심 & 시선 해방 투어**<br>• 계단 배제 완만길 원칙<br>• 30m 전 음성 코칭 안내<br>• Local-First 프라이버시 약속 | **반려견 맞춤 대시보드**<br>• 초코 프로필 & 권장 속도<br>• 지면온도 '산책 좋은 시간'<br>• AI 산책 도우미 & 최근 산책 | **목표 시간 & 선호 환경**<br>• 20~60분 시간 선택 칩<br>• 6대 안심 보행길 다중 선택<br>• 자연어/음성 요청 입력 |
+
+| 04. 추천 산책 코스 | 05. 위치 정보 수집 동의 | 06. 초절전 다크 포켓 모드 |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/04_course_recommendation.png" width="240" alt="추천 산책 코스"/> | <img src="docs/screenshots/05_location_consent_modal.png" width="240" alt="위치 동의 모달"/> | <img src="docs/screenshots/06_dark_pocket_mode.png" width="240" alt="다크 포켓 모드"/> |
+| **실시간 AI 코스 & 지도 프리뷰**<br>• AI 맞춤 코스 뱃지 & 브리핑<br>• OSM 실제 지도 & 경로 핀<br>• 경사/노면/그늘 3대 안심 지표 | **프라이버시 3대 투명 고지**<br>• 30m 음성 안내용 한정 수집<br>• 기기에만 안전하게 로컬 보관<br>• 공유 시 출발/도착 200m 마스킹 | **시선 해방(Eyes-Free) HUD**<br>• True Black OLED 배터리 절감<br>• 시간/거리/속도 네온 그린 HUD<br>• 오터치 방지 슬라이드 잠금해제 |
+
+| 07. 완주 인포그래픽 리포트 | 08. 마이 프로필 & 보관함 | 09. 커뮤니티 안심 피드 |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/07_walk_report.png" width="240" alt="완주 리포트"/> | <img src="docs/screenshots/08_my_profile_and_bookmarks.png" width="240" alt="마이 프로필"/> | <img src="docs/screenshots/09_community_feed.png" width="240" alt="커뮤니티 피드"/> |
+| **보행 통계 & 체감 피드백**<br>• 4대 핵심 보행 지표 4분할<br>• 3초 체감 만족도 피드백<br>• 오늘 산책 코스 보관함 찜하기 | **아이 정보 & 즐겨찾기 코스**<br>• 나이/체중/관절 케어 3단계<br>• 찜한 코스 0.1초 즉시 재산책<br>• 프로필 백업 및 전체 데이터 초기화 | **이웃 코스 공유 & 안심 보호**<br>• 동네 이웃 안심 산책로 공유<br>• 집 위치 200m 자동 블러링<br>• 실시간 서버 / 오프라인 듀얼 모드 |
+
+---
+
+### 5.2 🗺️ 6대 핵심 시나리오 화면 명세 및 사용자 여정
 
 편안하개는 사전 계획부터 보행, 완주, 커뮤니티 보강까지 끊김 없는 사용자 여정을 제공합니다. (인터랙티브 웹 갤러리: [`mockup/index.html`](mockup/index.html))
 
 ```mermaid
 graph LR
-    S1["1. 산책 플래너<br/>(자연어/시간/노면)"] --> S2["2. 순환 경로 프리뷰<br/>(무장애·지면온도 Polyline)"]
-    S2 -->|산책 시작| S3["3. 다크 포켓 모드<br/>(WakeLock & 슬라이드 언락)"]
-    S3 -->|산책 완주| S5["5. 체크인 & 리포트<br/>(달성률 85% & 즐겨찾기)"]
-    S5 -->|코스 공유| S6["6. 커뮤니티 코스 공유<br/>(200m 공간 안심 마스킹)"]
-    S1 -.->|Phase 2: 사전 안내판 판독| S4["4. 공원안내판 비전 판독<br/>(금지구역 차단)"]
+    S0["0. 온보딩 가이드<br/>(안심 보행 3원칙)"] --> S1["1. 산책 플래너<br/>(자연어/시간/노면)"]
+    S1 --> S2["2. 순환 경로 프리뷰<br/>(무장애·지면온도 Polyline)"]
+    S2 -->|위치 동의 후 시작| S3["3. 다크 포켓 모드<br/>(OLED HUD & 음성 안내)"]
+    S3 -->|산책 완주| S5["5. 체크인 & 리포트<br/>(달성률 & 찜하기)"]
+    S5 -->|코스 공유| S6["6. 커뮤니티 공유<br/>(200m 공간 안심 마스킹)"]
+    S1 -.->|Phase 2: 안내판 판독| S4["4. 공원안내판 비전 판독<br/>(금지구역 차단)"]
     S4 -.->|제약 반영| S2
 ```
 
 | 시나리오 화면 | 화면 명칭 | 연계 스토리 | 핵심 기능 및 UX 특징 |
 |:---:|---|:---:|---|
-| **01** | **맞춤형 산책 플래너**<br/>([`01_walk_planner.jpg`](mockup/01_walk_planner.jpg)) | `US-A1`<br>`US-A2`<br>`US-A3` | • 반려견 활성 프로필 카드 ('코코', 관절 안심 케어 집중)<br>• 자연어 질의 입력창 (*"관절 안심 케어가 필요한 코코 25분 폭신한 길"*)<br>• 10~90분 시간 슬라이더 및 선호 노면 선택 칩(흙길, 잔디길, 탄성포장) |
-| **02** | **안심 순환 경로 프리뷰**<br/>([`02_route_preview.jpg`](mockup/02_route_preview.jpg)) | `US-B1~B3`<br>`US-C1` | • 노면/온도별 색상 분기 Polyline (🌿 안심/저온: `#10B981`, 🟤 흙길: `#92400E`, ⚠️ 고온주의: `#F97316`)<br>• 바텀시트: 총 1.4km, 예상 25분, 폭신한 길 비율 **82%** 표시<br>• 네이버/카카오 지도 원터치 외부 네비게이션 딥링크 제공 |
-| **03** | **초절전 다크 포켓 모드**<br/>([`03_pocket_mode.jpg`](mockup/03_pocket_mode.jpg)) | `US-C2`<br>`US-E1` | • Screen Wake Lock & OLED True Black (`#000000`) 배터리 극소화<br>• 주머니 오터치 방지 '밀어서 잠금 해제(Slide to Unlock)' 엄지 조작<br>• 실시간 HUD(시간, 거리, 속도) 및 백그라운드 TTS 음성 브리핑 연동 |
-| **04** | **공원안내판 비전 인스펙터 (Phase 2)**<br/>([`04_vision_inspection.jpg`](mockup/04_vision_inspection.jpg)) | `US-D1`<br>`US-D2`<br>*(Phase 2)* | • 공원 입구 오프라인 종합안내도 촬영 ➔ Gemini Flash 구조화 파싱<br>• 비포장 흙길 산책로 녹색 식별, 반려견 출입 금지 구역 붉은색 차단<br>• 금지구역 라우팅 격리 및 흙길 우선 경유 대안 순환로 즉시 수립 |
-| **05** | **완주 체크인 & 안심 리포트**<br/>([`05_walk_report.jpg`](mockup/05_walk_report.jpg)) | `US-E2`<br>`US-E3` | • 선호 노면 달성률 게이지 (폭신한 길 85% 달성)<br>• 3초 원터치 체감 피드백(별점) 수집 ➔ 다음 산책 무상태 경사도 보정 반영<br>• 나만의 안심 코스 즐겨찾기(`@pet_walk:favorites`) 로컬 저장 |
-| **06** | **커뮤니티 안심 공유 피드**<br/>([`06_community_enrichment.jpg`](mockup/06_community_enrichment.jpg)) | `US-G2` | • 출발지/도착지 **반경 200m 공간 지터링 및 절단**으로 자택 위치 완벽 은폐<br>• 검증된 동네 산책로 코스 공유 및 현장 위험 제보 등록 |
-
+| **01** | **맞춤형 산책 플래너**<br/>([`01_walk_planner.jpg`](mockup/01_walk_planner.jpg)) | `US-A1`<br>`US-A2`<br>`US-A3` | • 반려견 활성 프로필 카드 ('초코', 관절 안심 케어 집중)<br>• 자연어 질의 입력창 (*"초코랑 30분 정도 폭신한 길로 걸을래"* 또는 음성 입력)<br>• 20~60분 시간 칩 및 6대 선호 노면 다중 선택(흙길, 잔디길, 그늘길, 계단 피하기 등) |
+| **02** | **안심 순환 경로 프리뷰**<br/>([`02_route_preview.jpg`](mockup/02_route_preview.jpg)) | `US-B1~B3`<br>`US-C1`<br>`US-29` | • 실제 OSM 지도 위 노면/경사도별 색상 분기 Polyline (🌿 완만/그늘, 🟤 일반 보도, ⚠️ 주의 구간)<br>• 요약 카드: 총 1.4km, 예상 30분, 폭신한 길 비율 **88%** 표시<br>• 나만의 안심 코스 찜하기(즐겨찾기) 버튼 연동 |
+| **03** | **초절전 다크 포켓 모드**<br/>([`03_pocket_mode.jpg`](mockup/03_pocket_mode.jpg)) | `US-C2`<br>`US-E1` | • Screen Wake Lock & OLED True Black (`#000000`) 배터리 극소화<br>• 주머니 오터치 방지 '밀어서 잠금 해제(Slide to Unlock)' 엄지 제스처<br>• 실시간 HUD(시간, 거리, 속도) 및 백그라운드 30m 전 TTS 음성 브리핑 연동 |
+| **04** | **공원안내판 비전 인스펙터**<br/>([`04_vision_inspection.jpg`](mockup/04_vision_inspection.jpg)) | `US-D1`<br>`US-D2` | • 공원 입구 오프라인 종합안내도 촬영 ➔ Gemini Flash 구조화 파싱<br>• 비포장 흙길 산책로 녹색 식별, 반려견 출입 금지 구역 붉은색 차단<br>• 금지구역 라우팅 격리 및 흙길 우선 경유 대안 순환로 즉시 수립 |
+| **05** | **완주 체크인 & 안심 리포트**<br/>([`05_walk_report.jpg`](mockup/05_walk_report.jpg)) | `US-E2`<br>`US-E3` | • 4대 핵심 보행 통계 4분할 그리드 (거리, 시간, 속도, 완만 노면 달성률)<br>• 3초 원터치 체감 피드백(별점) 수집 ➔ 다음 산책 무상태 경사도 보정 반영<br>• 나만의 안심 코스 즐겨찾기(`@편안하개:bookmarked_routes`) 로컬 저장 |
+| **06** | **커뮤니티 안심 공유 피드**<br/>([`06_community_enrichment.jpg`](mockup/06_community_enrichment.jpg)) | `US-G2` | • 출발지/도착지 **반경 200m 공간 지터링 및 절단**으로 자택 위치 완벽 은폐<br>• 검증된 동네 산책로 코스 공유 및 실시간 서버 / 오프라인 듀얼 모드 지원 |
 
 ---
 
-## 👥 6. 5인 팀 R&R 및 애자일 스펙 (Team Roles & Agile Backlog)
+## 👥 6. 5인 팀 R&R, 프로젝트 마일스톤 및 개발 현황 (Team Roles, Milestones & Status)
 
-편안하개 프로젝트는 5인 전담 R&R과 **15개 핵심 애자일 사용자 스토리 (총 62 Story Points / 298 Hours, Phase 2 확장 별도)** 체계로 운영됩니다. (상세 명세: [`02_편안하개_Team_building.md`](docs/02_편안하개_Team_building.md), [`03_편안하개_Agile_User_Stories.md`](docs/03_편안하개_Agile_User_Stories.md), [`05_편안하개_프로젝트_수행계획서_일정.md`](docs/05_편안하개_프로젝트_수행계획서_일정.md))
+### 6.1 5인 전담 R&R 및 협업 체계
+
+편안하개 프로젝트는 5인 전담 R&R과 **18개 핵심 애자일 사용자 스토리 (총 62 Story Points / 298 Hours, Phase 2 확장 포함)** 체계로 운영됩니다. (상세 명세: [`02_편안하개_Team_building.md`](docs/02_편안하개_Team_building.md), [`03_편안하개_Agile_User_Stories.md`](docs/03_편안하개_Agile_User_Stories.md))
 
 | 번호 | 역할 명칭 (포지션) | 담당 팀원 | 핵심 R&R 및 주요 산출물 | 연계 사용자 스토리 |
 |:---:|---|:---:|---|:---:|
-| **1번** | **팀장 / 프로젝트 총괄·AI 기능 설계**<br/>(PM & AI Agent Lead) | **조현정** | • 전체 프로젝트 리딩, LangGraph ReAct 오케스트레이션<br>• 자연어 의도 파싱 스키마 설계 및 Candidate Route Scorer 튜닝 | `US-A1`, `US-A3`, `US-B3`, `US-E3`<br>*(Phase 2: US-D2)* |
-| **2번** | **데이터 / 지도·공간데이터·AI 분석**<br/>(AI & Spatial Data Engineer) | **전황진** | • OSM 보행망·무장애길 데이터 정제, DEM 15도 미만 경사도 분석<br>• 기상청 지면온도 추정 모델 및 고온 노면 회피 파이프라인 | `US-B1`, `US-B2`, `US-F1`, `US-G1`, `US-G2`<br>*(Phase 2: US-D1, US-D2)* |
+| **1번** | **팀장 / 프로젝트 총괄·AI 설계**<br/>(PM & AI Agent Lead) | **조현정** | • 전체 프로젝트 리딩, LangGraph ReAct 오케스트레이션<br>• 자연어 의도 파싱 스키마 설계 및 Candidate Route Scorer 튜닝 | `US-A1`, `US-A3`, `US-B3`, `US-E3`<br>*(Phase 2: US-D2)* |
+| **2번** | **데이터 / 지도·공간데이터·AI 분석**<br/>(AI & Spatial Data Engineer) | **전황진** | • OSM 보행망·무장애길 정제, DEM 15도 미만 경사도 분석<br>• 기상청 지면온도 추정 모델 및 고온 노면 회피 파이프라인 | `US-B1`, `US-B2`, `US-F1`, `US-G1`, `US-G2`<br>*(Phase 2: US-D1, US-D2)* |
 | **3번** | **서버 / 서버·맞춤 경로 계산**<br/>(Backend & Spatial Routing Lead) | **노희선** | • FastAPI 무상태 REST API 개발, ORS/OSRM 라우팅 어댑터<br>• 무장애길 및 지면온도 비용 함수 구현, 200m 공간 지터링 알고리즘 | `US-B1~B3`, `US-F1`, `US-G1`, `US-G2`<br>*(Phase 2: US-D2)* |
-| **4번** | **앱 / 모바일 앱·GPS·음성 안내**<br/>(Frontend & Mobile App Lead) | **김승현** | • React Native Expo 모바일 앱 구축, Android Foreground Service GPS<br>• `expo-speech` 백그라운드 음성 브리핑, Local-First `AsyncStorage` | `US-A2`, `US-C1`, `US-C2`, `US-E1`, `US-E2`, `US-E3`, `US-H1`<br>*(Phase 2: US-D2)* |
-| **5번** | **UI / 화면 구현·통합 테스트**<br/>(UI/UX Designer & Product Experience Lead) | **김정님** | • 핵심 시나리오 UI/UX 화면 개발, 고대비 시인성 토큰 적용<br>• 웰니스 카피라이팅 가드레일 준수, EAS Update 배포 및 5인 CBT 총괄 | `US-A2`, `US-A3`, `US-C1`, `US-E2`, `US-F1`, `US-G1`, `US-G2`, `US-H1` |
+| **4번** | **앱 / 모바일 앱·GPS·음성 안내**<br/>(Frontend & Mobile App Lead) | **김승현** | • React Native Expo 모바일 앱 구축, 시선 해방 TTS 음성 안내<br>• Local-First 스토리지, 즐겨찾기(US-29), 온보딩(US-21), 위치동의(US-23) | `US-A2`, `US-C1`, `US-C2`, `US-E1~E3`, `US-H1`<br>*(Phase 2: US-29, 23, 21)* |
+| **5번** | **UI / 화면 구현·품질 검증**<br/>(UI/UX Designer & Experience Lead) | **김정님** | • 핵심 시나리오 UI/UX 화면 개발, 고대비 시인성 토큰 적용<br>• 웰니스 카피라이팅 가드레일 준수, EAS 배포 및 CBT 총괄 | `US-A2`, `US-A3`, `US-C1`, `US-E2`, `US-F1`, `US-G1~G2`, `US-H1` |
 
-### 📅 6.1 프로젝트 주요 마일스톤 (수행계획서 정합)
-> 상세 타임라인: [`05_편안하개_프로젝트_수행계획서_일정.md`](docs/05_편안하개_프로젝트_수행계획서_일정.md)
+---
+
+### 6.2 프로젝트 주요 마일스톤 (수행계획서 정합)
+> 상세 타임라인 명세: [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](docs/05_편안하개_프로젝트_수행계획서_일정.md)
 
 | 마일스톤 단계 | 일정 | 주요 목표 및 산출물 | 책임 |
 |---|:---:|---|:---:|
@@ -225,14 +324,43 @@ graph LR
 
 ---
 
+### 6.3 📊 현재 프로젝트 개발 및 구현 현황 (Current Implementation Status)
+
+본 프로젝트는 핵심 사용자 여정 및 Phase 2 프론트엔드 단독 완결형 스토리를 100% 완료하고 엄격한 품질 가드레일을 통과한 안정화 상태입니다.
+
+#### 1) 종합 품질 검증 지표
+| 구분 | 검증 항목 | 달성 지표 | 상태 | 세부 내용 |
+| :--- | :--- | :---: | :---: | :--- |
+| **Backend** | Pytest TDD 스위트 | **103 / 103** | `PASS` | LangGraph ReAct, GIS 비용 함수, 200m 마스킹 전수 통과 |
+| **Frontend** | Vitest 단위 테스트 | **70 / 70** | `PASS` | 14개 테스트 파일 전원 통과 (북마크, 위치동의, 온보딩, 리포트) |
+| **Frontend** | TypeScript 컴파일 검사 | **0 Errors** | `PASS` | `tsc --noEmit` 완벽 무결성 통과 (Strict Mode) |
+| **Code Quality** | SonarLint 단일 파일 줄수 | **100% 준수** | `PASS` | 모든 신규/수정 파일 250줄 이하 가드레일 엄수 (`App.tsx` 249줄) |
+| **UX & Copy** | 전문 용어 순화 가드레일 | **100% 완료** | `PASS` | 스토리 번호(`US-xx`) 및 개발자 용어 전면 배제, 웰니스 어휘 적용 |
+| **CI/CD** | GitHub Actions Pipeline | **Auto-Merge** | `PASS` | `backend-test` + `mobile-app-ci` 통과 시 자동 머지 파이프라인 |
+
+#### 2) 최근 완성된 주요 기능 구현 내용
+1. **나만의 안심 코스 즐겨찾기(Bookmark) 보관함 (US-29)**:
+   - 마음에 든 산책 코스를 로컬 `@편안하개:bookmarked_routes`에 원터치 저장 (햅틱 피드백 연동).
+   - 서버 재호출 없이 저장된 GeoJSON 경로와 안내 핀으로 0.1초 만에 즉시 내비게이션/다크 포켓 모드 재진입.
+2. **위치 정보 수집 동의 및 Local-First 투명 고지 (US-23)**:
+   - 산책 시작 직전 프라이버시 3대 안심 약속(음성 안내 한정, 서버 미전송, 200m 마스킹) 팝업 모달 제공.
+   - 마이 페이지 내 2단계 확인을 통한 기기 로컬 데이터 영구 삭제(`clearAll()`) 탑재.
+3. **신규 견주 시선 해방 온보딩 가이드 (US-21)**:
+   - 3단계 인터랙티브 슬라이드(완만길, 시선 해방, 프라이버시) 온보딩 위저드 탑재.
+   - 마이 페이지에서 언제든 "📖 앱 이용 가이드 다시 보기"로 재호출 가능.
+4. **AI 산책 코스 동적 피드백 루프**:
+   - 완주 후 수집된 불만족 피드백(경사도, 계단)이 다음 코스 생성 시 최대 경사도 한계치에 실시간 보정 반영.
+
+---
+
 ## 🧪 7. TDD 테스트 스위트 및 품질 가드레일 (Test-Driven Development)
 
 본 프로젝트는 **TDD(Test-Driven Development) 및 ATDD(인수 테스트 주도 개발)**를 기반으로 구축되었으며, 18개 핵심 스토리 및 Phase 2 확장 백로그의 모든 인수 조건(Acceptance Criteria)과 완료 정의(DoD)를 테스트 코드로 100% 사전 검증합니다. (상세 가이드: [`test_case/README.md`](test_case/README.md))
 
-
 ### 7.1 테스트 스위트 구성 및 실행 결과
+
 ```bash
-# 전체 TDD 테스트 스위트 실행 (100개 테스트 100% Pass)
+# 전체 TDD 테스트 스위트 실행 (103개 테스트 100% Pass)
 python -m pytest test_case/ -v
 ```
 
@@ -240,87 +368,117 @@ python -m pytest test_case/ -v
 ============================= test session starts =============================
 platform win32 -- Python 3.14.x / pytest-9.x
 rootdir: .
-collected 100 items
+collected 103 items
 
-
-test_case/test_api_contracts.py ...                                      [  3%]
-test_case/test_langgraph_walk_agent.py ......                            [  9%]
-test_case/test_loop_target_duration.py ............                      [ 21%]
-test_case/test_mobile_and_voice_navigation.py ........                   [ 29%]
-test_case/test_phase2_extended_features.py ..........                    [ 39%]
-test_case/test_surface_cost_model.py ....................                [ 59%]
-test_case/test_thermal_and_parking.py ......                             [ 65%]
+test_case/test_api_contracts.py ...                                      [  2%]
+test_case/test_langgraph_walk_agent.py ......                            [  8%]
+test_case/test_loop_target_duration.py ............                      [ 20%]
+test_case/test_mobile_and_voice_navigation.py ........                   [ 28%]
+test_case/test_phase2_extended_features.py ..........                    [ 37%]
+test_case/test_supabase_repository.py ...                                [ 40%]
+test_case/test_surface_cost_model.py ....................                [ 60%]
+test_case/test_thermal_and_parking.py ......                             [ 66%]
 test_case/test_vision_safety_inspector.py .............                  [ 78%]
 test_case/test_walk_plan_agent_schema.py .............                   [ 91%]
 test_case/test_walk_tracking_and_feedback.py .........                   [100%]
 
-============================ 100 passed in 0.54s ==============================
+============================ 103 passed in 0.74s ==============================
 ```
 
 ```bash
-# 모바일 프론트엔드 단위 테스트 실행 (Vitest 31개 테스트 100% Pass)
+# 모바일 프론트엔드 단위 테스트 실행 (14개 파일, 70개 테스트 100% Pass)
 cd frontend && npm test
 ```
 
-
 ### 7.2 엄격한 품질 가드레일 (Enforced Guardrails)
-1. **웰니스 카피라이팅 (Zero Medical Slang)**: 앱 UI, DTO, 테스트 코드 전역에서 '슬개골 탈구' 등 임상적 질병 공포 유발 단어를 배제하고, '관절 안심 케어', '폭신한 길' 등 순화된 웰니스 단어만을 사용하도록 자동 검사합니다.
-2. **Gemini 3.x 순차 체인 (Cascading Chain)**: 구형 `gemini-1.5` 계열 사용을 전면 차단하고, `3.5-flash-lite` ➔ `3.1-flash-lite` ➔ `3.6-flash` 순으로 자동 폴백되도록 강제합니다.
-3. **프라이버시 무결성**: 자택 좌표 서버 전송 0건 및 커뮤니티 공유 시 출발/도착지 200m 공간 지터링 마스킹을 테스트로 보증합니다.
+1. **웰니스 카피라이팅 (Zero Medical Slang)**: 앱 UI, DTO, 테스트 코드 전역에서 임상적 공포 유발 단어를 배제하고, '관절 안심 케어', '폭신한 길' 등 순화된 웰니스 단어만을 사용하도록 자동 검사합니다.
+2. **사용자 친화적 용어 통일**: 스토리 번호(`US-xx`)나 엔지니어링 용어(JSON, DB, API 등)를 사용자 화면에서 완전히 배제합니다.
+3. **Gemini 3.x 순차 체인 (Cascading Chain)**: `3.5-flash-lite` ➔ `3.1-flash-lite` ➔ `3.6-flash` 순으로 자동 폴백되도록 강제합니다.
+4. **프라이버시 무결성**: 자택 좌표 서버 전송 0건 및 커뮤니티 공유 시 출발/도착지 200m 공간 지터링 마스킹을 테스트로 보증합니다.
+5. **SonarLint 단일 파일 줄수 제한**: 모든 프론트엔드 소스 파일은 단일 파일 250줄 이하 가드레일을 100% 준수합니다.
 
 ---
 
-## 📂 8. 프로젝트 디렉터리 구조 (Directory Structure)
+## 📂 8. 프로젝트 디렉터리 구조 및 공식 산출물 문서 (Directory Structure & Docs)
+
+### 8.1 📚 docs/ 기획 및 공식 엔지니어링 산출물 문서 목록
+
+| 문서 파일 | 주요 내용 및 목적 | 관련 영역 |
+| :--- | :--- | :--- |
+| [`docs/01_편안하개_인프라_구축_및_환경설정_가이드.md`](docs/01_편안하개_인프라_구축_및_환경설정_가이드.md) | 전체 4대 인프라 레이어 구조, 개발 환경 세팅, 빌드 및 실행 가이드 | 인프라 / 환경 |
+| [`docs/02_편안하개_Team_building.md`](docs/02_편안하개_Team_building.md) | 5인 팀 R&R, 역할별 핵심 산출물 및 4대 핵심 기술 엔지니어링 전략 | 팀 빌딩 / 아키텍처 |
+| [`docs/03_편안하개_Agile_User_Stories.md`](docs/03_편안하개_Agile_User_Stories.md) | 8대 에픽(A~H), 18개 애자일 사용자 스토리 명세서 및 인수 조건(DoD) | 백로그 / 기능 명세 |
+| [`docs/04_ai_problem_definition.md`](docs/04_ai_problem_definition.md) | AI 문제 정의서 (아키텍처, 5대 핵심 문제, 성공 지표 및 평가 기준) | AI 문제 정의 |
+| [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](docs/05_편안하개_프로젝트_수행계획서_일정.md) | 프로젝트 전체 일정, 주차별 R&R, 간트 차트 및 4단계 마일스톤 수행계획 | 마일스톤 / 일정 |
+| [`docs/implementation_plan/frontend_phase2_stories_implementation_plan.md`](docs/implementation_plan/frontend_phase2_stories_implementation_plan.md) | 프론트엔드 Phase 2(US-29, US-23, US-21) 상세 구현 계획서 | Phase 2 구현 계획 |
+| [`docs/implementation_plan/99.member4_implementation_status_report.md`](docs/implementation_plan/99.member4_implementation_status_report.md) | 멤버4 구현 완료 보고서 및 산출물 종합 보고서 | 구현 보고서 |
+| [`docs/screenshots/README.md`](docs/screenshots/README.md) | 주요 모바일 구동 화면 스크린샷 9종 갤러리 및 상세 설명 | 화면 갤러리 |
+
+---
+
+### 8.2 전체 프로젝트 디렉터리 트리
 
 ```text
 pet_walk_t01/
-├── README.md                                  # [본 문서] 프로젝트 통합 개요 및 엔지니어링 표준
-├── docs/                                      # 프로젝트 기획 및 엔지니어링 문서
+├── README.md                                  # [본 문서] 프로젝트 통합 개요 및 실행 가이드
+├── main.py                                    # ⚡ FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API)
+├── requirements.txt                           # Python 백엔드 및 AI 에이전트 의존성 명세서
+├── docs/                                      # 프로젝트 기획, 스크린샷 및 공식 산출물 문서
+│   ├── 01_편안하개_인프라_구축_및_환경설정_가이드.md # 전체 4대 인프라 레이어 및 환경 설정 가이드
 │   ├── 02_편안하개_Team_building.md            # 5인 팀 R&R 및 4대 기술 엔지니어링 전략
 │   ├── 03_편안하개_Agile_User_Stories.md       # 8대 에픽(A~H), 18개 사용자 스토리 및 DoD 명세서
 │   ├── 04_ai_problem_definition.md            # AI 문제 정의서 (아키텍처, 5대 문제, 성공 지표)
-│   └── 05_편안하개_Member4_모바일_구현계획서.md # Member 4 모바일 전담 6단계 구현 계획서
-├── agent/                                     # LangGraph ReAct Walk Planning Agent 코어
+│   ├── 05_편안하개_Member4_모바일_구현계획서.md # 멤버4 모바일 전담 6단계 구현 계획서
+│   ├── 05_편안하개_프로젝트_수행계획서_일정.md # 프로젝트 수행 기간, 간트 차트 및 마일스톤
+│   ├── implementation_plan/                   # 상세 구현 계획 및 상태 보고서
+│   │   ├── frontend_phase2_stories_implementation_plan.md # Phase 2 스토리(US-29, 23, 21) 구현 계획서
+│   │   └── 99.member4_implementation_status_report.md     # 멤버4 구현 완료 보고서
+│   └── screenshots/                           # 📸 주요 구동 화면 고화질 스크린샷 (01~09)
+│       ├── 01_onboarding_wizard.png           # 신규 견주 안심 산책 온보딩 위저드
+│       ├── 02_home_screen.png                 # 메인 홈 화면 (골든타임 위젯, 활성견 카드)
+│       ├── 03_walk_settings.png               # 맞춤 산책 조건 설정 (시간 칩, 선호 환경)
+│       ├── 04_course_recommendation.png       # 실시간 AI 추천 코스 & OSM 지도 프리뷰
+│       ├── 05_location_consent_modal.png      # 위치 정보 수집 동의 및 Local-First 고지 모달
+│       ├── 06_dark_pocket_mode.png            # 초절전 True Black 다크 포켓 모드 HUD
+│       ├── 07_walk_report.png                 # 완주 체크인 & 인포그래픽 리포트
+│       ├── 08_my_profile_and_bookmarks.png    # 마이 프로필 & 찜한 코스 보관함
+│       ├── 09_community_feed.png              # 동네 이웃 안심 산책로 피드 (200m 마스킹)
+│       └── README.md                          # 스크린샷 갤러리 상세 문서
+├── agent/                                     # 🤖 LangGraph ReAct Walk Planning Agent 코어
 │   ├── __init__.py                            # 에이전트 패키지 초기화
-│   └── walk_planning_agent.py                 # 의도 파싱, 제약 보정, 후보 경로 생성 및 브리핑 오케스트레이션
-├── frontend/                                  # 📱 [공식 모바일 앱 & 웹 데모] React Native / Expo SDK 57 (모바일 + Expo Web 단일화)
-│   ├── App.tsx                                # 메인 애플리케이션 (Screen 01~04 및 반응형 모바일 쉘 뷰)
+│   ├── walk_planning_agent.py                 # 의도 파싱, 제약 보정, 후보 경로 생성 및 브리핑 오케스트레이션
+│   └── supabase_repository.py                 # 커뮤니티 안심 피드 및 오프라인 폴백 저장소
+├── frontend/                                  # 📱 [공식 모바일 앱 & 웹] React Native / Expo SDK 57
+│   ├── App.tsx                                # 메인 애플리케이션 (Screen 01~05 통합 라우팅, 249줄 준수)
 │   ├── app.json                               # Expo 앱 매니페스트 및 설정
+│   ├── package.json                           # React Native, Expo, Vitest 의존성
 │   └── src/
-│       ├── theme/tokens.ts                    # 디자인 시스템 토큰 (모바일 규격)
-│       ├── types/                             # DogProfile, Route, Storage, WalkSettings DTO
-│       ├── services/                          # AsyncStorage, expo-speech TTS, 거리/속도 연산
-│       └── components/
-│           ├── home/                          # Screen-01: HomeDogCard, GoldenTimeWidget, AiPlannerBanner, RecentWalkCard
-│           ├── profile/                       # Screen-02: DogSelectionView (다견 선택 & 신규 등록)
-│           ├── walk/                          # Screen-03/04: WalkSettingsView, CourseRecommendationView
-│           ├── map/                           # RouteMapView (3색 지도), RouteReasonCard (3대 지표)
-│           └── common/                        # CardWrapper, GradientButton, BottomTabBar
-├── mockup/                                    # 예상 사용 시나리오 스크린 갤러리 및 UI 목업
+│       ├── theme/tokens.ts                    # 디자인 시스템 토큰 (고대비 야외 시인성 규격)
+│       ├── types/                             # DogProfile, Route, Storage, Bookmark, Consent DTO
+│       ├── services/                          # LocalStorage, TTS, OSM 타일, 북마크, 동의 서비스
+│       ├── hooks/                             # useWalkGuidance, useLocationConsent
+│       ├── screens/                           # HomeScreen, WalkTabScreen, CommunityTabScreen, MyProfileTabScreen, DarkPocketScreen, WalkReportScreen
+│       └── components/                        # Onboarding, Walk, Profile, Bookmark, Privacy, Map 컴포넌트
+├── mockup/                                    # 🎨 예상 사용 시나리오 스크린 갤러리 및 UI 목업
 │   ├── index.html                             # 인터랙티브 스크린 뷰어 웹 애플리케이션
 │   ├── 01_walk_planner.jpg ~ 06_...jpg        # 핵심 사용자 여정 화면 고화질 목업
-│   └── PawTrail Screen-01 ~ 04/               # Figma Make 기반 개별 모바일 스크린 UI 목업 (홈/선택/추천/이유)
-├── UI_design/                                 # 앱 디자인 무드보드 및 에셋
-├── test_case/                                 # 🧪 TDD 종합 테스트 스위트 (100개 테스트 전수 Pass)
+│   └── PawTrail Screen-01 ~ 04/               # 개별 모바일 스크린 UI 목업 에셋
+├── test_case/                                 # 🧪 TDD 종합 테스트 스위트 (103개 Pytest 전수 Pass)
 │   ├── README.md                              # TDD 스위트 구조 및 실행 가이드
-│   ├── conftest.py                            # 5인 CBT 프로필, OSM 네트워크, GeoJSON Fixture
+│   ├── conftest.py                            # 테스트 Fixture 및 Mock 데이터
 │   ├── test_langgraph_walk_agent.py           # [1번 코어] LangGraph ReAct 전주기 오케스트레이션
-│   ├── test_walk_plan_agent_schema.py         # [US-A1, A2, E3] 자연어 파싱, 프로필, 피드백 보정
-│   ├── test_loop_target_duration.py          # [US-A3] 보행 속도 모델 및 순환 루프 수렴 검증
-│   ├── test_surface_cost_model.py             # [US-B1~B4] 계단 회피, DEM 경사, 그늘, 스코어러
-│   ├── test_mobile_and_voice_navigation.py    # [US-C1, C2] Polyline 색상 분기, TTS 음성 안내
-│   ├── test_vision_safety_inspector.py        # [US-D1, D2] Gemini 체인, 턱/장애물/안내판 판독
-│   ├── test_walk_tracking_and_feedback.py     # [US-E1, E2, H1] 로컬 GPS 저장, EAS OTA, CBT 튜닝
-│   ├── test_thermal_and_parking.py            # [US-F1, G1] 기상청 지면열 추정, P&R 주차장 필터
-│   ├── test_api_contracts.py                  # [US-G2] 200m 공간 마스킹 및 REST API Contract
-│   └── test_phase2_extended_features.py       # [Phase 2] 긴급 귀환, 다견, 헥사곤 점령, 즐겨찾기
-├── .github/workflows/                         # GitHub Actions CI 파이프라인
-│   └── ci.yml                                 # pytest(100개) + mobile vitest(9개) & tsc 자동 검증
-├── .gemini/                                   # Gemini Code Assist 전역 지침 및 코딩 룰
-│   ├── GEMINI.md                              # 코딩 어시스턴트 핵심 준수 지침
-│   ├── coding_rule.md                         # SonarLint 및 정적 분석 통합 코딩 컨벤션
-│   └── UX_COMPACT_RULES.md                    # 야외 모바일 고대비 및 Thumb Zone UX 규칙
-└── .agents/rules/                             # AI Pair Programming 자동 점검 규칙
+│   ├── test_walk_plan_agent_schema.py         # 자연어 파싱, 프로필, 피드백 보정
+│   ├── test_loop_target_duration.py           # 보행 속도 모델 및 순환 루프 수렴 검증
+│   ├── test_surface_cost_model.py             # 계단 회피, DEM 경사도, 그늘길 비용 함수
+│   ├── test_mobile_and_voice_navigation.py    # Polyline 색상 분기, TTS 음성 안내
+│   ├── test_vision_safety_inspector.py        # Gemini Cascading 체인, 턱/장애물 판독
+│   ├── test_walk_tracking_and_feedback.py     # 로컬 GPS 저장, EAS OTA, CBT 튜닝
+│   ├── test_thermal_and_parking.py            # 기상청 지면열 추정, P&R 주차장 필터
+│   ├── test_api_contracts.py                  # 200m 공간 마스킹 및 REST API Contract
+│   ├── test_phase2_extended_features.py       # 긴급 귀환, 다견, 즐겨찾기, 헥사곤 점령
+│   └── test_supabase_repository.py            # Supabase 연동 및 오프라인 폴백 검증
+└── .github/workflows/                         # GitHub Actions CI 파이프라인
+    └── ci.yml                                 # pytest(103개) + mobile vitest(70개) & tsc 자동 머지
 ```
 
 ---
@@ -328,11 +486,15 @@ pet_walk_t01/
 ## 🚀 9. 시작하기 및 실행 방법 (Getting Started)
 
 ### 9.1 환경 요구사항
-* **Python**: 3.11 이상
-* **Node.js**: 20.x 이상 (Frontend 구현 시)
+* **Python**: 3.11 이상 (권장: 3.11 ~ 3.14)
+* **Node.js**: 20.x 이상 (권장: 20.x ~ 24.x)
+* **npm**: 10.x 이상
 * **pytest**: 8.x 이상
 
-### 9.2 의존성 설치 및 TDD 테스트 실행
+---
+
+### 9.2 백엔드 가동 및 API 테스트
+
 ```bash
 # 1. 저장소 클론
 git clone https://github.com/haru2014/pet_walk_t01.git
@@ -340,26 +502,67 @@ cd pet_walk_t01
 
 # 2. 파이썬 가상환경 생성 및 활성화
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\activate
+# macOS / Linux: source .venv/bin/activate
 
 # 3. 필수 패키지 설치
-pip install pytest pydantic
+pip install -r requirements.txt
 
-# 4. 전체 TDD 테스트 스위트 실행
-python -m pytest test_case/ -v
-```
+# 4. 백엔드 서버 가동
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-### 9.3 인터랙티브 목업 갤러리 확인
-프로젝트의 6대 핵심 시나리오 화면을 브라우저에서 바로 확인할 수 있습니다:
-```bash
-# 기본 브라우저로 목업 갤러리 열기 (Windows PowerShell)
-Start-Process mockup/index.html
+# 5. 브라우저에서 Swagger UI 접속하여 실시간 API 테스트
+# URL: http://localhost:8000/docs
 ```
 
 ---
 
-## 📜 라이선스 및 저작권 (License)
+### 9.3 프론트엔드 모바일 앱/웹 가동
+
+```bash
+# 1. 프론트엔드 폴더 이동
+cd frontend
+
+# 2. npm 패키지 설치
+npm install
+
+# 3. 웹 브라우저 데모 실행 (접속: http://localhost:8081)
+npm run web
+
+# 4. 스마트폰 Expo Go 실행
+npx expo start
+```
+
+---
+
+### 9.4 의존성 설치 및 TDD/단위 테스트 실행
+
+```bash
+# 백엔드 Pytest 전수 검증 (103개 테스트 100% Pass)
+python -m pytest test_case/ -v
+
+# 프론트엔드 Vitest 단위 테스트 (70개 테스트 100% Pass)
+cd frontend && npm test
+
+# 프론트엔드 TypeScript 무결성 검증 (0 Errors)
+cd frontend && npm run check
+```
+
+---
+
+### 9.5 인터랙티브 목업 갤러리 확인
+
+프로젝트의 6대 핵심 시나리오 화면을 브라우저에서 바로 확인할 수 있습니다:
+```bash
+# Windows PowerShell
+Start-Process mockup/index.html
+
+# macOS
+open mockup/index.html
+```
+
+---
+
+## 📜 10. 라이선스 및 저작권 (License)
+
 본 프로젝트는 **MIT License**에 따라 자유롭게 사용 및 수정할 수 있습니다. 자세한 내용은 라이선스 문서를 참조하십시오.

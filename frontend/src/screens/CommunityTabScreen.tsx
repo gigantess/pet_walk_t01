@@ -36,11 +36,11 @@ export const CommunityTabScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>커뮤니티 코스 피드 👥</Text>
       </View>
 
-      {/* Supabase 연동 상태 뱃지 */}
+      {/* 연동 상태 뱃지 */}
       <View style={styles.badgeRow}>
         <View style={[styles.statusBadge, isSupabase ? styles.badgeSupabase : styles.badgeOffline]}>
           <Text style={[styles.badgeText, isSupabase ? styles.textSupabase : styles.textOffline]}>
-            {isSupabase ? '🌐 Supabase PostgreSQL 연동됨' : '🌿 로컬 안심 모드 (오프라인)'}
+            {isSupabase ? '🌐 실시간 커뮤니티 연결됨' : '🌿 오프라인 안심 피드 모드'}
           </Text>
         </View>
         <TouchableOpacity
@@ -53,12 +53,12 @@ export const CommunityTabScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* 200m 공간 마스킹 안내 카드 */}
+      {/* 200m 자택 위치 안심 보호 안내 카드 */}
       <CardWrapper style={{ marginBottom: 14 }}>
-        <Text style={styles.cardHeaderTitle}>🔒 200m 공간 마스킹 보호</Text>
+        <Text style={styles.cardHeaderTitle}>🔒 자택 위치 안심 보호 (출발·도착지 200m)</Text>
         <Text style={styles.cardBodyText}>
-          이웃 견주들이 공유한 안심 산책 코스입니다. 견주의 자택 프라이버시를 위해
-          출발지/도착지 200m 구간은 자동으로 마스킹(Spatial Jittering)됩니다.
+          이웃 보호자들이 공유한 안심 산책 코스입니다. 집 위치 노출을 방지하기 위해
+          출발지와 도착지 반경 200m 구간은 자동으로 가림 처리(블러링)됩니다.
         </Text>
       </CardWrapper>
 
@@ -73,7 +73,7 @@ export const CommunityTabScreen: React.FC = () => {
             <Text style={styles.feedTitle}>{feed.title}</Text>
             {feed.is_origin_masked && (
               <View style={styles.maskedChip}>
-                <Text style={styles.maskedChipText}>🔒 마스킹 안심</Text>
+                <Text style={styles.maskedChipText}>🔒 집 위치 보호됨</Text>
               </View>
             )}
           </View>

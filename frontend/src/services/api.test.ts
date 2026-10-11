@@ -36,6 +36,12 @@ describe('apiService (Live API 및 오프라인 폴백 듀얼 모드)', () => {
     const mockApiResponse = {
       courses: [{ id: 'live_1', name: '실시간 생성 코스', durationMinutes: 25, distanceKm: 1.5, safeRatio: 90, slopePercent: 2.0, shadowPercent: 80, tags: ['안심'] }],
       briefing: '실시간 AI 코스가 생성되었습니다.',
+      course_plans: {
+        live_1: {
+          route: { type: 'FeatureCollection', features: [] },
+          stepPins: [],
+        },
+      },
     };
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
@@ -48,5 +54,6 @@ describe('apiService (Live API 및 오프라인 폴백 듀얼 모드)', () => {
     expect(result.isLiveServer).toBe(true);
     expect(result.courses[0].name).toBe('실시간 생성 코스');
     expect(result.briefingMessage).toBe('실시간 AI 코스가 생성되었습니다.');
+    expect(result.coursePlans?.live_1).toBeDefined();
   });
 });

@@ -11,6 +11,7 @@ import { RouteFeatureCollection, RouteStepPin } from '../types/route';
 import { RecommendedCourse, WalkPreferences, DEFAULT_RECOMMENDED_COURSES } from '../types/walkSettings';
 import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './sampleRoute';
 import { FeedbackSummaryPayload } from './feedbackContext';
+import { generateAdaptiveCourses, generateAdaptiveBriefing } from './courseAdaptivePlanner';
 
 export interface RoutePlanResult {
   readonly isLiveServer: boolean;
@@ -18,6 +19,7 @@ export interface RoutePlanResult {
   readonly route: RouteFeatureCollection;
   readonly stepPins: readonly RouteStepPin[];
   readonly briefingMessage: string;
+  readonly coursePlans?: Record<string, { route: RouteFeatureCollection; stepPins: readonly RouteStepPin[] }>;
 }
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
@@ -66,6 +68,7 @@ export async function requestWalkPlan(
         courses: data.courses ?? DEFAULT_RECOMMENDED_COURSES,
         route: data.geojson ?? SAMPLE_ROUTE,
         stepPins: data.step_pins ?? SAMPLE_STEP_PINS,
+        coursePlans: data.course_plans,
         briefingMessage: data.briefing ?? `${dog.name}를 위한 맞춤형 안심 코스가 생성되었습니다.`,
       };
     }
@@ -76,11 +79,13 @@ export async function requestWalkPlan(
   }
 
   // 🛡️ 오프라인 / 데모용 무중단 자동 폴백
+  const fallbackCourses = generateAdaptiveCourses(dog, preferences);
+  const fallbackBriefing = generateAdaptiveBriefing(dog, preferences);
   return {
     isLiveServer: false,
-    courses: DEFAULT_RECOMMENDED_COURSES,
+    courses: fallbackCourses,
     route: SAMPLE_ROUTE,
     stepPins: SAMPLE_STEP_PINS,
-    briefingMessage: `${dog.name}를 위한 관절 안심 숲길 코스예요. (로컬 안심 모드)`,
+    briefingMessage: fallbackBriefing,
   };
 }

@@ -57,6 +57,121 @@ def health_check():
     }
 
 
+def _parse_recent_feedback(req: Dict[str, Any]) -> List[Dict[str, Any]]:
+    rf = req.get("recent_feedback")
+    if not rf:
+        return []
+    feedback = []
+    if rf.get("slope_dissatisfaction_count", 0) > 0:
+        feedback.append({"tag": "too_steep", "count": rf["slope_dissatisfaction_count"]})
+    if rf.get("shade_preference_count", 0) > 0:
+        feedback.append({"tag": "cool_shade", "count": rf["shade_preference_count"]})
+    return feedback
+
+
+def _build_candidate_course(cand: Any, score: Optional[float] = None, fallback_reason: str = "") -> Dict[str, Any]:
+    surface_types = cand.surface_types or []
+    is_soft = "grass" in surface_types or "dirt" in surface_types
+    reason = (
+        f"AI 맞춤 점수 {score:.0f}점: {cand.name} (경사 {cand.max_slope_percent}% 이하)"
+        if score is not None
+        else fallback_reason
+    )
+    return {
+        "id": cand.route_id,
+        "name": cand.name,
+        "distanceKm": f"{cand.total_distance_m / 1000.0:.1f} km",
+        "estimatedMinutes": int(cand.estimated_duration_minutes),
+        "softRatio": "85%" if is_soft else "60%",
+        "shadeLevel": "많음" if cand.average_shade_ratio > 0.5 else "보통",
+        "stairsCount": "0회" if not cand.has_stairs else "계단 있음",
+        "maxSlopePercent": cand.max_slope_percent,
+        "shadePercent": int(cand.average_shade_ratio * 100),
+        "softSurfacePercent": 85 if "grass" in surface_types else 65,
+        "reason": reason,
+    }
+
+
+def _build_course_list(agent_result: Any) -> List[Dict[str, Any]]:
+    if agent_result.all_scored_candidates:
+        return [
+            _build_candidate_course(scored.candidate, score=scored.total_score)
+            for scored in agent_result.all_scored_candidates[:3]
+        ]
+    return [_build_candidate_course(agent_result.best_route, fallback_reason=agent_result.briefing_message)]
+
+
+def _build_segmented_geojson(coords: List[List[float]], max_slope: float) -> Dict[str, Any]:
+    """경로 좌표열을 안전/보통/주의 3대 안심 등급 구간으로 분할하여 다채로운 지도 시각화 제공."""
+    if len(coords) < 4:
+        return {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {"segmentType": "safe", "maxSlopePercent": max_slope, "shaded": True},
+                    "geometry": {"type": "LineString", "coordinates": coords}
+                }
+            ]
+        }
+    n = len(coords)
+    i1 = max(1, n // 4)
+    i2 = max(i1 + 1, (2 * n) // 4)
+    i3 = max(i2 + 1, (3 * n) // 4)
+
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"segmentType": "safe", "maxSlopePercent": round(max(1.5, max_slope * 0.4), 1), "shaded": True},
+                "geometry": {"type": "LineString", "coordinates": coords[: i1 + 1]}
+            },
+            {
+                "type": "Feature",
+                "properties": {"segmentType": "normal", "maxSlopePercent": round(max(2.2, max_slope * 0.7), 1), "shaded": False},
+                "geometry": {"type": "LineString", "coordinates": coords[i1 : i2 + 1]}
+            },
+            {
+                "type": "Feature",
+                "properties": {"segmentType": "caution", "maxSlopePercent": round(max_slope, 1), "shaded": False},
+                "geometry": {"type": "LineString", "coordinates": coords[i2 : i3 + 1]}
+            },
+            {
+                "type": "Feature",
+                "properties": {"segmentType": "safe", "maxSlopePercent": round(max(1.4, max_slope * 0.3), 1), "shaded": True},
+                "geometry": {"type": "LineString", "coordinates": coords[i3 :]}
+            },
+        ]
+    }
+
+
+def _build_step_pins(cand: Any, coords: List[List[float]]) -> List[Dict[str, Any]]:
+    """실제 방향 전환 교차점 및 주의 구간 핀 목록 생성."""
+    steps = getattr(cand, "turn_by_turn_steps", None) or []
+    pins: List[Dict[str, Any]] = []
+    for idx, step in enumerate(steps):
+        pos = step.get("position")
+        if not pos and len(coords) > idx + 1:
+            pos = coords[idx + 1]
+        elif not pos:
+            pos = coords[0]
+        pins.append({
+            "id": f"{cand.route_id}_step_{idx + 1}",
+            "kind": "caution" if "주의" in step.get("instruction", "") else "turn",
+            "position": pos,
+            "instruction": step.get("instruction", "안전하게 직진하세요"),
+        })
+    if not pins and len(coords) > 1:
+        pins.append({
+            "id": f"{cand.route_id}_step_1",
+            "kind": "turn",
+            "position": coords[1],
+            "instruction": "보행로를 따라 안전하게 직진하세요",
+        })
+    return pins
+
+
 @app.post(
     "/api/v1/walk/plan",
     responses={
@@ -67,6 +182,8 @@ def plan_walk_route(req: Dict[str, Any]):
     """[US-A1, US-A3, US-B1~B3, US-E3] LangGraph ReAct Walk Planning Agent 코어 연동 엔드포인트."""
     dog_name = req.get("dog_name", "아이")
     target_duration = req.get("target_duration_minutes", 30)
+    origin_lat = req.get("origin_lat", 37.5665)
+    origin_lon = req.get("origin_lon", 126.9780)
 
     user_query = f"{dog_name}와 {target_duration}분 동안 폭신한 길 위주로 걷고 싶어요."
 
@@ -78,59 +195,41 @@ def plan_walk_route(req: Dict[str, Any]):
         "joint_care_level": req.get("joint_care_level", 1),
     }
 
-    recent_feedback = []
-    if req.get("recent_feedback"):
-        rf = req["recent_feedback"]
-        if rf.get("slope_dissatisfaction_count", 0) > 0:
-            recent_feedback.append({"tag": "too_steep", "count": rf["slope_dissatisfaction_count"]})
-        if rf.get("shade_preference_count", 0) > 0:
-            recent_feedback.append({"tag": "cool_shade", "count": rf["shade_preference_count"]})
+    recent_feedback = _parse_recent_feedback(req)
 
     try:
         agent_result = run_walk_planning_agent(
             user_query=user_query,
             client_dog_context=client_dog,
             client_recent_feedback=recent_feedback,
+            origin_lat=origin_lat,
+            origin_lon=origin_lon,
         )
 
         best = agent_result.best_route
         coords = best.geojson_coordinates if best.geojson_coordinates else [
-            [127.0374, 37.5443], [127.0390, 37.5455], [127.0409, 37.5456], [127.0374, 37.5443]
+            [126.9784, 37.5663], [126.9796, 37.5692], [126.9830, 37.5689], [126.9815, 37.5665], [126.9784, 37.5663]
         ]
 
-        geojson = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {"segmentType": "safe", "maxSlopePercent": best.max_slope_percent, "shaded": True},
-                    "geometry": {"type": "LineString", "coordinates": coords}
+        geojson = _build_segmented_geojson(coords, best.max_slope_percent)
+        step_pins = _build_step_pins(best, coords)
+        courses = _build_course_list(agent_result)
+
+        course_plans: Dict[str, Any] = {}
+        if agent_result.all_scored_candidates:
+            for scored in agent_result.all_scored_candidates:
+                cand = scored.candidate
+                cand_coords = cand.geojson_coordinates if cand.geojson_coordinates else coords
+                course_plans[cand.route_id] = {
+                    "route": _build_segmented_geojson(cand_coords, cand.max_slope_percent),
+                    "stepPins": _build_step_pins(cand, cand_coords),
                 }
-            ]
-        }
-
-        courses = [
-            {
-                "id": best.route_id,
-                "name": best.name,
-                "distanceKm": f"{best.total_distance_m / 1000.0:.1f}km",
-                "estimatedMinutes": int(best.estimated_duration_minutes),
-                "softRatio": "85%",
-                "shadeLevel": "높음" if best.average_shade_ratio > 0.5 else "보통",
-                "stairsCount": "0개",
-                "maxSlopePercent": best.max_slope_percent,
-                "shadePercent": int(best.average_shade_ratio * 100),
-                "softSurfacePercent": 85,
-                "reason": agent_result.briefing_message,
-            }
-        ]
 
         return {
             "courses": courses,
             "geojson": geojson,
-            "step_pins": [
-                {"id": "step_1", "kind": "turn", "position": coords[1] if len(coords) > 1 else coords[0], "instruction": "50m 앞 완만한 길입니다. 우회전하세요"},
-            ],
+            "step_pins": step_pins,
+            "course_plans": course_plans,
             "briefing": agent_result.briefing_message,
             "score": agent_result.best_score,
             "is_live_server": True,

@@ -144,7 +144,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
 
         {/* 안전 완료 안내 문구 */}
         <Text style={styles.disclaimerText}>
-          수집된 이동 궤적은 견주 기기 로컬 스토리지에만 안전하게 보관됩니다.
+          기록된 산책 경로는 보호자님의 스마트폰에만 안전하게 보관됩니다.
         </Text>
       </ScrollView>
 
