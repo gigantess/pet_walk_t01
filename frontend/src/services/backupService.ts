@@ -46,7 +46,7 @@ export class BackupService {
         a.download = `편안하개_프로필_${profile.name}_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        a.remove();
         URL.revokeObjectURL(url);
         return true;
       }
@@ -63,44 +63,18 @@ export class BackupService {
   static parseAndValidateBackup(jsonString: string): DogProfile | null {
     try {
       const parsed = JSON.parse(jsonString) as Record<string, unknown>;
+      const candidate = extractCandidate(parsed);
 
-      // 백업 포맷(BackupPayload) 또는 순수 DogProfile 모두 호환
-      const candidate = (
-        parsed.profile && typeof parsed.profile === 'object'
-          ? (parsed.profile as Record<string, unknown>)
-          : parsed
-      );
-
-      if (!candidate.name || typeof candidate.name !== 'string') {
+      if (typeof candidate.name !== 'string' || !candidate.name.trim()) {
         return null;
       }
 
-      const weight = typeof candidate.weightKg === 'number' ? candidate.weightKg : Number(candidate.weightKg);
-      if (Number.isNaN(weight) || weight <= 0) {
+      const weight = parseWeight(candidate.weightKg);
+      if (weight === null) {
         return null;
       }
 
-      const age = typeof candidate.ageYears === 'number' ? candidate.ageYears : Number(candidate.ageYears) || 1;
-      const careLevel = [0, 1, 2].includes(Number(candidate.jointCareLevel))
-        ? (Number(candidate.jointCareLevel) as JointCareLevel)
-        : 0;
-
-      const validProfile: DogProfile = {
-        id: typeof candidate.id === 'string' && candidate.id ? candidate.id : `dog_${Date.now()}`,
-        name: candidate.name.trim(),
-        breed: typeof candidate.breed === 'string' && candidate.breed.trim() ? candidate.breed.trim() : '믹스견',
-        ageYears: age,
-        weightKg: weight,
-        jointCareLevel: careLevel,
-        speedKmH: typeof candidate.speedKmH === 'number' && candidate.speedKmH > 0 ? candidate.speedKmH : 2.8,
-        preference: typeof candidate.preference === 'string' ? candidate.preference : undefined,
-        photoUri: typeof candidate.photoUri === 'string' ? candidate.photoUri : undefined,
-        avatarUrl: typeof candidate.avatarUrl === 'string' ? candidate.avatarUrl : undefined,
-        createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      return validProfile;
+      return sanitizeProfile(candidate, weight);
     } catch (error) {
       console.warn('[BackupService] JSON 백업 파싱 실패:', error);
       return null;
@@ -118,3 +92,43 @@ export class BackupService {
     return saved ? profile : null;
   }
 }
+
+function extractCandidate(parsed: Record<string, unknown>): Record<string, unknown> {
+  if (parsed.profile && typeof parsed.profile === 'object') {
+    return parsed.profile as Record<string, unknown>;
+  }
+  return parsed;
+}
+
+function parseWeight(val: unknown): number | null {
+  const num = typeof val === 'number' ? val : Number(val);
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
+function parseJointCare(val: unknown): JointCareLevel {
+  const num = Number(val);
+  return num === 1 || num === 2 ? (num as JointCareLevel) : 0;
+}
+
+function sanitizeProfile(candidate: Record<string, unknown>, weight: number): DogProfile {
+  const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+  const breed = typeof candidate.breed === 'string' && candidate.breed.trim() ? candidate.breed.trim() : '믹스견';
+  const age = Number(candidate.ageYears) || 1;
+  const speed = typeof candidate.speedKmH === 'number' && candidate.speedKmH > 0 ? candidate.speedKmH : 2.8;
+
+  return {
+    id: typeof candidate.id === 'string' && candidate.id ? candidate.id : `dog_${Date.now()}`,
+    name,
+    breed,
+    ageYears: age,
+    weightKg: weight,
+    jointCareLevel: parseJointCare(candidate.jointCareLevel),
+    speedKmH: speed,
+    preference: typeof candidate.preference === 'string' ? candidate.preference : undefined,
+    photoUri: typeof candidate.photoUri === 'string' ? candidate.photoUri : undefined,
+    avatarUrl: typeof candidate.avatarUrl === 'string' ? candidate.avatarUrl : undefined,
+    createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
