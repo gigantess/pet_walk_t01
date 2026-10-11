@@ -14,8 +14,16 @@ import {
   WalkPreferences,
 } from '../types/walkSettings';
 
+interface CourseBuilderContext {
+  readonly dog: DogProfile;
+  readonly targetMinutes: number;
+  readonly speed: number;
+  readonly envs: readonly EnvironmentId[];
+  readonly envSummary: string;
+}
+
 /** 환경 ID 목록을 친근한 한국어 요약 문구로 결합한다. */
-function buildEnvironmentSummaryText(envs: EnvironmentId[]): string {
+function buildEnvironmentSummaryText(envs: readonly EnvironmentId[]): string {
   if (envs.length === 0) return '기본 안심 경로';
   const labelMap = new Map(WALK_ENVIRONMENTS.map((e) => [e.id, e.label]));
   const labels = envs.map((id) => labelMap.get(id)).filter(Boolean) as string[];
@@ -29,6 +37,78 @@ function calculateDistanceKm(speedKmH: number, minutes: number): string {
   return `${km.toFixed(1)} km`;
 }
 
+/** 코스 1: 최우선 선호 조건을 정밀 반영한 최적 안심 코스 (목표 시간 100%) */
+function buildForestCourse(ctx: CourseBuilderContext): RecommendedCourse {
+  const { dog, targetMinutes, speed, envs, envSummary } = ctx;
+  const hasSoft = envs.includes('soft');
+  const hasShade = envs.includes('shade');
+  const hasStairs = envs.includes('stairs');
+
+  return {
+    id: 'course_1',
+    name: hasSoft ? '편안한 숲길 코스' : '맞춤 안심 순환 코스',
+    distanceKm: calculateDistanceKm(speed, targetMinutes),
+    estimatedMinutes: targetMinutes,
+    softRatio: hasSoft ? '78%' : '55%',
+    shadeLevel: hasShade ? '많음' : '보통',
+    stairsCount: hasStairs ? '0회' : '1회',
+    maxSlopePercent: dog.jointCareLevel >= 2 ? 1.8 : 2.4,
+    shadePercent: hasShade ? 68 : 45,
+    softSurfacePercent: hasSoft ? 84 : 60,
+    reason: `${dog.name}의 ${targetMinutes}분 산책 목표에 맞춰, ${envSummary}을 우선 반영한 최적 순환 경로예요.`,
+  };
+}
+
+/** 코스 2: 공원 및 쉼터 중심의 가벼운 수변 코스 (목표 시간 약 90%) */
+function buildParkCourse(ctx: CourseBuilderContext): RecommendedCourse {
+  const { targetMinutes, speed, envs } = ctx;
+  const minutes = Math.max(10, Math.round(targetMinutes * 0.9));
+  const features: string[] = [];
+  if (envs.includes('rest')) features.push('쉬어갈 벤치');
+  if (envs.includes('shade')) features.push('풍부한 그늘');
+  if (envs.includes('traffic')) features.push('차량 통제 보행로');
+  const detail = features.length > 0 ? features.join('와 ') : '완만한 공원 산책로';
+
+  return {
+    id: 'course_2',
+    name: '공원 한바퀴 코스',
+    distanceKm: calculateDistanceKm(speed, minutes),
+    estimatedMinutes: minutes,
+    softRatio: '68%',
+    shadeLevel: '많음',
+    stairsCount: '0회',
+    maxSlopePercent: 2.8,
+    shadePercent: 55,
+    softSurfacePercent: 75,
+    reason: `${detail}를 중심으로 호수 둘레를 여유롭게 산책할 수 있어요.`,
+  };
+}
+
+/** 코스 3: 조용한 주택가 및 골목 안심 코스 (목표 시간 약 110%) */
+function buildResidentialCourse(ctx: CourseBuilderContext): RecommendedCourse {
+  const { targetMinutes, speed, envs } = ctx;
+  const minutes = Math.round(targetMinutes * 1.1);
+  const hasQuiet = envs.includes('quiet');
+  const features: string[] = [];
+  if (envs.includes('traffic')) features.push('차량 통행이 적은 골목길');
+  if (hasQuiet) features.push('소음이 적은 주택가');
+  const detail = features.length > 0 ? features.join('과 ') : '한적한 이면도로';
+
+  return {
+    id: 'course_3',
+    name: hasQuiet ? '조용한 주택가 코스' : '한적한 골목길 코스',
+    distanceKm: calculateDistanceKm(speed, minutes),
+    estimatedMinutes: minutes,
+    softRatio: envs.includes('soft') ? '58%' : '48%',
+    shadeLevel: '보통',
+    stairsCount: envs.includes('stairs') ? '0회' : '2회',
+    maxSlopePercent: 3.2,
+    shadePercent: 42,
+    softSurfacePercent: 62,
+    reason: `${detail}를 따라 복잡하지 않고 평온하게 걸을 수 있어요.`,
+  };
+}
+
 /**
  * 사용자가 선택한 시간과 환경 조건에 적응하여 추천 코스 3종을 생성한다.
  */
@@ -39,79 +119,15 @@ export function generateAdaptiveCourses(
   const targetMinutes = preferences?.durationMinutes ?? 30;
   const envs = preferences?.environments ?? ['soft', 'shade', 'stairs'];
   const speed = dog.speedKmH > 0 ? dog.speedKmH : 2.8;
-
-  const hasSoft = envs.includes('soft');
-  const hasShade = envs.includes('shade');
-  const hasStairs = envs.includes('stairs');
-  const hasTraffic = envs.includes('traffic');
-  const hasRest = envs.includes('rest');
-  const hasQuiet = envs.includes('quiet');
-
-  // 코스 1: 사용자의 최우선 선호 조건을 정밀 반영한 최적 안심 코스 (목표 시간 100%)
-  const c1Minutes = targetMinutes;
-  const c1Distance = calculateDistanceKm(speed, c1Minutes);
   const envSummary = buildEnvironmentSummaryText(envs);
 
-  const course1: RecommendedCourse = {
-    id: 'course_1',
-    name: hasSoft ? '편안한 숲길 코스' : '맞춤 안심 순환 코스',
-    distanceKm: c1Distance,
-    estimatedMinutes: c1Minutes,
-    softRatio: hasSoft ? '78%' : '55%',
-    shadeLevel: hasShade ? '많음' : '보통',
-    stairsCount: hasStairs ? '0회' : '1회',
-    maxSlopePercent: dog.jointCareLevel >= 2 ? 1.8 : 2.4,
-    shadePercent: hasShade ? 68 : 45,
-    softSurfacePercent: hasSoft ? 84 : 60,
-    reason: `${dog.name}의 ${targetMinutes}분 산책 목표에 맞춰, ${envSummary}을 우선 반영한 최적 순환 경로예요.`,
-  };
+  const ctx: CourseBuilderContext = { dog, targetMinutes, speed, envs, envSummary };
 
-  // 코스 2: 공원 및 쉼터 중심의 가벼운 수변 코스 (목표 시간 약 90%)
-  const c2Minutes = Math.max(10, Math.round(targetMinutes * 0.9));
-  const c2Distance = calculateDistanceKm(speed, c2Minutes);
-  const c2Features: string[] = [];
-  if (hasRest) c2Features.push('쉬어갈 벤치');
-  if (hasShade) c2Features.push('풍부한 그늘');
-  if (hasTraffic) c2Features.push('차량 통제 보행로');
-  const c2Detail = c2Features.length > 0 ? c2Features.join('와 ') : '완만한 공원 산책로';
-
-  const course2: RecommendedCourse = {
-    id: 'course_2',
-    name: '공원 한바퀴 코스',
-    distanceKm: c2Distance,
-    estimatedMinutes: c2Minutes,
-    softRatio: '68%',
-    shadeLevel: '많음',
-    stairsCount: '0회',
-    maxSlopePercent: 2.8,
-    shadePercent: 55,
-    softSurfacePercent: 75,
-    reason: `${c2Detail}를 중심으로 호수 둘레를 여유롭게 산책할 수 있어요.`,
-  };
-
-  // 코스 3: 조용한 주택가 및 골목 안심 코스 (목표 시간 약 110%)
-  const c3Minutes = Math.round(targetMinutes * 1.1);
-  const c3Distance = calculateDistanceKm(speed, c3Minutes);
-  const c3Features: string[] = [];
-  if (hasTraffic) c3Features.push('차량 통행이 적은 골목길');
-  if (hasQuiet) c3Features.push('소음이 적은 주택가');
-  const c3Detail = c3Features.length > 0 ? c3Features.join('과 ') : '한적한 이면도로';
-
-  const course3: RecommendedCourse = {
-    id: 'course_3',
-    name: hasQuiet ? '조용한 주택가 코스' : '한적한 골목길 코스',
-    distanceKm: c3Distance,
-    estimatedMinutes: c3Minutes,
-    softRatio: hasSoft ? '58%' : '48%',
-    shadeLevel: '보통',
-    stairsCount: hasStairs ? '0회' : '2회',
-    maxSlopePercent: 3.2,
-    shadePercent: 42,
-    softSurfacePercent: 62,
-    reason: `${c3Detail}를 따라 복잡하지 않고 평온하게 걸을 수 있어요.`,
-  };
-
-  return [course1, course2, course3];
+  return [
+    buildForestCourse(ctx),
+    buildParkCourse(ctx),
+    buildResidentialCourse(ctx),
+  ];
 }
 
 /** 사용자 조건에 맞춤형 브리핑 문구를 반환한다. */
