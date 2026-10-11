@@ -127,6 +127,39 @@ def get_standard_speed_kmh(weight_kg: float, age_years: int, joint_care_level: i
 # 3. ReAct 도구 및 단위 알고리즘 함수
 # ==============================================================================
 
+def _extract_target_duration(query_str: str) -> Optional[int]:
+    match = re.search(r"(\d{1,3})\s*(?:분|min)", query_str)
+    if match:
+        dur = int(match.group(1))
+        return max(10, min(90, dur))
+    return None
+
+
+def _extract_avoid_stairs(query_str: str) -> bool:
+    if any(w in query_str for w in ["계단 괜찮", "계단 포함", "계단 상관없", "계단 좋아"]):
+        return False
+    return True
+
+
+def _extract_slope_preference(query_str: str) -> SlopePreference:
+    if any(w in query_str for w in ["완만", "평지", "완만한", "낮은"]):
+        return "gentle"
+    if any(w in query_str for w in ["가파른", "급경사", "언덕"]) and any(w in query_str for w in ["피해", "싫어", "회피"]):
+        return "steep_avoid"
+    return "gentle"
+
+
+def _extract_preferred_surfaces(query_str: str) -> List[AllowedSurface]:
+    surfaces: List[AllowedSurface] = []
+    if "흙" in query_str:
+        surfaces.append("dirt")
+    if "잔디" in query_str:
+        surfaces.append("grass")
+    if "탄성" in query_str or "우레탄" in query_str:
+        surfaces.append("rubber")
+    return surfaces
+
+
 def parse_natural_language_walk_query(user_query: str) -> WalkIntent:
     """[US-A1] 자연어 발화에서 시간, 계단, 경사, 그늘, 노면 의도 엔티티 파싱."""
     if not user_query or not user_query.strip():
@@ -135,37 +168,17 @@ def parse_natural_language_walk_query(user_query: str) -> WalkIntent:
     intent = WalkIntent()
     query_str = user_query.strip()
 
-    # 1. 시간 추출 (예: "20분", "30 min")
-    duration_match = re.search(r"(\d+)\s*(?:분|min)", query_str)
-    if duration_match:
-        dur = int(duration_match.group(1))
-        intent.target_duration_minutes = max(10, min(90, dur))
+    duration = _extract_target_duration(query_str)
+    if duration is not None:
+        intent.target_duration_minutes = duration
 
-    # 2. 계단 회피
-    if "계단" in query_str:
-        if any(w in query_str for w in ["피해", "안돼", "없이", "회피", "빼고", "힘들"]):
-            intent.avoid_stairs = True
-    elif "단차" in query_str or "턱" in query_str:
-        intent.avoid_stairs = True
+    intent.avoid_stairs = _extract_avoid_stairs(query_str)
+    intent.slope_preference = _extract_slope_preference(query_str)
 
-    # 3. 경사도 선호
-    if any(w in query_str for w in ["완만", "평지", "완만한", "낮은"]):
-        intent.slope_preference = "gentle"
-    elif any(w in query_str for w in ["가파른", "급경사", "언덕"]) and any(w in query_str for w in ["피해", "싫어", "회피"]):
-        intent.slope_preference = "steep_avoid"
-
-    # 4. 그늘 / 더위
     if any(w in query_str for w in ["그늘", "시원한", "더워", "낮", "햇빛", "햇볕"]):
         intent.shade_priority = True
 
-    # 5. 선호 노면
-    surfaces: List[AllowedSurface] = []
-    if "흙" in query_str:
-        surfaces.append("dirt")
-    if "잔디" in query_str:
-        surfaces.append("grass")
-    if "탄성" in query_str or "우레탄" in query_str:
-        surfaces.append("rubber")
+    surfaces = _extract_preferred_surfaces(query_str)
     if surfaces:
         intent.preferred_surfaces = surfaces
 
@@ -266,7 +279,7 @@ def mock_generate_loop_candidates(
         average_slope_percent=2.3,
         surface_temp_c=28.5,
         average_shade_ratio=0.85,
-        surface_types=["dirt", "grass"],
+        surface_types=preferred_surfaces if preferred_surfaces else ["dirt", "grass"],
         geojson_coordinates=[
             [origin_lon, origin_lat],
             [origin_lon + 0.002, origin_lat + 0.002],

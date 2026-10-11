@@ -57,6 +57,50 @@ def health_check():
     }
 
 
+def _parse_recent_feedback(req: Dict[str, Any]) -> List[Dict[str, Any]]:
+    rf = req.get("recent_feedback")
+    if not rf:
+        return []
+    feedback = []
+    if rf.get("slope_dissatisfaction_count", 0) > 0:
+        feedback.append({"tag": "too_steep", "count": rf["slope_dissatisfaction_count"]})
+    if rf.get("shade_preference_count", 0) > 0:
+        feedback.append({"tag": "cool_shade", "count": rf["shade_preference_count"]})
+    return feedback
+
+
+def _build_candidate_course(cand: Any, score: Optional[float] = None, fallback_reason: str = "") -> Dict[str, Any]:
+    surface_types = cand.surface_types or []
+    is_soft = "grass" in surface_types or "dirt" in surface_types
+    reason = (
+        f"AI 맞춤 점수 {score:.0f}점: {cand.name} (경사 {cand.max_slope_percent}% 이하)"
+        if score is not None
+        else fallback_reason
+    )
+    return {
+        "id": cand.route_id,
+        "name": cand.name,
+        "distanceKm": f"{cand.total_distance_m / 1000.0:.1f} km",
+        "estimatedMinutes": int(cand.estimated_duration_minutes),
+        "softRatio": "85%" if is_soft else "60%",
+        "shadeLevel": "많음" if cand.average_shade_ratio > 0.5 else "보통",
+        "stairsCount": "0회" if not cand.has_stairs else "계단 있음",
+        "maxSlopePercent": cand.max_slope_percent,
+        "shadePercent": int(cand.average_shade_ratio * 100),
+        "softSurfacePercent": 85 if "grass" in surface_types else 65,
+        "reason": reason,
+    }
+
+
+def _build_course_list(agent_result: Any) -> List[Dict[str, Any]]:
+    if agent_result.all_scored_candidates:
+        return [
+            _build_candidate_course(scored.candidate, score=scored.total_score)
+            for scored in agent_result.all_scored_candidates[:3]
+        ]
+    return [_build_candidate_course(agent_result.best_route, fallback_reason=agent_result.briefing_message)]
+
+
 @app.post(
     "/api/v1/walk/plan",
     responses={
@@ -78,13 +122,7 @@ def plan_walk_route(req: Dict[str, Any]):
         "joint_care_level": req.get("joint_care_level", 1),
     }
 
-    recent_feedback = []
-    if req.get("recent_feedback"):
-        rf = req["recent_feedback"]
-        if rf.get("slope_dissatisfaction_count", 0) > 0:
-            recent_feedback.append({"tag": "too_steep", "count": rf["slope_dissatisfaction_count"]})
-        if rf.get("shade_preference_count", 0) > 0:
-            recent_feedback.append({"tag": "cool_shade", "count": rf["shade_preference_count"]})
+    recent_feedback = _parse_recent_feedback(req)
 
     try:
         agent_result = run_walk_planning_agent(
@@ -109,21 +147,7 @@ def plan_walk_route(req: Dict[str, Any]):
             ]
         }
 
-        courses = [
-            {
-                "id": best.route_id,
-                "name": best.name,
-                "distanceKm": f"{best.total_distance_m / 1000.0:.1f}km",
-                "estimatedMinutes": int(best.estimated_duration_minutes),
-                "softRatio": "85%",
-                "shadeLevel": "높음" if best.average_shade_ratio > 0.5 else "보통",
-                "stairsCount": "0개",
-                "maxSlopePercent": best.max_slope_percent,
-                "shadePercent": int(best.average_shade_ratio * 100),
-                "softSurfacePercent": 85,
-                "reason": agent_result.briefing_message,
-            }
-        ]
+        courses = _build_course_list(agent_result)
 
         return {
             "courses": courses,
