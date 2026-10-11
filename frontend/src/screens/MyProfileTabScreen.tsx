@@ -22,14 +22,11 @@ export interface MyProfileTabScreenProps {
   onInjectFeedback: (dissatisfied: boolean) => void;
   onStartBookmark: (bookmark: BookmarkedRoute) => void;
   onResetData?: () => Promise<void>;
+  onOpenOnboarding?: () => void;
 }
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
-  dog,
-  onSaveDog,
-  onInjectFeedback,
-  onStartBookmark,
-  onResetData,
+  dog, onSaveDog, onInjectFeedback, onStartBookmark, onResetData, onOpenOnboarding,
 }) => {
   const [resetCount, setResetCount] = useState(0);
   return (
@@ -146,6 +143,21 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </TouchableOpacity>
         </View>
       </CardWrapper>
+
+      {/* US-21: 앱 이용 가이드 다시 보기 */}
+      {onOpenOnboarding && (
+        <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onOpenOnboarding}
+            style={[styles.simButton, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
+          >
+            <Text style={{ color: '#166534', fontSize: 13, fontWeight: '700' }}>
+              📖 앱 이용 가이드 다시 보기 (US-21)
+            </Text>
+          </TouchableOpacity>
+        </CardWrapper>
+      )}
 
       {/* US-23: 로컬 데이터 완전 초기화 */}
       {onResetData && (

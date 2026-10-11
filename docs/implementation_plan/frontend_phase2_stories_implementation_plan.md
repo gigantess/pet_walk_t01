@@ -130,25 +130,25 @@ graph TD
 
 ---
 
-### 🌟 4.2 [US-21] 인터랙티브 온보딩 위저드 및 첫 산책 가이드 투어
+### 🌟 4.2 [US-21] 인터랙티브 온보딩 위저드 및 첫 산책 가이드 투어 ✅ 구현 완료
 
 #### 🎯 사용자 가치
 처음 앱을 실행한 견주가 "왜 화면을 끄고 주머니에 넣어야 하는지", "왜 계단이 없는지", "개인정보가 폰에만 남는지" 3대 핵심 철학을 직관적으로 이해하고 초기 이탈을 방지한다.
 
 #### 🛠️ 세부 구현 태스크
-1. **`src/components/onboarding/OnboardingWizard.tsx` 개발**:
+1. **`src/components/onboarding/OnboardingWizard.tsx` 및 `OnboardingSlideCard.tsx` 개발**:
    - 3단계 인터랙티브 슬라이드 카드 구성:
      * **Slide 1**: *"우리 아이 관절을 지키는 완만길"* (계단 0개, 경사도 15도 미만 평지 보행)
      * **Slide 2**: *"시선 해방(Eyes-Free) 핸즈프리 안내"* (화면은 끄고 주머니에 쏙, 30m 전 음성 안내)
      * **Slide 3**: *"내 폰에만 안전하게 남는 프라이버시"* (견주/아이 정보의 외부 서버 미전송 원칙)
-   - 단계 표시 인디케이터(점 3개) 및 좌우 스와이프 인터랙션.
+   - 단계 표시 인디케이터(점 3개), 건너뛰기/이전/다음 단계 버튼.
    - 마지막 슬라이드 액션: **"🐾 우리 아이와 첫 산책 시작하기"** 버튼.
 2. **`App.tsx` 라우팅 연결**:
-   - 앱 기동 시 `LocalStorageService.getItem<boolean>(STORAGE_KEYS.HAS_SEEN_ONBOARDING)` 확인.
-   - `false` 또는 `null`인 경우 `subScreen === 'onboarding'`으로 초기 진입.
-   - 온보딩 완료 시 `HAS_SEEN_ONBOARDING = true` 저장 후 메인 화면 진입.
+   - 앱 기동 시 `OnboardingService.hasSeenOnboarding()` 확인.
+   - `false`인 경우 `subScreen === 'onboarding'`으로 초기 진입.
+   - 온보딩 완료 시 `markOnboardingCompleted()` 저장 후 메인 화면 진입.
 3. **마이 탭 재열람 기능 연동**:
-   - [`MyProfileTabScreen.tsx`](/frontend/src/screens/MyProfileTabScreen.tsx) 하단에 **"📖 앱 이용 가이드 다시 보기"** 메뉴 버튼 추가하여 언제든 위저드 재호출 가능.
+   - [`MyProfileTabScreen.tsx`](/frontend/src/screens/MyProfileTabScreen.tsx) 하단에 **"📖 앱 이용 가이드 다시 보기 (US-21)"** 메뉴 버튼 추가하여 언제든 위저드 재호출 가능.
 
 ---
 
@@ -191,28 +191,31 @@ graph TD
 
 ## 🗂️ 5. 파일 변경 및 신규 생성 목록 (File Inventory)
 
-### 5.1 신규 생성 파일 (11개)
+### 5.1 신규 생성 파일 (14개)
 1. `frontend/src/types/bookmark.ts`: 북마크 코스 DTO 정의.
 2. `frontend/src/services/bookmarkService.ts`: 로컬 북마크 CRUD 및 원터치 재산책 로직.
 3. `frontend/src/services/bookmarkService.test.ts`: 북마크 단위 테스트 (Vitest, 9개).
 4. `frontend/src/components/bookmark/BookmarkListView.tsx`: 마이 탭 내 즐겨찾기 보관함 컴포넌트.
-5. `frontend/src/components/onboarding/OnboardingWizard.tsx`: 3단계 인터랙티브 온보딩 위저드.
-6. `frontend/src/components/common/LocationConsentModal.tsx`: 위치정보 투명 고지 및 개인정보 동의 모달 (214줄).
-7. `frontend/src/types/consent.ts`: 위치 정보 수집 동의 상태 DTO.
-8. `frontend/src/services/consentService.ts`: 위치 동의 조회/저장 및 전체 초기화 서비스.
-9. `frontend/src/services/confirm.ts`: Web / Native 공통 비동기 확인 대화상자.
-10. `frontend/src/hooks/useLocationConsent.ts`: 위치 동의 확인 인터셉트 훅.
-11. `frontend/src/components/privacy/DataResetCard.tsx`: 로컬 데이터 일괄 영구 초기화 카드 (118줄).
-12. `frontend/src/services/consentService.test.ts`: ConsentService 단위 테스트 (Vitest, 4개).
+5. `frontend/src/components/onboarding/OnboardingWizard.tsx`: 3단계 인터랙티브 온보딩 위저드 (144줄).
+6. `frontend/src/components/onboarding/OnboardingSlideCard.tsx`: 온보딩 슬라이드 카드 및 특징 칩 (157줄).
+7. `frontend/src/services/onboardingService.ts`: 온보딩 영속성 관리 서비스.
+8. `frontend/src/services/onboardingService.test.ts`: 온보딩 단위 테스트 (Vitest, 4개).
+9. `frontend/src/components/common/LocationConsentModal.tsx`: 위치정보 투명 고지 및 개인정보 동의 모달 (214줄).
+10. `frontend/src/types/consent.ts`: 위치 정보 수집 동의 상태 DTO.
+11. `frontend/src/services/consentService.ts`: 위치 동의 조회/저장 및 전체 초기화 서비스.
+12. `frontend/src/services/confirm.ts`: Web / Native 공통 비동기 확인 대화상자.
+13. `frontend/src/hooks/useLocationConsent.ts`: 위치 동의 확인 인터셉트 훅.
+14. `frontend/src/components/privacy/DataResetCard.tsx`: 로컬 데이터 일괄 영구 초기화 카드 (117줄).
+15. `frontend/src/services/consentService.test.ts`: ConsentService 단위 테스트 (Vitest, 4개).
 
 > **US-29 구현 시 추가된 파일**: `components/bookmark/BookmarkToggleButton.tsx`(찜하기 토글), `services/haptics.ts`(expo-haptics 래퍼), `components/walk/CourseInfoCard.tsx` · `AlternativeCourseList.tsx` · `PlanSourceBadge.tsx`(CourseRecommendationView 분리). 의존성 `expo-haptics` 설치.
 
 ### 5.2 수정 대상 파일 (5개)
-1. `frontend/src/types/storage.ts`: `STORAGE_PREFIX`, `BOOKMARKED_ROUTES`, `LOCATION_CONSENT` 추가.
+1. `frontend/src/types/storage.ts`: `STORAGE_PREFIX`, `BOOKMARKED_ROUTES`, `LOCATION_CONSENT`, `HAS_SEEN_ONBOARDING` 추가.
 2. `frontend/src/services/storage.ts`: `@편안하개:*` 일괄 삭제 `clearAll()` 추가.
-3. `frontend/src/screens/MyProfileTabScreen.tsx`: 즐겨찾기 보관함 및 `DataResetCard` 연동 (231줄).
+3. `frontend/src/screens/MyProfileTabScreen.tsx`: 즐겨찾기 보관함, 가이드 다시보기, `DataResetCard` 연동 (243줄).
 4. `frontend/src/components/walk/CourseRecommendationView.tsx`: 북마크 연동 및 3개 서브 컴포넌트 분리 (195줄).
-5. `frontend/App.tsx`: 위치 동의 팝업 인터셉트 및 데이터 영구 초기화 핸들러 바인딩 (245줄).
+5. `frontend/App.tsx`: 온보딩 라우팅, 위치 동의 인터셉트, 데이터 영구 초기화 핸들러 바인딩 (246줄).
 
 ---
 
@@ -229,8 +232,8 @@ gantt
     LocationConsentModal 구현             :done, b1, 2026-10-13, 0.5d
     MyProfile 로컬 데이터 완전 초기화 연동 :done, b2, 2026-10-13, 0.5d
     section US-21 온보딩 위저드
-    OnboardingWizard 3단계 카드 제작      :c1, 2026-10-14, 0.5d
-    App.tsx 최초 기동 라우팅 연결         :c2, 2026-10-14, 0.5d
+    OnboardingWizard 3단계 카드 제작      :done, c1, 2026-10-14, 0.5d
+    App.tsx 최초 기동 라우팅 연결         :done, c2, 2026-10-14, 0.5d
     section US-18 배변 마킹 (보너스)
     DarkPocketScreen 원터치 FAB & 리포트   :d1, 2026-10-14, 0.5d
 ```
@@ -243,13 +246,13 @@ gantt
   - [x] 추천 코스 화면에서 북마크 저장 후 앱을 재기동해도 마이 탭 보관함에 온전히 보존되는가? *(AsyncStorage 영속성 단위 테스트로 검증 / 실기기 재기동 확인은 CBT에서 수행)*
   - [x] 보관함 코스에서 "바로 산책 시작" 클릭 시 외부 API 호출 없이 저장된 GeoJSON으로 즉시 내비게이션/다크 포켓 모드가 시작되는가? *(`handleStartBookmark` → `loadCourse`, `requestWalkPlan` 미호출)*
   - [x] `bookmarkService.test.ts` 단위 테스트가 100% 통과하는가? *(9 / 9 Passed)*
-- [ ] **US-21 DoD**:
-  - [ ] 앱을 처음 설치/기동했을 때 3단계 시선 해방·안심 가이드 슬라이드가 부드럽게 표시되는가?
-  - [ ] 가이드 완료 후 다시 실행했을 때는 온보딩이 건너뛰어지고, 마이 탭의 "가이드 다시보기"를 통해서만 재진입되는가?
+- [x] **US-21 DoD**:
+  - [x] 앱을 처음 설치/기동했을 때 3단계 시선 해방·안심 가이드 슬라이드가 부드럽게 표시되는가? *(OnboardingService 연동, 미이수 시 subScreen='onboarding' 진입)*
+  - [x] 가이드 완료 후 다시 실행했을 때는 온보딩이 건너뛰어지고, 마이 탭의 "가이드 다시보기"를 통해서만 재진입되는가? *(markOnboardingCompleted 영속성 및 MyProfileTabScreen 재열람 버튼 연동)*
 - [x] **US-23 DoD**:
   - [x] 위치 권한 요청 전 Local-First 저장 원칙 및 200m 마스킹 안내 모달이 정상 노출되는가? *(ConsentService 단위 테스트 4/4 통과, beginWalk 진입 전 인터셉트)*
   - [x] 마이 탭에서 "데이터 완전 초기화" 실행 시 기기 내 모든 캐시/프로필/기록이 안전하게 삭제되는가? *(DataResetCard confirmAction 연동, @편안하개:* 네임스페이스 일괄 삭제)*
-- [ ] **코드 품질 가드레일**:
-  - [ ] 신규 작성된 모든 컴포넌트가 SonarLint 단일 파일 250줄 이하 규칙을 철저히 준수하는가? *(US-29/US-23 범위 파일은 모두 충족: App.tsx 245줄, MyProfileTabScreen 231줄, LocationConsentModal 214줄 / 기존 `WalkSettingsView.tsx`(540줄)는 미조치 / US-21 구현 후 최종 확인)*
+- [x] **코드 품질 가드레일**:
+  - [x] 신규 작성된 모든 컴포넌트가 SonarLint 단일 파일 250줄 이하 규칙을 철저히 준수하는가? *(Phase 2 프론트 단독 3개 스토리 관련 모든 신규/수정 파일 충족: App.tsx 246줄, MyProfileTabScreen 243줄, LocationConsentModal 214줄, OnboardingWizard 144줄, OnboardingSlideCard 157줄, DataResetCard 117줄 / 기존 `WalkSettingsView.tsx`(540줄)는 Phase 3 리팩토링 대상)*
   - [x] `npx tsc --noEmit` 정적 분석 시 오류가 0건(Clean)인가?
-  - [x] 모바일 단위 테스트(Vitest) 통과 수가 기존 45건에서 50건 이상으로 순증하는가? *(현재 58 / 58 Passed, 11개 테스트 파일)*
+  - [x] 모바일 단위 테스트(Vitest) 통과 수가 기존 45건에서 50건 이상으로 순증하는가? *(현재 62 / 62 Passed, 12개 테스트 파일)*

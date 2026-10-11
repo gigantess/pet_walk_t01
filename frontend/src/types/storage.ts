@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   APP_SETTINGS: '@편안하개:app_settings',
   BOOKMARKED_ROUTES: '@편안하개:bookmarked_routes',
   LOCATION_CONSENT: '@편안하개:location_consent',
+  HAS_SEEN_ONBOARDING: '@편안하개:has_seen_onboarding',
 } as const;
 
 export type SlopeFeedbackLevel = 'gentle' | 'moderate' | 'steep';

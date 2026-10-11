@@ -26,6 +26,8 @@ import { createBookmark } from './src/services/bookmarkService';
 import { useLocationConsent } from './src/hooks/useLocationConsent';
 import { ConsentService } from './src/services/consentService';
 import { LocationConsentModal } from './src/components/common/LocationConsentModal';
+import { OnboardingService } from './src/services/onboardingService';
+import { OnboardingWizard } from './src/components/onboarding/OnboardingWizard';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WalkTabScreen } from './src/screens/WalkTabScreen';
@@ -37,7 +39,7 @@ import { DogSelectionView } from './src/components/profile/DogSelectionView';
 import { WalkSettingsView } from './src/components/walk/WalkSettingsView';
 import { CourseRecommendationView } from './src/components/walk/CourseRecommendationView';
 
-export type AppSubScreen = 'main' | 'dog_selection' | 'walk_settings' | 'course_recommend' | 'pocket' | 'report';
+export type AppSubScreen = 'main' | 'dog_selection' | 'walk_settings' | 'course_recommend' | 'pocket' | 'report' | 'onboarding';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('홈');
@@ -66,22 +68,26 @@ export default function App() {
         await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, DEFAULT_DOGS[0]);
       }
       setFeedbackSummary(await FeedbackContextService.buildRecentFeedbackContext());
+      if (!(await OnboardingService.hasSeenOnboarding())) setSubScreen('onboarding');
     }
     void loadData();
   }, []);
 
   const handleSaveActiveDog = async (fields: Partial<DogProfile>) => {
-    const updated = { ...activeDog, ...fields };
+    const updated = { ...activeDog, ...fields, updatedAt: new Date().toISOString() };
     updated.speedKmH = calculateRecommendedSpeedKmH(updated.weightKg, updated.ageYears, updated.jointCareLevel);
-    updated.updatedAt = new Date().toISOString();
     setDogs(dogs.map((d) => (d.id === updated.id ? updated : d)));
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, updated);
   };
 
   const handleAddDog = async (newDog: DogProfile) => {
-    setDogs([...dogs, newDog]);
-    setSelectedDogId(newDog.id);
+    setDogs([...dogs, newDog]); setSelectedDogId(newDog.id);
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, newDog);
+  };
+
+  const handleCompleteOnboarding = async () => {
+    await OnboardingService.markOnboardingCompleted();
+    setSubScreen('main');
   };
 
   const beginWalk = async (title: string, plan: CoursePlan | undefined, bookmark: BookmarkedRoute | null) => {
@@ -122,8 +128,7 @@ export default function App() {
 
   const handleResetAllData = async () => {
     await ConsentService.resetAllLocalData();
-    setDogs([...DEFAULT_DOGS]);
-    setSelectedDogId(DEFAULT_DOGS[0].id);
+    setDogs([...DEFAULT_DOGS]); setSelectedDogId(DEFAULT_DOGS[0].id);
     setFeedbackSummary(null); setCompletedRecord(null); setWalkBookmark(null);
   };
 
@@ -163,9 +168,8 @@ export default function App() {
           barStyle={subScreen === 'pocket' ? 'light-content' : 'dark-content'}
           backgroundColor={subScreen === 'pocket' ? TOKENS.colors.pocketBg : TOKENS.colors.background}
         />
-        {subScreen === 'pocket' && (
-          <DarkPocketScreen dogName={activeDog.name} stats={walk.stats} onUnlock={handlePocketUnlock} />
-        )}
+        {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
+        {subScreen === 'pocket' && <DarkPocketScreen dogName={activeDog.name} stats={walk.stats} onUnlock={handlePocketUnlock} />}
         {subScreen === 'report' && completedRecord && (
           <WalkReportScreen
             record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
@@ -218,6 +222,7 @@ export default function App() {
                 <MyProfileTabScreen
                   dog={activeDog} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
                   onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
+                  onOpenOnboarding={() => setSubScreen('onboarding')}
                 />
               )}
             </ScrollView>
@@ -233,15 +238,11 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: TOKENS.colors.background, maxWidth: 480, width: '100%', marginHorizontal: 'auto' },
   safeAreaPocket: { backgroundColor: TOKENS.colors.pocketBg, maxWidth: 480, width: '100%', marginHorizontal: 'auto' },
-
   mainContainer: { flex: 1 },
   header: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: TOKENS.colors.border, backgroundColor: TOKENS.colors.surface },
   logoGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoBadge: { width: 32, height: 32, borderRadius: 10, backgroundColor: TOKENS.colors.primary, alignItems: 'center', justifyContent: 'center' },
-  logoIcon: { fontSize: 16 },
-  appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 18, color: TOKENS.colors.textMain },
-  scrollContent: { padding: 20, paddingBottom: 24 },
+  logoIcon: { fontSize: 16 }, appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 }, iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 18, color: TOKENS.colors.textMain }, scrollContent: { padding: 20, paddingBottom: 24 },
 });
