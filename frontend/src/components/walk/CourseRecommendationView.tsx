@@ -10,11 +10,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { requestWalkPlan, RoutePlanResult } from '../../services/api';
 import { createBookmark } from '../../services/bookmarkService';
+import {
+  buildAdaptiveConditionLabels,
+  generateAdaptiveCourses,
+} from '../../services/courseAdaptivePlanner';
 import { getCoursePlanById } from '../../services/sampleRoute';
 import { TOKENS } from '../../theme/tokens';
 import { CoursePlan } from '../../types/bookmark';
 import { DogProfile } from '../../types/dogProfile';
-import { DEFAULT_RECOMMENDED_COURSES, RecommendedCourse, WalkPreferences } from '../../types/walkSettings';
+import { RecommendedCourse, WalkPreferences } from '../../types/walkSettings';
 import { RouteMapView } from '../map/RouteMapView';
 import { RouteReasonCard } from '../map/RouteReasonCard';
 import { AlternativeCourseList } from './AlternativeCourseList';
@@ -29,14 +33,6 @@ export interface CourseRecommendationViewProps {
   onPinSelect?: (instruction: string) => void;
 }
 
-/** 사용자 선택 조건을 상단 태그 칩 문구로 변환한다. */
-function buildConditionLabels(dog: DogProfile, preferences?: WalkPreferences): string[] {
-  const minutes = preferences?.durationMinutes;
-  let durationLabel = '30분';
-  if (minutes) durationLabel = minutes === 60 ? '1시간' : `${minutes}분`;
-  return [dog.name, durationLabel, '폭신한 길', '그늘이 많은 길', '계단 피하기'];
-}
-
 export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> = ({
   dog,
   preferences,
@@ -44,7 +40,9 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
   onStartWalk,
   onPinSelect,
 }) => {
-  const [courses, setCourses] = useState<readonly RecommendedCourse[]>(DEFAULT_RECOMMENDED_COURSES);
+  const [courses, setCourses] = useState<readonly RecommendedCourse[]>(() =>
+    generateAdaptiveCourses(dog, preferences)
+  );
   const [selectedCourseIndex, setSelectedCourseIndex] = useState(0);
   const [planResult, setPlanResult] = useState<RoutePlanResult | null>(null);
 
@@ -74,7 +72,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
     () => (currentCourse ? createBookmark(currentCourse, plan, dog.name) : null),
     [currentCourse, plan, dog.name],
   );
-  const conditionLabels = useMemo(() => buildConditionLabels(dog, preferences), [dog, preferences]);
+  const conditionLabels = useMemo(() => buildAdaptiveConditionLabels(dog, preferences), [dog, preferences]);
 
   return (
     <View style={styles.container}>
@@ -96,7 +94,9 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
           <Text style={styles.mainTitle}>
             {dog.name}에게 맞는 산책 코스를{'\n'}찾았어요.
           </Text>
-          <Text style={styles.subTitle}>선택한 조건을 반영해 관절과 발바닥이 편안한 순환 코스예요.</Text>
+          <Text style={styles.subTitle}>
+            {planResult?.briefingMessage ?? `${dog.name}의 ${preferences?.durationMinutes ?? 30}분 산책 조건에 맞춘 관절 안심 순환 코스예요.`}
+          </Text>
         </View>
 
         <View style={styles.tagWrap}>

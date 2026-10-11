@@ -11,6 +11,7 @@ import { RouteFeatureCollection, RouteStepPin } from '../types/route';
 import { RecommendedCourse, WalkPreferences, DEFAULT_RECOMMENDED_COURSES } from '../types/walkSettings';
 import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './sampleRoute';
 import { FeedbackSummaryPayload } from './feedbackContext';
+import { generateAdaptiveCourses, generateAdaptiveBriefing } from './courseAdaptivePlanner';
 
 export interface RoutePlanResult {
   readonly isLiveServer: boolean;
@@ -76,11 +77,13 @@ export async function requestWalkPlan(
   }
 
   // 🛡️ 오프라인 / 데모용 무중단 자동 폴백
+  const fallbackCourses = generateAdaptiveCourses(dog, preferences);
+  const fallbackBriefing = generateAdaptiveBriefing(dog, preferences);
   return {
     isLiveServer: false,
-    courses: DEFAULT_RECOMMENDED_COURSES,
+    courses: fallbackCourses,
     route: SAMPLE_ROUTE,
     stepPins: SAMPLE_STEP_PINS,
-    briefingMessage: `${dog.name}를 위한 관절 안심 숲길 코스예요. (로컬 안심 모드)`,
+    briefingMessage: fallbackBriefing,
   };
 }

@@ -98,7 +98,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
       {/* US-A2: 프로필 JSON 백업 및 복원 */}
       <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
-        <Text style={styles.cardHeaderTitle}>💾 로컬 JSON 백업 및 복원 (US-A2)</Text>
+        <Text style={styles.cardHeaderTitle}>💾 개인 프로필 백업 및 복원</Text>
         <Text style={styles.backupDesc}>
           개인정보 보호를 위해 외부 서버 전송 없이 기기 파일로 안전하게 보관합니다.
         </Text>
@@ -107,10 +107,10 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           onPress={() => {
             const ok = BackupService.downloadProfileJsonFile(dog);
             if (ok) {
-              Alert.alert('백업 파일 생성', `🐾 ${dog.name} 프로필 JSON 파일이 다운로드되었습니다.`);
+              Alert.alert('백업 파일 생성', `🐾 ${dog.name} 프로필 파일이 다운로드되었습니다.`);
             } else {
               const jsonStr = BackupService.exportProfileToJson(dog);
-              Alert.alert('백업 JSON 내보내기', `JSON 데이터가 생성되었습니다:\n${jsonStr.slice(0, 80)}...`);
+              Alert.alert('백업 파일 내보내기', `백업 데이터가 생성되었습니다:\n${jsonStr.slice(0, 80)}...`);
             }
           }}
           style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', marginTop: 10 }]}
@@ -153,7 +153,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             style={[styles.simButton, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
           >
             <Text style={{ color: '#166534', fontSize: 13, fontWeight: '700' }}>
-              📖 앱 이용 가이드 다시 보기 (US-21)
+              📖 앱 이용 가이드 다시 보기
             </Text>
           </TouchableOpacity>
         </CardWrapper>
