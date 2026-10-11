@@ -86,51 +86,54 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
         <GradientButton
           fullWidth
-          onPress={() => Alert.alert('저장 완료', '🐾 프로필이 로컬에 안전하게 저장되었습니다!')}
+          onPress={() => Alert.alert('저장 완료', '🐾 반려견 프로필이 안전하게 저장되었습니다!')}
           style={{ marginTop: 16 }}
         >
-          로컬 프로필 저장 ✓
+          반려견 프로필 저장 ✓
         </GradientButton>
       </CardWrapper>
 
-      {/* US-29: 내 보관함 (즐겨찾기 안심 코스) */}
+      {/* 내 보관함 (즐겨찾기 안심 코스) */}
       <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} />
 
-      {/* US-A2: 프로필 JSON 백업 및 복원 */}
+      {/* 반려견 프로필 파일 보관 및 복원 */}
       <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
-        <Text style={styles.cardHeaderTitle}>💾 개인 프로필 백업 및 복원</Text>
+        <Text style={styles.cardHeaderTitle}>💾 반려견 프로필 백업 및 복원</Text>
         <Text style={styles.backupDesc}>
-          개인정보 보호를 위해 외부 서버 전송 없이 기기 파일로 안전하게 보관합니다.
+          소중한 반려견 프로필을 내 스마트폰 파일로 안전하게 보관하고 필요할 때 불러옵니다.
         </Text>
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => {
             const ok = BackupService.downloadProfileJsonFile(dog);
             if (ok) {
-              Alert.alert('백업 파일 생성', `🐾 ${dog.name} 프로필 파일이 다운로드되었습니다.`);
+              Alert.alert('프로필 저장 완료', `🐾 ${dog.name} 프로필 파일이 기기에 다운로드되었습니다.`);
             } else {
               const jsonStr = BackupService.exportProfileToJson(dog);
-              Alert.alert('백업 파일 내보내기', `백업 데이터가 생성되었습니다:\n${jsonStr.slice(0, 80)}...`);
+              Alert.alert('프로필 내보내기', `백업 데이터가 생성되었습니다:\n${jsonStr.slice(0, 80)}...`);
             }
           }}
           style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', marginTop: 10 }]}
         >
           <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '700' }}>
-            📥 프로필 JSON 파일 백업하기
+            📥 내 프로필 파일로 저장하기
           </Text>
         </TouchableOpacity>
       </CardWrapper>
 
-      {/* 피드백 시뮬레이션 */}
+      {/* 산책 체감 피드백 테스트 */}
       <CardWrapper variant="flat">
-        <Text style={styles.cardHeaderTitle}>🧪 피드백 주입 시뮬레이션</Text>
+        <Text style={styles.cardHeaderTitle}>🧪 산책 체감 피드백 테스트</Text>
+        <Text style={styles.backupDesc}>
+          보행 후 체감 피드백에 따라 AI가 다음 추천 경로를 자동으로 보정하는 기능을 테스트합니다.
+        </Text>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
           <TouchableOpacity
             onPress={() => onInjectFeedback(true)}
             style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}
           >
             <Text style={{ color: '#991B1B', fontSize: 12, fontWeight: '600' }}>
-              + 가파름 불만족
+              + 가파른 길 피드백
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -138,13 +141,13 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}
           >
             <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '600' }}>
-              + 완만길 만족
+              + 완만한 길 피드백
             </Text>
           </TouchableOpacity>
         </View>
       </CardWrapper>
 
-      {/* US-21: 앱 이용 가이드 다시 보기 */}
+      {/* 이용 안내 가이드 투어 다시 보기 */}
       {onOpenOnboarding && (
         <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
           <TouchableOpacity
@@ -153,13 +156,13 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             style={[styles.simButton, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
           >
             <Text style={{ color: '#166534', fontSize: 13, fontWeight: '700' }}>
-              📖 앱 이용 가이드 다시 보기
+              📖 첫 산책 가이드 투어 다시 보기
             </Text>
           </TouchableOpacity>
         </CardWrapper>
       )}
 
-      {/* US-23: 로컬 데이터 완전 초기화 */}
+      {/* 로컬 데이터 완전 초기화 */}
       {onResetData && (
         <DataResetCard
           onReset={onResetData}

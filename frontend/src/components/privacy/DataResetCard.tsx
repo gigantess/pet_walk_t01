@@ -21,9 +21,9 @@ export const DataResetCard: React.FC<DataResetCardProps> = ({ onReset, onComplet
 
   const handlePressReset = async () => {
     const confirmed = await confirmAction(
-      '내 산책 데이터 영구 초기화',
-      '로컬에 저장된 모든 반려견 프로필, 산책 기록, 즐겨찾기가 영구 삭제됩니다.\n계속할까요?',
-      { confirmLabel: '영구 삭제', destructive: true }
+      '모든 기록을 삭제할까요?',
+      '스마트폰에 저장된 모든 반려견 프로필, 산책 기록, 찜한 코스가 영구히 삭제됩니다.\n정말 삭제하시겠습니까?',
+      { confirmLabel: '전체 삭제', destructive: true }
     );
 
     if (!confirmed) return;
@@ -31,7 +31,7 @@ export const DataResetCard: React.FC<DataResetCardProps> = ({ onReset, onComplet
     try {
       setIsResetting(true);
       await onReset();
-      setResetMessage('모든 로컬 데이터가 깨끗하게 초기화되었습니다.');
+      setResetMessage('스마트폰에 저장된 모든 기록이 안전하게 삭제되었습니다.');
       onCompleted?.();
     } finally {
       setIsResetting(false);
@@ -40,9 +40,9 @@ export const DataResetCard: React.FC<DataResetCardProps> = ({ onReset, onComplet
 
   return (
     <CardWrapper variant="flat" style={styles.card}>
-      <Text style={styles.title}>🔒 프라이버시 및 데이터 초기화 (US-23)</Text>
+      <Text style={styles.title}>🔒 개인정보 보호 및 전체 기록 삭제</Text>
       <Text style={styles.description}>
-        기기에 저장된 모든 기록(프로필, 산책 이력, 즐겨찾기, 위치 동의)을 즉시 영구 삭제합니다.
+        스마트폰에 저장된 모든 기록(반려견 프로필, 산책 이력, 찜한 코스, 위치 설정)을 깨끗하게 삭제합니다.
       </Text>
 
       {Boolean(resetMessage) && (
@@ -58,7 +58,7 @@ export const DataResetCard: React.FC<DataResetCardProps> = ({ onReset, onComplet
         style={[styles.resetButton, isResetting && styles.buttonDisabled]}
       >
         <Text style={styles.buttonText}>
-          {isResetting ? '데이터 초기화 중...' : '⚠️ 내 산책 데이터 영구 초기화'}
+          {isResetting ? '기록 삭제 중...' : '🗑️ 저장된 모든 기록 삭제하기'}
         </Text>
       </TouchableOpacity>
     </CardWrapper>

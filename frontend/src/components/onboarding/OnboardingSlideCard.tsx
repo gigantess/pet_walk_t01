@@ -39,10 +39,10 @@ export const ONBOARDING_SLIDES: SlideItem[] = [
     badge: 'Step 3. 프라이버시 안심',
     emoji: '🔒',
     title: '내 폰에만 안전하게 남는 프라이버시',
-    headline: '외부 서버 미전송 Local-First',
+    headline: '외부 서버 전송 없는 기기 내 안전 보관',
     description:
       '아이 프로필과 상세 이동 궤적은 외부 서버로 전송되지 않고 내 폰에만 보관됩니다. 코스를 이웃과 나눌 때도 집 주변 200m가 자동 마스킹됩니다.',
-    features: ['100% 로컬 기기 저장', '집 주변 200m 안심 마스킹', '데이터 언제든 초기화'],
+    features: ['스마트폰에만 100% 안전 저장', '집 주변 200m 안심 보호', '언제든 전체 기록 삭제 가능'],
   },
 ];
 
