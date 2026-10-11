@@ -202,6 +202,9 @@ export const COURSE_PLANS: Record<string, CoursePlanData> = {
   course_1: { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS },
   course_2: { route: ROUTE_COURSE_2, stepPins: STEP_PINS_COURSE_2 },
   course_3: { route: ROUTE_COURSE_3, stepPins: STEP_PINS_COURSE_3 },
+  'candidate-loop-01': { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS },
+  'candidate-loop-02': { route: ROUTE_COURSE_2, stepPins: STEP_PINS_COURSE_2 },
+  'candidate-loop-03': { route: ROUTE_COURSE_3, stepPins: STEP_PINS_COURSE_3 },
 };
 
 export function getCoursePlanById(

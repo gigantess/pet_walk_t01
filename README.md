@@ -409,7 +409,6 @@ cd frontend && npm test
 | [`docs/02_편안하개_Team_building.md`](docs/02_편안하개_Team_building.md) | 5인 팀 R&R, 역할별 핵심 산출물 및 4대 핵심 기술 엔지니어링 전략 | 팀 빌딩 / 아키텍처 |
 | [`docs/03_편안하개_Agile_User_Stories.md`](docs/03_편안하개_Agile_User_Stories.md) | 8대 에픽(A~H), 18개 애자일 사용자 스토리 명세서 및 인수 조건(DoD) | 백로그 / 기능 명세 |
 | [`docs/04_ai_problem_definition.md`](docs/04_ai_problem_definition.md) | AI 문제 정의서 (아키텍처, 5대 핵심 문제, 성공 지표 및 평가 기준) | AI 문제 정의 |
-| [`docs/05_편안하개_Member4_모바일_구현계획서.md`](docs/05_편안하개_Member4_모바일_구현계획서.md) | 멤버4 프론트엔드 모바일 전담 엔지니어 단계별 구현 계획서 | 프론트엔드 계획 |
 | [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](docs/05_편안하개_프로젝트_수행계획서_일정.md) | 프로젝트 전체 일정, 주차별 R&R, 간트 차트 및 4단계 마일스톤 수행계획 | 마일스톤 / 일정 |
 | [`docs/implementation_plan/frontend_phase2_stories_implementation_plan.md`](docs/implementation_plan/frontend_phase2_stories_implementation_plan.md) | 프론트엔드 Phase 2(US-29, US-23, US-21) 상세 구현 계획서 | Phase 2 구현 계획 |
 | [`docs/implementation_plan/99.member4_implementation_status_report.md`](docs/implementation_plan/99.member4_implementation_status_report.md) | 멤버4 구현 완료 보고서 및 산출물 종합 보고서 | 구현 보고서 |

@@ -58,6 +58,9 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
 
   const currentCourse = courses[selectedCourseIndex] ?? courses[0];
   const activePlan = useMemo(() => {
+    if (planResult?.coursePlans && currentCourse?.id && planResult.coursePlans[currentCourse.id]) {
+      return planResult.coursePlans[currentCourse.id];
+    }
     const isLiveFirstCourse = Boolean(planResult?.isLiveServer && selectedCourseIndex === 0);
     return getCoursePlanById(
       currentCourse?.id,

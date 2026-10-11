@@ -19,6 +19,7 @@ export interface RoutePlanResult {
   readonly route: RouteFeatureCollection;
   readonly stepPins: readonly RouteStepPin[];
   readonly briefingMessage: string;
+  readonly coursePlans?: Record<string, { route: RouteFeatureCollection; stepPins: readonly RouteStepPin[] }>;
 }
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
@@ -67,6 +68,7 @@ export async function requestWalkPlan(
         courses: data.courses ?? DEFAULT_RECOMMENDED_COURSES,
         route: data.geojson ?? SAMPLE_ROUTE,
         stepPins: data.step_pins ?? SAMPLE_STEP_PINS,
+        coursePlans: data.course_plans,
         briefingMessage: data.briefing ?? `${dog.name}를 위한 맞춤형 안심 코스가 생성되었습니다.`,
       };
     }

@@ -67,4 +67,14 @@ describe('sampleRoute & getCoursePlanById', () => {
     const unknownWithoutFallback = getCoursePlanById('unknown_course');
     expect(unknownWithoutFallback.route).toEqual(SAMPLE_ROUTE);
   });
+
+  it('AI 에이전트 candidate-loop ID들도 유효한 코스 플랜에 매핑된다', () => {
+    const loop1 = getCoursePlanById('candidate-loop-01');
+    const loop2 = getCoursePlanById('candidate-loop-02');
+    const loop3 = getCoursePlanById('candidate-loop-03');
+
+    expect(loop1.route).toEqual(SAMPLE_ROUTE);
+    expect(loop2.route).toEqual(ROUTE_COURSE_2);
+    expect(loop3.route).toEqual(ROUTE_COURSE_3);
+  });
 });
