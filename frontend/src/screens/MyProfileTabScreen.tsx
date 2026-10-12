@@ -94,7 +94,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
       </CardWrapper>
 
       {/* 내 보관함 (즐겨찾기 안심 코스) */}
-      <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} />
+      <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} dogSpeedKmH={dog.speedKmH} />
 
       {/* 반려견 프로필 파일 보관 및 복원 */}
       <CardWrapper variant="flat" style={{ marginBottom: 16 }}>

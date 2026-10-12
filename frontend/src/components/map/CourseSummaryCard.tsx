@@ -41,9 +41,14 @@ export const CourseSummaryCard: React.FC<CourseSummaryCardProps> = ({ summary, o
         </StatusBadge>
       </View>
 
-      <GradientButton fullWidth size="lg" onPress={onStart}>
-        <View style={styles.startButtonContent}><Text style={styles.startButtonText}>산책 시작</Text><AppIcon name="chevronRight" size={18} color={TOKENS.colors.textWhite} /></View>
-      </GradientButton>
+      {onStart && (
+        <GradientButton fullWidth size="lg" onPress={onStart}>
+          <View style={styles.startButtonContent}>
+            <Text style={styles.startButtonText}>산책 시작</Text>
+            <AppIcon name="chevronRight" size={18} color={TOKENS.colors.textWhite} />
+          </View>
+        </GradientButton>
+      )}
     </View>
   );
 };
