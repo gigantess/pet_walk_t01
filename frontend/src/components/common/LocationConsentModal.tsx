@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { AppIcon, AppIconName } from './AppIcon';
 import { LocationConsentController } from '../../hooks/useLocationConsent';
@@ -96,10 +96,20 @@ export const LocationConsentModal: React.FC<LocationConsentModalProps> = ({ cont
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    ...(Platform.OS === 'web'
+      ? ({
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 99999,
+        } as any)
+      : {}),
   },
   card: {
     width: '100%',
@@ -112,6 +122,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
+    ...(Platform.OS === 'web'
+      ? ({
+          zIndex: 100000,
+        } as any)
+      : {}),
   },
   header: {
     marginBottom: 16,
