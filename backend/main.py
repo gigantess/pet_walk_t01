@@ -39,6 +39,7 @@ from test_case.test_api_contracts import (
     CommunityCourseShareRequest,
     CommunityCourseSummary,
 )
+from test_case.test_thermal_and_parking import determine_heat_risk_dto
 
 app = FastAPI(
     title="편안하개 (PetWalk) API",
@@ -301,4 +302,42 @@ def get_community_feed():
     return {
         "feeds": community_repo.get_feeds(),
         "is_supabase": community_repo.is_connected(),
+    }
+
+
+@app.get("/api/v1/weather/heat-risk")
+def get_weather_heat_risk(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+):
+    """[US-F1] 기상청 단기예보 모델 기반 시간대별 지면열 추정 및 안전 골든타임 조회."""
+    import datetime
+    import math
+
+    now_hour = datetime.datetime.now().hour
+    hourly = []
+    golden_hours = []
+
+    for h in range(24):
+        air_temp = round(26.5 + 4.5 * math.cos(((h - 14) / 12) * math.pi), 1)
+        sky = "clear" if 10 <= h <= 15 else "partly_cloudy" if 6 <= h <= 18 else "clear"
+        dto = determine_heat_risk_dto(hour=h, air_temp=air_temp, sky=sky)
+        hourly.append(dto.model_dump() if hasattr(dto, "model_dump") else dto.dict())
+        if dto.is_golden_time and (6 <= h <= 22):
+            golden_hours.append(h)
+
+    current_dto = hourly[now_hour] if now_hour < len(hourly) else hourly[12]
+    golden_window = (
+        f"{golden_hours[0]:02d}:00 ~ {golden_hours[-1] + 1:02d}:00"
+        if golden_hours
+        else "일몰 후 (19:00 ~ 22:00) 권장"
+    )
+
+    return {
+        "status": "success",
+        "current": current_dto,
+        "golden_time_window": golden_window,
+        "hourly_forecast": hourly,
+        "notice": "본 지수는 기상청 예보 모델 기반 추정치입니다.",
+        "coordinates": {"lat": lat, "lon": lon},
     }

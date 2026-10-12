@@ -196,3 +196,25 @@ class TestHazardReportEndpoints:
         res = client.get("/api/v1/hazards", params={"lat": 35.1796, "lon": 129.0756, "radius_m": 500})
         assert res.status_code == 200
         assert res.json()["count"] == 0
+
+
+class TestWeatherHeatRiskEndpoint:
+    """[US-F1] GET /api/v1/weather/heat-risk 시간대별 지면열 및 골든타임 조회 검증."""
+
+    def test_get_weather_heat_risk_returns_200_and_valid_schema(self, client):
+        res = client.get("/api/v1/weather/heat-risk", params={"lat": 37.544, "lon": 127.038})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "success"
+        assert "current" in data
+        assert "hourly_forecast" in data
+        assert len(data["hourly_forecast"]) == 24
+        assert "golden_time_window" in data
+        assert "기상청 예보 모델 기반 추정치" in data["notice"]
+
+        current = data["current"]
+        assert "air_temp_celsius" in current
+        assert "estimated_surface_temp" in current
+        assert current["risk_level"] in ("SAFE", "CAUTION", "DANGER")
+        assert isinstance(current["is_golden_time"], bool)
+
