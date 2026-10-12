@@ -115,7 +115,7 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
   let goldenWindow = '일몰 후 (19:00 ~ 22:00) 권장';
   if (goldenHours.length > 0) {
     const first = goldenHours[0];
-    const last = goldenHours[goldenHours.length - 1];
+    const last = goldenHours.at(-1) ?? first;
     goldenWindow = `${String(first).padStart(2, '0')}:00 ~ ${String(last + 1).padStart(2, '0')}:00`;
   }
 

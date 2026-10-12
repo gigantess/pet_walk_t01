@@ -115,7 +115,7 @@ describe('weatherApi - US-F1 지면열 추정 및 골든타임 서비스', () =>
       const result = await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON);
 
       expect(result.isLiveServer).toBe(false);
-      expect(result.hourly_forecast.length).toBe(24);
+      expect(result.hourly_forecast).toHaveLength(24);
       expect(result.notice).toContain('기상청 예보 모델 기반 추정치');
     });
 
