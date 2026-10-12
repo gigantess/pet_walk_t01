@@ -4,12 +4,12 @@
 > **작성 일자**: 2026년 10월 12일  
 > **작성자**: 멤버D **김승현** (Frontend & Mobile App Lead / 4번 앱 담당)  
 > **기준 문서**:  
-> - [`docs/02_편안하개_Team_building.md`](file:///d:/코디세이/pet_walk_t01/docs/02_편안하개_Team_building.md) (팀 R&R 및 4대 엔지니어링 전략)  
-> - [`docs/03_편안하개_Agile_User_Stories.md`](file:///d:/코디세이/pet_walk_t01/docs/03_편안하개_Agile_User_Stories.md) (요구사항 정의서 및 DoD)  
-> - [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](file:///d:/코디세이/pet_walk_t01/docs/05_편안하개_프로젝트_수행계획서_일정.md) (주차별 수행 일정)  
-> - [`docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md`](file:///d:/코디세이/pet_walk_t01/docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md) (외장 인프라 및 EAS 운영 매뉴얼)  
-> - [`docs/implementation_plan/99.member4_implementation_status_report.md`](file:///d:/코디세이/pet_walk_t01/docs/implementation_plan/99.member4_implementation_status_report.md) (구현 현황 보고서)  
-> - [`docs/implementation_plan/02.server_implementation_status_and_frontend_roadmap.md`](file:///d:/코디세이/pet_walk_t01/docs/implementation_plan/02.server_implementation_status_and_frontend_roadmap.md) (서버-프론트 로드맵)  
+> - [`docs/02_편안하개_Team_building.md`](/pet_walk_t01/docs/02_편안하개_Team_building.md) (팀 R&R 및 4대 엔지니어링 전략)  
+> - [`docs/03_편안하개_Agile_User_Stories.md`](/pet_walk_t01/docs/03_편안하개_Agile_User_Stories.md) (요구사항 정의서 및 DoD)  
+> - [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](/pet_walk_t01/docs/05_편안하개_프로젝트_수행계획서_일정.md) (주차별 수행 일정)  
+> - [`docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md`](/pet_walk_t01/docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md) (외장 인프라 및 EAS 운영 매뉴얼)  
+> - [`docs/implementation_plan/99.member4_implementation_status_report.md`](/pet_walk_t01/docs/implementation_plan/99.member4_implementation_status_report.md) (구현 현황 보고서)  
+> - [`docs/implementation_plan/02.server_implementation_status_and_frontend_roadmap.md`](/pet_walk_t01/docs/implementation_plan/02.server_implementation_status_and_frontend_roadmap.md) (서버-프론트 로드맵)  
 
 ---
 
@@ -41,12 +41,12 @@ flowchart LR
 ### 1.2 현재 진척 상태 및 기구축 성과 요약
 - **스토리 포인트 진척도**: 핵심 24 pt 중 **21 pt 완료 (88% 달성)** + Phase 2 선행 스토리 6 pt 기완료.
 - **기구축 완료 기능**:
-  - `US-A2`: 반려견 프로필 로컬 등록 & JSON 백업/복원 ([`backupService.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/backupService.ts), [`DogSelectionView.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/components/profile/DogSelectionView.tsx))
-  - `US-C1`: 3색 Polyline 구간별 색상 분기 렌더링 및 코스 프리뷰 ([`RouteMapView.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/components/map/RouteMapView.tsx), [`RouteReasonCard.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/components/map/RouteReasonCard.tsx))
-  - `US-C2`: Android Foreground GPS 무중단 추적, 30m 전 TTS 사전 브리핑, 초절전 다크 포켓 모드 ([`guidanceEngine.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/guidanceEngine.ts), [`ttsNavigation.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/ttsNavigation.ts), [`DarkPocketScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/DarkPocketScreen.tsx))
-  - `US-E1`: 실산책 GPS 궤적 로깅 및 100회 FIFO 영구 저장 ([`locationService.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/locationService.ts), [`walkReport.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/walkReport.ts))
-  - `US-E2`: 완주 인포그래픽 리포트 및 3초 원터치 피드백 ([`WalkReportScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx), [`QuickFeedbackModal.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/components/feedback/QuickFeedbackModal.tsx))
-  - `US-E3`: 누적 피드백 기반 무상태 AI 보정 파라미터 연동 ([`feedbackContext.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/feedbackContext.ts), [`HomeScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/HomeScreen.tsx))
+  - `US-A2`: 반려견 프로필 로컬 등록 & JSON 백업/복원 ([`backupService.ts`](/pet_walk_t01/frontend/src/services/backupService.ts), [`DogSelectionView.tsx`](/pet_walk_t01/frontend/src/components/profile/DogSelectionView.tsx))
+  - `US-C1`: 3색 Polyline 구간별 색상 분기 렌더링 및 코스 프리뷰 ([`RouteMapView.tsx`](/pet_walk_t01/frontend/src/components/map/RouteMapView.tsx), [`RouteReasonCard.tsx`](/pet_walk_t01/frontend/src/components/map/RouteReasonCard.tsx))
+  - `US-C2`: Android Foreground GPS 무중단 추적, 30m 전 TTS 사전 브리핑, 초절전 다크 포켓 모드 ([`guidanceEngine.ts`](/pet_walk_t01/frontend/src/services/guidanceEngine.ts), [`ttsNavigation.ts`](/pet_walk_t01/frontend/src/services/ttsNavigation.ts), [`DarkPocketScreen.tsx`](/pet_walk_t01/frontend/src/screens/DarkPocketScreen.tsx))
+  - `US-E1`: 실산책 GPS 궤적 로깅 및 100회 FIFO 영구 저장 ([`locationService.ts`](/pet_walk_t01/frontend/src/services/locationService.ts), [`walkReport.ts`](/pet_walk_t01/frontend/src/services/walkReport.ts))
+  - `US-E2`: 완주 인포그래픽 리포트 및 3초 원터치 피드백 ([`WalkReportScreen.tsx`](/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx), [`QuickFeedbackModal.tsx`](/pet_walk_t01/frontend/src/components/feedback/QuickFeedbackModal.tsx))
+  - `US-E3`: 누적 피드백 기반 무상태 AI 보정 파라미터 연동 ([`feedbackContext.ts`](/pet_walk_t01/frontend/src/services/feedbackContext.ts), [`HomeScreen.tsx`](/pet_walk_t01/frontend/src/screens/HomeScreen.tsx))
   - Phase 2 선행: `US-29` (북마크 보관함), `US-23` (위치동의/초기화), `US-21` (온보딩 위저드 투어).
 - **엔지니어링 무결성**:
   - 단위 테스트 (Vitest): **17개 테스트 파일, 78개 테스트 전수 통과 (100% Pass)**.
@@ -83,7 +83,7 @@ mindmap
 | 트랙 | 과제 ID | 작업 명칭 | 연관 스토리 / 분류 | 난이도 / 공수 | 의존성 | 우선순위 |
 |:---:|:---:|---|---|:---:|:---:|:---:|
 | **Track 1** | **T1-1** | **EAS Build Standalone APK 1회 패키징 & 무선 OTA 배포 구축** | **US-H1** (MVP) | 상 / 18 h | **완료 (100% - EAS 프로젝트 연동, preview 채널 바인딩, Standalone APK 클라우드 빌드 가동)** | **완료 (Must)** |
-| **Track 1** | **T1-2** | **산책 완주 리포트에서 커뮤니티 코스 공유(`POST /community/share`) 플로우 연동** | **US-G2** (MVP) | 중 / 8 h | 백엔드 API 기구축 | **Must** |
+| **Track 1** | **T1-2** | **산책 완주 리포트에서 커뮤니티 코스 공유(`POST /community/share`) 플로우 연동** | **US-G2** (MVP) | 중 / 8 h | **완료 (100% - `ShareCourseModal.tsx` 생성, `WalkReportScreen.tsx` 연동, `shareCourseFlow.test.ts` 통과)** | **완료 (Must)** |
 | **Track 1** | **T1-3** | **현장 위험 제보 등록 모달 & 동적 우회 재탐색 API(`POST /reroute`) 연동** | **US-D2** (P2 연계) | 중상 / 10 h | 백엔드 API 기구축 | **Should** |
 | **Track 2** | **T2-1** | **산책 중 한 손 원터치 배변 마킹 FAB & 완주 리포트 타임라인** | **US-18** (P2 선행) | 중 / 8 h | 0% (로컬 완결) | **Must** |
 | **Track 2** | **T2-2** | **긴급 산책 중단 및 출발지 복귀 모드 (Return to Start)** | **US-22** (P2 선행) | 중 / 8 h | 0% (로컬 완결) | **Should** |
@@ -106,7 +106,7 @@ mindmap
 * **배경 & 목표**:
   - 에뮬레이터나 개발자 PC가 없는 테스터(팀원 1번, 5번 및 외부 5인 실사용자)가 Android 스마트폰에서 직접 설치할 수 있는 독립 APK를 **10월 30일 Code Freeze 시점에 단 1회 패키징**.
   - 4주차(10/31~11/7) CBT 기간 중 모든 JS/UI 핫픽스는 `eas update` 무선 OTA로 앱 재설치 없이 5초 내 실시간 배포.
-* **상세 작업 절차 ([`Member_D_Mobile_Infra_and_EAS_Manual.md`](file:///d:/코디세이/pet_walk_t01/docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md) 정합)**:
+* **상세 작업 절차 ([`Member_D_Mobile_Infra_and_EAS_Manual.md`](/pet_walk_t01/docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md) 정합)**:
   1. **EAS CLI 및 프로젝트 연동 (완료)**:
      ```bash
      cd frontend
@@ -138,28 +138,28 @@ mindmap
 
 ---
 
-#### 2️⃣ [T1-2 / US-G2] 완주 리포트 내 커뮤니티 코스 공유 (`POST /community/share`) 연계
+#### 2️⃣ [T1-2 / US-G2] 완주 리포트 내 커뮤니티 코스 공유 (`POST /community/share`) 연계 - [완료 (100%)]
 * **현황**:
-  - 서버 측 `POST /api/v1/community/share` (교차로 스냅 200m 공간 마스킹) 및 `GET /api/v1/community/feed` 구현 완료.
-  - 클라이언트 `CommunityTabScreen.tsx`에서 피드 조회 및 코스 불러오기는 구현되었으나, **[`WalkReportScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx)에서 완주 코스를 공유하는 UI 버튼과 모달이 누락되어 있음**.
-* **구현 설계**:
-  1. **신규 컴포넌트: `frontend/src/components/community/ShareCourseModal.tsx` 생성**:
+  - 서버 측 `POST /api/v1/community/share` (교차로 스냅 200m 공간 마스킹) 및 `GET /api/v1/community/feed`와 완벽 연동.
+  - [`frontend/src/screens/WalkReportScreen.tsx`](/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx)에 **[이웃과 안심 코스 공유하기]** 배너 배치 완료.
+* **구현 완료 내용**:
+  1. **신규 컴포넌트: `frontend/src/components/community/ShareCourseModal.tsx` 생성 완료 (192줄, SonarLint 규격 준수)**:
      - 코스 제목 입력 필드 (예: *"성산근린공원 폭신한 둘레길"*).
-     - 자택/출발지 보호 안내: *"안심하세요! 출발지와 도착지 200m 구간은 자동으로 마스킹되어 안전하게 큰길부터 공개됩니다."* 뱃지 표시.
-     - 반려견 크기 및 코스 한줄평 입력.
-  2. **[`WalkReportScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx) 하단 공유 버튼 배치**:
-     - `[이웃과 안심 코스 공유하기 👥]` 고대비 액션 버튼 추가.
-     - 버튼 탭 시 `ShareCourseModal` 오픈.
-  3. **[`communityApi.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/communityApi.ts) 연계**:
-     - `shareCommunityCourse(payload)` 호출 ➔ 성공 시 알림 후 `CommunityTabScreen`으로 자동 이동하여 신규 등록된 코스 하이라이트.
-  4. **단위 테스트**: `shareCourseFlow.test.ts` 작성 (200m 마스킹 확인 및 공유 성공 핸들링).
+     - 자택/출발지 보호 안내: *"자택 위치 200m 자동 보호 (출발·도착지 200m는 최근접 교차로로 자동 절단되어 집 위치가 노출되지 않아요)"* 뱃지 표시.
+     - 추천 대상 반려견 크기 칩 선택 (`모든 반려견`, `소형견 안심`, `노령견 추천`, `대형견 환영`).
+     - 추천 별점(1~5점) 및 이웃을 위한 산책 팁(선택) 입력 지원.
+  2. **`WalkReportScreen.tsx` 연계**:
+     - `onGoToCommunity?: () => void` 콜백 연동.
+     - 완주 기록(`gpsTrack`) 좌표를 `[lon, lat]` 튜플로 변환하여 `shareCommunityCourse` 전달.
+     - 공유 완료 알림창 후 `CommunityTabScreen` 피드로 즉시 자동 화면 전환.
+  3. **단위 테스트 통과**: [`frontend/src/services/shareCourseFlow.test.ts`](/pet_walk_t01/frontend/src/services/shareCourseFlow.test.ts) (3개 테스트 100% Pass).
 
 ---
 
 #### 3️⃣ [T1-3 / US-D2] 현장 위험 제보 등록 모달 & 동적 우회 API (`POST /reroute`) 연계
 * **현황**:
   - 서버 엔드포인트 `POST /api/v1/walk/reroute` (위험 링크 10배 페널티 3초 우회) 및 `POST /api/v1/hazards` 구비됨.
-  - 프론트 [`useWalkGuidance.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/hooks/useWalkGuidance.ts)에 `updateReroutePath()` 메서드가 선행 구현되어 있으나, 사용자가 현장에서 제보를 누르는 UI가 부재함.
+  - 프론트 [`useWalkGuidance.ts`](/pet_walk_t01/frontend/src/hooks/useWalkGuidance.ts)에 `updateReroutePath()` 메서드가 선행 구현되어 있으나, 사용자가 현장에서 제보를 누르는 UI가 부재함.
 * **구현 설계**:
   1. **신규 컴포넌트: `frontend/src/components/walk/HazardReportModal.tsx` 생성**:
      - 위험 유형 선택 칩: `[🚧 공사 구간]`, `[🪜 높은 단차/계단]`, `[⚠️ 깨진 유리/장애물]`, `[🐕 대형견 잦은 출몰]`.
@@ -192,13 +192,13 @@ mindmap
   // WalkRecord 인터페이스에 poopEvents?: PoopEvent[] 추가
   ```
 * **구현 설계**:
-  1. **[`DarkPocketScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/DarkPocketScreen.tsx) 및 산책 지도 화면에 배변 FAB 배치**:
+  1. **[`DarkPocketScreen.tsx`](/pet_walk_t01/frontend/src/screens/DarkPocketScreen.tsx) 및 산책 지도 화면에 배변 FAB 배치**:
      - 원터치 토글: 💩 (대변) / 💧 (소변).
      - 탭 시 `Haptics.notificationAsync(NotificationFeedbackType.Success)` 진동 발생.
      - HUD 하단에 *"배변 1회 기록됨"* 2초 토스트 표시.
-  2. **[`useWalkGuidance.ts`](file:///d:/코디세이/pet_walk_t01/frontend/src/hooks/useWalkGuidance.ts)에 이벤트 버퍼 추가**:
+  2. **[`useWalkGuidance.ts`](/pet_walk_t01/frontend/src/hooks/useWalkGuidance.ts)에 이벤트 버퍼 추가**:
      - `markPoopEvent(type)` 함수 구현 ➔ 현재 GPS 좌표와 결합해 세션 내 저장.
-  3. **[`WalkReportScreen.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx) 통계 반영**:
+  3. **[`WalkReportScreen.tsx`](/pet_walk_t01/frontend/src/screens/WalkReportScreen.tsx) 통계 반영**:
      - 핵심 통계 카드 하단에 배변 횟수 인포그래픽 뱃지 (`대변 1회 · 소변 2회`) 렌더링.
      - 산책 궤적 지도 상에 귀여운 배변 핀 아이콘 오버레이.
 
@@ -217,7 +217,7 @@ mindmap
 #### 6️⃣ [T2-3 / US-24] 다견 가구(Multi-Dog) 동시 산책 최적화 다중 선택 플래너
 * **목표**: 체급과 보행 속도가 다른 2마리 이상의 반려견을 함께 산책시킬 때 최약체 개체 기준으로 속도와 안전 조건을 자동 절충.
 * **구현 설계**:
-  1. **[`DogSelectionView.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/components/profile/DogSelectionView.tsx)** 확장:
+  1. **[`DogSelectionView.tsx`](/pet_walk_t01/frontend/src/components/profile/DogSelectionView.tsx)** 확장:
      - 단일 라디오 선택에서 다중 체크박스 선택 모드 토글 지원.
   2. **절충 파라미터 자동 연산**:
      - 보행 속도: 선택된 반려견 중 최솟값 ($V_{\min} = \min(speed_1, speed_2, \dots)$).
@@ -231,7 +231,7 @@ mindmap
 ---
 
 #### 7️⃣ [T3-1 / US-F1] 기상청 열 위험 지수 / 골든타임 카드 실서버 연동
-* **현황**: 백엔드 [`backend/main.py`](file:///d:/코디세이/pet_walk_t01/backend/main.py)에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록 상태.
+* **현황**: 백엔드 [`backend/main.py`](/pet_walk_t01/backend/main.py)에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록 상태.
 * **액션 계획**:
   - `src/types/weather.ts`에 `HeatRiskResponse` DTO 선언.
   - `weatherService.ts`를 구현하여 현재는 계산 수식 기반 Mock을 반환하고, 백엔드 3번 노희선 엔지니어의 엔드포인트 오픈 즉시 `fetchLiveHeatRisk()`로 스위치 전환.
@@ -254,7 +254,7 @@ mindmap
 ---
 
 #### 🔟 [T4-1] `WalkSettingsView.tsx` 250줄 이하 모듈화 리팩토링
-* **문제점**: [`frontend/src/components/walk/WalkSettingsView.tsx`](file:///d:/코디세이/pet_walk_t01/frontend/src/components/walk/WalkSettingsView.tsx)가 현재 **537줄**로 SonarLint 단일 파일 250줄 권장 가이드라인을 초과함.
+* **문제점**: [`frontend/src/components/walk/WalkSettingsView.tsx`](/pet_walk_t01/frontend/src/components/walk/WalkSettingsView.tsx)가 현재 **537줄**로 SonarLint 단일 파일 250줄 권장 가이드라인을 초과함.
 * **리팩토링 분리 구조**:
   - `DurationSliderCard.tsx` (약 110줄): 목표 시간 슬라이더 및 예상 거리 자동 환산 카드.
   - `WalkPresetChips.tsx` (약 120줄): 6대 선호 환경 칩(완만한 길, 그늘길, 계단 없음 등) 다중 선택 UI.
@@ -274,14 +274,14 @@ mindmap
 
 ## 📅 4. 주차별 상세 실행 일정 및 마일스톤 (Timeline)
 
-프로젝트 공식 마일스톤([`05_편안하개_프로젝트_수행계획서_일정.md`](file:///d:/코디세이/pet_walk_t01/docs/05_편안하개_프로젝트_수행계획서_일정.md))에 맞춘 멤버D의 4주간 주차별 상세 실행 로드맵입니다.
+프로젝트 공식 마일스톤([`05_편안하개_프로젝트_수행계획서_일정.md`](/pet_walk_t01/docs/05_편안하개_프로젝트_수행계획서_일정.md))에 맞춘 멤버D의 4주간 주차별 상세 실행 로드맵입니다.
 
 ```mermaid
 gantt
     title 멤버D(김승현) 남은 작업 주차별 실행 로드맵
     dateFormat  YYYY-MM-DD
     section 1주차 (10/12 ~ 10/18) 코어 완결
-    T1-2: US-G2 완주 리포트 내 코스 공유 연계         :active, a1, 2026-10-12, 2d
+    T1-2: US-G2 완주 리포트 내 코스 공유 연계         :done, a1, 2026-10-12, 2d
     T2-1: US-18 원터치 배변 마킹 FAB 개발            :a2, after a1, 2d
     T4-1: WalkSettingsView(537줄) 250줄 모듈화 리팩토링 :a3, after a2, 2d
     T3-1: US-F1 열 위험 지수 Mock 클라이언트 사전 구축 :a4, after a3, 1d

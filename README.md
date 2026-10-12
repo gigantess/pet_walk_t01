@@ -7,7 +7,7 @@
 [![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB.svg)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-0%20Errors%20(Clean)-3178C6.svg)](frontend)
 [![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-156%2F156%20Passed-brightgreen.svg)](backend/test_case)
-[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-78%2F78%20Passed-brightgreen.svg)](frontend)
+[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-81%2F81%20Passed-brightgreen.svg)](frontend)
 [![Code Quality](https://img.shields.io/badge/SonarLint-Line%20%E2%89%A4%20250%20(100%25)-success.svg)](frontend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -125,7 +125,7 @@ open mockup/index.html
 python -m pytest   # 루트에서 실행 시 backend/test_case 자동 감지
 # 또는: cd backend && pytest test_case/ -v
 
-# 2. 프론트엔드 Vitest 단위 테스트 (17개 파일, 78개 테스트 100% Pass)
+# 2. 프론트엔드 Vitest 단위 테스트 (18개 파일, 81개 테스트 100% Pass)
 cd frontend && npm test
 
 # 3. 프론트엔드 TypeScript 무결성 검증 (0 Errors)
@@ -409,7 +409,7 @@ backend/test_case/test_walk_tracking_and_feedback.py ..                      [10
 ```
 
 ```bash
-# 모바일 프론트엔드 Vitest 단위 테스트 실행 (17개 파일, 78개 테스트 100% Pass)
+# 모바일 프론트엔드 Vitest 단위 테스트 실행 (18개 파일, 81개 테스트 100% Pass)
 cd frontend && npm test
 ```
 
@@ -483,7 +483,7 @@ pet_walk_t01/
 │   ├── package.json                           # React Native, Expo, Vitest 의존성
 │   └── src/                                   # components, screens, services, theme, hooks, types
 └── .github/workflows/                         # GitHub Actions CI 파이프라인
-    └── ci.yml                                 # pytest(156개) + mobile vitest(78개) & tsc 자동 머지
+    └── ci.yml                                 # pytest(156개) + mobile vitest(81개) & tsc 자동 머지
 ```
 
 ---
@@ -563,7 +563,7 @@ python -m pytest
 # 방법 2) backend 폴더로 이동 후 실행
 cd backend && pytest test_case/ -v
 
-# 프론트엔드 Vitest 단위 테스트 (78개 테스트 100% Pass)
+# 프론트엔드 Vitest 단위 테스트 (81개 테스트 100% Pass)
 cd frontend && npm test
 
 # 프론트엔드 TypeScript 무결성 검증 (0 Errors)

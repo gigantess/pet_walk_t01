@@ -84,7 +84,7 @@ npm run export:android
 
 ### 3.5 단위 테스트 및 타입 검사
 ```bash
-# Vitest 단위 테스트 78개 실행 (100% Pass)
+# Vitest 단위 테스트 81개 실행 (100% Pass)
 npm test
 
 # TypeScript 정적 타입 검사 (0 Errors)
@@ -100,6 +100,7 @@ npm run check
 - **EAS Project**: `@pettrail/petwalk-production` (`52ded2f2-d6e7-420f-9c9f-3d999f262454`)
 - **Package ID**: `com.petwalk.app`
 - **배포 대시보드**: [Expo 대시보드 바로가기](https://expo.dev/accounts/pettrail/projects/petwalk-production)
+- **최신 Standalone APK**: [APK 다운로드 링크 (Build ID: cbf76e84...)](https://expo.dev/artifacts/eas/N6VL_NxLIfMFroFS-Kmul-JtlDUP1bVw4H3riyr1OHs.apk)
 
 ### 4.1 테스터용 독립 실행형 APK 빌드 (EAS Build)
 에뮬레이터가 없는 팀원 및 5인 필드 테스터용 Standalone `.apk` 생성:

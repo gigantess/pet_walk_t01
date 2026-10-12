@@ -85,8 +85,8 @@ pie title 편안하개 MVP 스토리 포인트 달성 현황 (총 62 pt)
 |:---:|---|:---:|---|---|:---:|---|
 | **US-F1** | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | 중 / 3 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 지면열 수지식 연산 및 DTO 단위 테스트 완료<br>• **잔여 과제: `backend/main.py`에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록** | **대기 중 (40%)** | `backend/test_case/test_thermal_and_parking.py` (테스트 통과) |
 | **US-G1** | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | 하 / 2 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 반경 1.5km 주차장 필터링 DTO 테스트 완료<br>• **잔여 과제: 주차장 목록 조회 API 및 플래너 토글 UI 미개방** | **대기 중 (40%)** | `backend/test_case/test_thermal_and_parking.py` (테스트 통과) |
-| **US-G2** | 간편 이메일 가입 및 코스 공유 (200m 마스킹) | 중 / 4 pt | 3번 노희선(서버)<br>2번 전황진(데이터)<br>5번 김정님(UI) | • 최근접 교차로(Node) 스냅 200m 공간 절단 마스킹 완벽 구현<br>• Supabase DB 영속 연동 및 커뮤니티 피드 조회/상세/원터치 산책 시작 완료<br>• 잔여: 완주 리포트 내 공유 생성 모달 연결 | **완료 (90%)** | `backend/agent/spatial_masking.py`, `backend/agent/supabase_repository.py`, `CommunityTabScreen.tsx` |
-| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 / 5 pt | 5인 전원 (Lead: 김정님/김승현) | • Expo SDK 57 및 EAS Build(`preview` APK) 클라우드 빌드 가동 완료<br>• `preview` 채널 무선 OTA 파이프라인 및 Web/Android 번들 빌드 100% 완료<br>• 잔여: 10/31 5인 필드 테스터 실기기 배포 및 피드백 수집 | **완료 (90%)** | EAS Cloud APK 빌드 가동 (`cbf76e84...`), Vitest 78건 통과 |
+| **US-G2** | 간편 이메일 가입 및 코스 공유 (200m 마스킹) | 중 / 4 pt | 3번 노희선(서버)<br>2번 전황진(데이터)<br>4번 김승현(앱) | • 최근접 교차로(Node) 스냅 200m 공간 절단 마스킹 완벽 구현<br>• Supabase DB 영속 연동 및 커뮤니티 피드 조회/상세/원터치 산책 시작 완료<br>• 완주 리포트(`WalkReportScreen.tsx`) 내 `ShareCourseModal` 연동 및 `POST /api/v1/community/share` 자동 등록 / 피드 즉시 이동 플로우 100% 완료 | **완료 (100%)** | `backend/agent/spatial_masking.py`, `ShareCourseModal.tsx`, `WalkReportScreen.tsx`, `shareCourseFlow.test.ts` (3 tests) |
+| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 / 5 pt | 5인 전원 (Lead: 김정님/김승현) | • Expo SDK 57 및 EAS Build(`preview` APK) 클라우드 빌드 완료 (APK URL 확보)<br>• `preview` 채널 무선 OTA 파이프라인 및 Web/Android 번들 빌드 100% 완료<br>• 잔여: 10/31 5인 필드 테스터 실기기 배포 및 피드백 수집 | **완료 (95%)** | EAS Standalone APK 빌드 완료 (`cbf76e84...`), Vitest 81건 통과 |
 
 ---
 
@@ -166,14 +166,14 @@ timeline
     최종 (11/08) : 최종 산출물 및 GitHub 코드베이스 제출
 ```
 
-### 5.1 즉시 해결해야 할 3대 잔여 과제
+### 5.1 핵심 잔여 과제 및 완료 현황
 1. **[백엔드] 미개방 2대 REST API 엔드포인트 신설 (3번 노희선)**:
    - `GET /api/v1/weather/heat-risk`: 시간대별 열 위험 지수 및 추천 골든타임 반환 API 등록.
    - `GET /api/v1/parking/nearby`: 공영주차장 P&R 거점 연계 탐색 API 등록.
-2. **[프론트엔드] 완주 리포트 내 코스 커뮤니티 공유 UI 연계 (4번 김승현)**:
-   - `WalkReportScreen.tsx`에서 완주한 코스를 `POST /api/v1/community/share`로 등록하는 팝업 및 피드 자동 이동 플로우 연결.
-3. **[배포 준비] EAS Build 테스터용 독립 APK 패키징 사전 검증 (4번 김승현, 5번 김정님)**:
-   - `frontend/eas.json`의 `preview` 프로필을 검증하여 10월 30일 마일스톤에 차질 없는 패키징 준비.
+2. **[프론트엔드] 완주 리포트 내 코스 커뮤니티 공유 UI 연계 (4번 김승현) - [완료 (100%)]**:
+   - `WalkReportScreen.tsx`에서 완주한 코스를 `POST /api/v1/community/share`로 등록하는 `ShareCourseModal` 연동 및 200m 공간 보호 마스킹 고지, 피드 자동 이동 플로우 완결 (`shareCourseFlow.test.ts` 통과).
+3. **[배포 준비] EAS Build 테스터용 독립 APK 패키징 사전 검증 (4번 김승현, 5번 김정님) - [완료 (100%)]**:
+   - EAS Cloud Build 완료 (`Build ID: cbf76e84-1716-40b5-8e23-e5aba630569d`, [APK 다운로드 링크](https://expo.dev/artifacts/eas/N6VL_NxLIfMFroFS-Kmul-JtlDUP1bVw4H3riyr1OHs.apk)). 10월 31일 5인 실기기 필드 테스트 준비 완료.
 
 ---
 

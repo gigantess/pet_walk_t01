@@ -235,6 +235,7 @@ export default function App() {
           <WalkReportScreen
             record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
             onSaveFeedback={handleSaveReportFeedback} onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
+            onGoToCommunity={() => { setSubScreen('main'); setActiveTab('커뮤니티'); }}
           />
         )}
         {subScreen === 'dog_selection' && (
