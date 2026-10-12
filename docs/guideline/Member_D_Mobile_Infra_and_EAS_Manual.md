@@ -12,18 +12,20 @@ AI 도구는 브라우저를 통한 계정 가입 및 터미널 2차 인증(2FA)
 ### 2.1 Expo 계정 및 Organization 설정
 1. **사이트 접속**: [expo.dev](https://expo.dev/) 접속 및 회원가입 (`petwalk-dev`).
 2. **Organization 생성**:
-   - 팀 단위 관리를 위해 `petwalk-team` Organization 생성.
-   - 프로젝트명: `petwalk-mobile`
+   - 팀 단위 관리를 위해 `pettrail` 계정/조직 사용.
+   - 프로젝트명(Slug): `petwalk-production`
 3. **EAS CLI 설치 및 로그인 (로컬 터미널)**:
    ```bash
    npm install -g eas-cli
    eas login
    # 브라우저 또는 터미널 프롬프트에서 아이디/비밀번호 수동 입력
    ```
-4. **프로젝트 연동 (초기화)**:
+4. **프로젝트 연동 (연동 완료)**:
    ```bash
    cd frontend
-   eas init --id <자동생성_PROJECT_ID>
+   # Project ID: 52ded2f2-d6e7-420f-9c9f-3d999f262454
+   # Full Name: @pettrail/petwalk-production
+   eas project:info
    ```
 
 ---
@@ -82,10 +84,14 @@ keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -sto
 ### 5.1 사내 테스트용 독립 APK 빌드 (10월 30일 Code Freeze 1회 패키징)
 에뮬레이터가 없는 팀원(Member A, E) 및 외부 5인 테스터 배포를 위한 Standalone APK 파일 생성:
 ```bash
-# eas.json의 preview 프로파일 빌드 (APK 파일 생성)
-eas build -p android --profile preview
+# frontend 디렉토리에서 실행 (preview 프로파일 빌드)
+npm run build:apk
+# 또는: eas build -p android --profile preview
 
-# 빌드 완료 후 콘솔에 출력되는 다운로드 URL을 슬랙 팀 채널에 공유
+# 빌드 진행 상황 및 결과 확인
+npx eas-cli build:view
+# 대시보드 URL: https://expo.dev/accounts/pettrail/projects/petwalk-production
+# 빌드 완료 후 생성된 다운로드 URL(또는 QR코드)을 팀 채널에 공유
 # 팀원 스마트폰에서 직접 APK 다운로드 및 "출처를 알 수 없는 앱 설치" 허용 후 설치
 ```
 

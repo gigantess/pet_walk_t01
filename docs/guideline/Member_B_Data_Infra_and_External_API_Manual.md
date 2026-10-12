@@ -47,7 +47,7 @@
    - 원본 EPSG:5186 (Korea 2000 / Central Belt 2010)
    - 표준 서비스 좌표계: **EPSG:4326 (WGS84)** 또는 **EPSG:3857 (Web Mercator)**로 변환.
 4. 산출물 서버 저장:
-   - Member C의 백엔드 서버 저장소(`agent/surface_slope_evaluator.py` 연계 경로)로 안전 전송.
+   - Member C의 백엔드 서버 저장소(`backend/agent/surface_slope_evaluator.py` 연계 경로)로 안전 전송.
 
 ---
 
@@ -103,4 +103,4 @@ docker-compose up -d
    - 적외선 표면 온도계(Infrared Thermometer)를 지참하여 한낮(12:00~15:00) 아스팔트, 콘크리트, 천연 잔디, 흙길 표면 온도를 직접 측정.
    - 모델 수지식 예측값과 실측값 간의 오차(RMSE)가 3.0℃ 이내로 수렴하는지 캘리브레이션 계수 수동 튜닝.
 2. **교차로(Node) 스냅 200m 공간 마스킹 감사**:
-   - [`agent/spatial_masking.py`](file:///d:/코디세이/pet_walk_t01/agent/spatial_masking.py)의 절단 알고리즘이 출발/도착지 200m 구간을 최근접 교차로 Node로 정확히 스냅하여 역추적 공격(Trajectory Inference Attack)을 원천 방어하는지 테스트 케이스 수동 감사.
+   - [`backend/agent/spatial_masking.py`](/pet_walk_t01/backend/agent/spatial_masking.py)의 절단 알고리즘이 출발/도착지 200m 구간을 최근접 교차로 Node로 정확히 스냅하여 역추적 공격(Trajectory Inference Attack)을 원천 방어하는지 테스트 케이스 수동 감사.

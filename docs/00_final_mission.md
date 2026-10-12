@@ -209,6 +209,6 @@ PawTrail은 위 파이널 미션의 모든 필수 요건과 제약사항을 **10
 * **팀 구성**: 5인 전원 전문 R&R 분담 완료 (Member A~E, 총 18개 스토리, 68개 Task, 77 pt, 372 Hours).
 * **실사용자 테스트**: 반려견 견주 5인 이상 대상 현장 필드 CBT 계획 수립 (US-H1).
 * **서비스 배포**: React Native Expo (Android Foreground Service) + EAS Build (1회 APK 배포) + EAS Update 무선 OTA 무중단 핫픽스 체계 완비.
-* **TDD 도메인 명세 테스트**: 74개 도메인 명세 테스트(`test_case/`) 100% 통과 완료.
+* **TDD 도메인 명세 테스트**: 156개 도메인 명세 테스트(`backend/test_case/`) 100% 통과 완료.
 * **AI 윤리 및 웰니스 원칙**: 비의료적 안심 참고 정보 고지 및 앱 전역 질병 단어 배제(폭신한 길, 관절 안심 케어 순화).
 

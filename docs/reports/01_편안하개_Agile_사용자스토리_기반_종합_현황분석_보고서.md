@@ -8,7 +8,7 @@
 > - [`docs/02_편안하개_Team_building.md`](file:///d:/코디세이/pet_walk_t01/docs/02_편안하개_Team_building.md) (팀 R&R 및 엔지니어링 전략)  
 > - [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](file:///d:/코디세이/pet_walk_t01/docs/05_편안하개_프로젝트_수행계획서_일정.md) (수행 일정 및 마일스톤)  
 > - [`docs/implementation_plan/02.server_implementation_status_and_frontend_roadmap.md`](file:///d:/코디세이/pet_walk_t01/docs/implementation_plan/02.server_implementation_status_and_frontend_roadmap.md) (서버 구현 분석 및 액션 로드맵)  
-> - 프로젝트 전체 코드베이스 ([`main.py`](file:///d:/코디세이/pet_walk_t01/main.py), [`agent/`](file:///d:/코디세이/pet_walk_t01/agent), [`frontend/`](file:///d:/코디세이/pet_walk_t01/frontend), [`test_case/`](file:///d:/코디세이/pet_walk_t01/test_case))
+> - 프로젝트 전체 코드베이스 ([`backend/main.py`](file:///d:/코디세이/pet_walk_t01/backend/main.py), [`backend/agent/`](file:///d:/코디세이/pet_walk_t01/backend/agent), [`frontend/`](file:///d:/코디세이/pet_walk_t01/frontend), [`backend/test_case/`](file:///d:/코디세이/pet_walk_t01/backend/test_case))
 
 ---
 
@@ -44,9 +44,9 @@ pie title 편안하개 MVP 스토리 포인트 달성 현황 (총 62 pt)
 
 | Story ID | 스토리 명칭 | 난이도 / pt | 담당자 | DoD 및 인수 조건 충족 현황 | 상태 | 검증 근거 (Code / Test) |
 |:---:|---|:---:|---|---|:---:|---|
-| **US-A1** | 대화형 자연어 산책 요청 및 조건 구조화 | 중 / 5 pt | 1번 조현정(팀장) | • LangGraph ReAct Agent 의도 추출 및 Pydantic Strict 스키마 변환 85% 이상 검증 통과<br>• 클라이언트 반려견 프로필 무상태(Stateless) 맥락 주입 완료 | **완료 (95%)** | `agent/walk_planning_agent.py`, `test_langgraph_walk_agent.py` |
+| **US-A1** | 대화형 자연어 산책 요청 및 조건 구조화 | 중 / 5 pt | 1번 조현정(팀장) | • LangGraph ReAct Agent 의도 추출 및 Pydantic Strict 스키마 변환 85% 이상 검증 통과<br>• 클라이언트 반려견 프로필 무상태(Stateless) 맥락 주입 완료 | **완료 (95%)** | `backend/agent/walk_planning_agent.py`, `backend/test_case/test_langgraph_walk_agent.py` |
 | **US-A2** | 반려견 프로필 로컬 등록 및 JSON 백업/복원 | 하 / 3 pt | 5번 김정님(UI)<br>4번 김승현(앱) | • 서버 미전송 Local-First (`AsyncStorage`) 저장 완료<br>• 프로필 JSON 파일 내보내기/가져오기 백업 완료<br>• 질병 용어 배제 및 관절 안심 케어(0~2레벨) 순화 카피라이팅 적용 | **완료 (100%)** | `frontend/src/services/backupService.ts`, `backupService.test.ts` (4 tests) |
-| **US-A3** | 목표 산책 시간/거리 기반 환산 (속도/슬라이더) | 중 / 3 pt | 1번 조현정(팀장)<br>5번 김정님(UI) | • 10~90분 슬라이더 인터랙션 및 목표 보행 거리 자동 환산<br>• 소형/중형/대형/노령견 속도 모델 기반 $\pm 15\%$ 오차 수렴 투기적 병렬 루프 보정 완료 | **완료 (100%)** | `agent/loop_route_planner.py`, `frontend/src/services/walkSettings.ts` |
+| **US-A3** | 목표 산책 시간/거리 기반 환산 (속도/슬라이더) | 중 / 3 pt | 1번 조현정(팀장)<br>5번 김정님(UI) | • 10~90분 슬라이더 인터랙션 및 목표 보행 거리 자동 환산<br>• 소형/중형/대형/노령견 속도 모델 기반 $\pm 15\%$ 오차 수렴 투기적 병렬 루프 보정 완료 | **완료 (100%)** | `backend/agent/loop_route_planner.py`, `frontend/src/services/walkSettings.ts` |
 
 ---
 
@@ -54,9 +54,9 @@ pie title 편안하개 MVP 스토리 포인트 달성 현황 (총 62 pt)
 
 | Story ID | 스토리 명칭 | 난이도 / pt | 담당자 | DoD 및 인수 조건 충족 현황 | 상태 | 검증 근거 (Code / Test) |
 |:---:|---|:---:|---|---|:---:|---|
-| **US-B1** | 무장애길(경사 15도 미만·무계단) 안심 경로 도출 | 상 / 8 pt | 3번 노희선(서버)<br>2번 전황진(데이터) | • OSM `highway=steps` 하드 제약 배제<br>• DEM 고도차 기반 15도 미만 완만 보행로 평가 및 3대 등급(safe/normal/caution) 분기 생성 완료<br>• 건물 관통 방지(Building Avoidance) 공간 교차 검증 통과 | **완료 (95%)** | `agent/surface_slope_evaluator.py`, `agent/building_geometry.py`, `test_building_avoidance.py` |
-| **US-B2** | 기상·노면 연동 지면온도 기반 안심 경로 도출 | 중상 / 5 pt | 3번 노희선(서버)<br>2번 전황진(데이터) | • 외기온/일사량/노면재질 연동 지면온도 수지식 비용 함수 검증 완료<br>• 지면온도 35℃ 초과 페널티 가중치 및 저온 안심 노면 우선 통과 검증 완료<br>• 코스 카드에 지면온도/체감온도 안전 지표 표시 완료 | **완료 (85%)** | `test_surface_cost_model.py`, `test_thermal_and_parking.py` |
-| **US-B3** | Routing API Adapter 연동 및 후보 경로 다요소 스코어링 | 상 / 8 pt | 3번 노희선(서버)<br>1번 조현정(팀장) | • OSRM Foot Routing Adapter 연동 및 3개 대안 루프 생성<br>• 10분 TTL 캐시 및 서킷 브레이커로 $\le 1.5$초 응답 보장<br>• 다요소 100점 만점 채점기 최고 득점 코스 및 3개 후보 반환 완료 | **완료 (100%)** | `agent/loop_route_planner.py`, `agent/road_network_routes.py`, `test_walk_plan_latency.py` |
+| **US-B1** | 무장애길(경사 15도 미만·무계단) 안심 경로 도출 | 상 / 8 pt | 3번 노희선(서버)<br>2번 전황진(데이터) | • OSM `highway=steps` 하드 제약 배제<br>• DEM 고도차 기반 15도 미만 완만 보행로 평가 및 3대 등급(safe/normal/caution) 분기 생성 완료<br>• 건물 관통 방지(Building Avoidance) 공간 교차 검증 통과 | **완료 (95%)** | `backend/agent/surface_slope_evaluator.py`, `backend/agent/building_geometry.py`, `backend/test_case/test_building_avoidance.py` |
+| **US-B2** | 기상·노면 연동 지면온도 기반 안심 경로 도출 | 중상 / 5 pt | 3번 노희선(서버)<br>2번 전황진(데이터) | • 외기온/일사량/노면재질 연동 지면온도 수지식 비용 함수 검증 완료<br>• 지면온도 35℃ 초과 페널티 가중치 및 저온 안심 노면 우선 통과 검증 완료<br>• 코스 카드에 지면온도/체감온도 안전 지표 표시 완료 | **완료 (85%)** | `backend/test_case/test_surface_cost_model.py`, `backend/test_case/test_thermal_and_parking.py` |
+| **US-B3** | Routing API Adapter 연동 및 후보 경로 다요소 스코어링 | 상 / 8 pt | 3번 노희선(서버)<br>1번 조현정(팀장) | • OSRM Foot Routing Adapter 연동 및 3개 대안 루프 생성<br>• 10분 TTL 캐시 및 서킷 브레이커로 $\le 1.5$초 응답 보장<br>• 다요소 100점 만점 채점기 최고 득점 코스 및 3개 후보 반환 완료 | **완료 (100%)** | `backend/agent/loop_route_planner.py`, `backend/agent/road_network_routes.py`, `backend/test_case/test_walk_plan_latency.py` |
 
 ---
 
@@ -75,7 +75,7 @@ pie title 편안하개 MVP 스토리 포인트 달성 현황 (총 62 pt)
 |:---:|---|:---:|---|---|:---:|---|
 | **US-E1** | 백그라운드 GPS 위치 추적 및 실산책 경로 로컬 저장 | 중상 / 5 pt | 4번 김승현(앱) | • Privacy-First 원칙: GPS 상세 좌표 서버 미전송, `@편안하개:walk_history` 100회 FIFO 영구 저장<br>• 완주 상세 화면에서 계획 경로와 실제 궤적 오버레이 표시 | **완료 (100%)** | `frontend/src/services/locationService.ts`, `walkReport.ts`, `walkReport.test.ts` |
 | **US-E2** | 산책 종료 후 보행 체감 피드백 수집 및 로컬 통계 | 하 / 3 pt | 5번 김정님(UI)<br>4번 김승현(앱) | • 산책 완료 인포그래픽 요약 카드 (총 거리, 시간, 완만길 달성률)<br>• 3초 원터치 피드백 태그(완만/그늘/발편함) 및 5점 만족도 슬라이더 | **완료 (100%)** | `frontend/src/screens/WalkReportScreen.tsx`, `QuickFeedbackModal.tsx` |
-| **US-E3** | 로컬 누적 피드백 기반 무상태(Stateless) AI 추천 보정 | 중 / 3 pt | 1번 조현정(팀장)<br>4번 김승현(앱) | • 최근 3회 피드백 요약 페이로드를 서버 요청에 무상태 주입<br>• 에이전트 최대 허용 경사도 자동 보정(완만 모드 vs 활력 모드 양방향 연동) | **완료 (100%)** | `agent/walk_planning_agent.py`, `frontend/src/services/feedbackContext.ts` |
+| **US-E3** | 로컬 누적 피드백 기반 무상태(Stateless) AI 추천 보정 | 중 / 3 pt | 1번 조현정(팀장)<br>4번 김승현(앱) | • 최근 3회 피드백 요약 페이로드를 서버 요청에 무상태 주입<br>• 에이전트 최대 허용 경사도 자동 보정(완만 모드 vs 활력 모드 양방향 연동) | **완료 (100%)** | `backend/agent/walk_planning_agent.py`, `frontend/src/services/feedbackContext.ts` |
 
 ---
 
@@ -83,10 +83,10 @@ pie title 편안하개 MVP 스토리 포인트 달성 현황 (총 62 pt)
 
 | Story ID | 스토리 명칭 | 난이도 / pt | 담당자 | DoD 및 인수 조건 충족 현황 | 상태 | 검증 근거 (Code / Test) |
 |:---:|---|:---:|---|---|:---:|---|
-| **US-F1** | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | 중 / 3 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 지면열 수지식 연산 및 DTO 단위 테스트 완료<br>• **잔여 과제: `main.py`에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록** | **대기 중 (40%)** | `test_thermal_and_parking.py` (테스트 통과) |
-| **US-G1** | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | 하 / 2 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 반경 1.5km 주차장 필터링 DTO 테스트 완료<br>• **잔여 과제: 주차장 목록 조회 API 및 플래너 토글 UI 미개방** | **대기 중 (40%)** | `test_thermal_and_parking.py` (테스트 통과) |
-| **US-G2** | 간편 이메일 가입 및 코스 공유 (200m 마스킹) | 중 / 4 pt | 3번 노희선(서버)<br>2번 전황진(데이터)<br>5번 김정님(UI) | • 최근접 교차로(Node) 스냅 200m 공간 절단 마스킹 완벽 구현<br>• Supabase DB 영속 연동 및 커뮤니티 피드 조회/상세/원터치 산책 시작 완료<br>• 잔여: 완주 리포트 내 공유 생성 모달 연결 | **완료 (90%)** | `agent/spatial_masking.py`, `agent/supabase_repository.py`, `CommunityTabScreen.tsx` |
-| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 / 5 pt | 5인 전원 (Lead: 김정님/김승현) | • Expo SDK 57 및 `eas.json` 프로필 구성 준비 완료<br>• 10월 30일 마일스톤에 맞추어 독립 APK 1회 패키징 및 OTA 가동 예정 | **대기 중 (20%)** | Expo SDK 57 세팅 완료 |
+| **US-F1** | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | 중 / 3 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 지면열 수지식 연산 및 DTO 단위 테스트 완료<br>• **잔여 과제: `backend/main.py`에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록** | **대기 중 (40%)** | `backend/test_case/test_thermal_and_parking.py` (테스트 통과) |
+| **US-G1** | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | 하 / 2 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 반경 1.5km 주차장 필터링 DTO 테스트 완료<br>• **잔여 과제: 주차장 목록 조회 API 및 플래너 토글 UI 미개방** | **대기 중 (40%)** | `backend/test_case/test_thermal_and_parking.py` (테스트 통과) |
+| **US-G2** | 간편 이메일 가입 및 코스 공유 (200m 마스킹) | 중 / 4 pt | 3번 노희선(서버)<br>2번 전황진(데이터)<br>4번 김승현(앱) | • 최근접 교차로(Node) 스냅 200m 공간 절단 마스킹 완벽 구현<br>• Supabase DB 영속 연동 및 커뮤니티 피드 조회/상세/원터치 산책 시작 완료<br>• 완주 리포트(`WalkReportScreen.tsx`) 내 `ShareCourseModal` 연동 및 `POST /api/v1/community/share` 자동 등록 / 피드 즉시 이동 플로우 100% 완료 | **완료 (100%)** | `backend/agent/spatial_masking.py`, `ShareCourseModal.tsx`, `WalkReportScreen.tsx`, `shareCourseFlow.test.ts` (3 tests) |
+| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 / 5 pt | 5인 전원 (Lead: 김정님/김승현) | • Expo SDK 57 및 EAS Build(`preview` APK) 클라우드 빌드 완료 (APK URL 확보)<br>• `preview` 채널 무선 OTA 파이프라인 및 Web/Android 번들 빌드 100% 완료<br>• 잔여: 10/31 5인 필드 테스터 실기기 배포 및 피드백 수집 | **완료 (95%)** | EAS Standalone APK 빌드 완료 (`cbf76e84...`), Vitest 81건 통과 |
 
 ---
 
@@ -125,7 +125,7 @@ flowchart LR
 ```
 
 ### 3.1 세부 테스트 결과표
-1. **Python 백엔드 단위 테스트 (`pytest test_case/`)**:
+1. **Python 백엔드 단위 테스트 (`cd backend && pytest test_case/`)**:
    - 총 **156개 테스트 케이스 100% Pass** (소요 시간 6.57s).
    - 건물 관통 방지 회귀 테스트 (`test_building_avoidance.py`): 100% 통과.
    - 응답 지연 시간 $\le 1.5$초 검증 (`test_walk_plan_latency.py`): 100% 통과.
@@ -148,8 +148,8 @@ flowchart LR
 |:---:|---|---|:---:|:---:|---|
 | **1번** | **조현정 (팀장)** | **프로젝트 총괄·AI 기능 설계**<br>(PM & AI Agent Lead) | 55 h (18.5%) | **95% 달성** | • LangGraph ReAct Walk Planning Agent 코어 수립<br>• Pydantic Strict 스키마 기반 무상태 맥락 주입<br>• 체급별 속도 상수 및 $\pm 15\%$ 수렴 웨이포인트 보정 총괄 |
 | **2번** | **전황진 (데이터)** | **지도·공간데이터·AI 분석**<br>(AI & Spatial Data Engineer) | 53 h (17.8%) | **85% 달성** | • DEM 고도차 기반 15도 미만 무장애 보행망 분석<br>• 기상청 단기예보 지면열 추정 수지식 모델 수립<br>• 교차로(Node) 스냅 200m 공간 마스킹 알고리즘 완성 |
-| **3번** | **노희선 (서버)** | **서버·맞춤 경로 계산**<br>(Backend & Spatial Routing Lead) | 74 h (24.8%) | **88% 달성** | • FastAPI v1 REST API 코어 (`main.py`) 구축<br>• OSRM Foot Routing 투기적 병렬 1.5초 캐시 아키텍처 완성<br>• Supabase PostgreSQL 영속 연동 + 인메모리 듀얼 모드 구축<br>• 건물 관통 방지 및 위험 우회 재탐색 (`/reroute`) 연동 |
-| **4번** | **김승현 (앱)** | **모바일 앱·GPS·음성 안내**<br>(Frontend & Mobile App Lead) | 78 h (26.2%) | **96% 달성** | • React Native (Expo SDK 57) + Expo Web 통합 개발 환경 완결<br>• 백그라운드 GPS & `expo-speech` 30m 전 음성 안내 엔진 개발<br>• Local-First 스토리지 (`@편안하개:*`) 및 100회 산책 기록 영구 보존<br>• Phase 2 선행 스토리(US-21, 23, 29) 100% 조기 구현 |
+| **3번** | **노희선 (서버)** | **서버·맞춤 경로 계산**<br>(Backend & Spatial Routing Lead) | 74 h (24.8%) | **88% 달성** | • FastAPI v1 REST API 코어 (`backend/main.py`) 구축<br>• OSRM Foot Routing 투기적 병렬 1.5초 캐시 아키텍처 완성<br>• Supabase PostgreSQL 영속 연동 + 인메모리 듀얼 모드 구축<br>• 건물 관통 방지 및 위험 우회 재탐색 (`/reroute`) 연동 |
+| **4번** | **김승현 (앱)** | **모바일 앱·GPS·음성 안내**<br>(Frontend & Mobile App Lead) | 78 h (26.2%) | **100% 달성** | • React Native (Expo SDK 57) + Expo Web 통합 개발 환경 완결<br>• 백그라운드 GPS & `expo-speech` 30m 전 음성 안내 엔진 개발<br>• Local-First 스토리지 (`@편안하개:*`) 및 100회 산책 기록 영구 보존<br>• Phase 2 선행 스토리(US-21, 23, 29) 조기 구현<br>• EAS Cloud Standalone APK 빌드 가동 및 무선 OTA 파이프라인 완성 |
 | **5번** | **김정님 (UI)** | **화면 구현·통합 테스트**<br>(UI/UX & Experience Lead) | 38 h (12.7%) | **90% 달성** | • 편안하개 디자인 시스템 (`src/theme/tokens.ts`) 에메랄드/3색 구축<br>• 앱 전역 질병 용어 100% 배제 긍정적 웰니스 카피라이팅 정립<br>• 6대 핵심 화면(플래너, 프리뷰, 다크포켓, 리포트, 커뮤니티, 프로필) 완성<br>• 5인 대면 CBT(10/31~11/7) 계획 및 사용성 평가 총괄 |
 
 ---
@@ -166,14 +166,14 @@ timeline
     최종 (11/08) : 최종 산출물 및 GitHub 코드베이스 제출
 ```
 
-### 5.1 즉시 해결해야 할 3대 잔여 과제
+### 5.1 핵심 잔여 과제 및 완료 현황
 1. **[백엔드] 미개방 2대 REST API 엔드포인트 신설 (3번 노희선)**:
    - `GET /api/v1/weather/heat-risk`: 시간대별 열 위험 지수 및 추천 골든타임 반환 API 등록.
    - `GET /api/v1/parking/nearby`: 공영주차장 P&R 거점 연계 탐색 API 등록.
-2. **[프론트엔드] 완주 리포트 내 코스 커뮤니티 공유 UI 연계 (4번 김승현)**:
-   - `WalkReportScreen.tsx`에서 완주한 코스를 `POST /api/v1/community/share`로 등록하는 팝업 및 피드 자동 이동 플로우 연결.
-3. **[배포 준비] EAS Build 테스터용 독립 APK 패키징 사전 검증 (4번 김승현, 5번 김정님)**:
-   - `frontend/eas.json`의 `preview` 프로필을 검증하여 10월 30일 마일스톤에 차질 없는 패키징 준비.
+2. **[프론트엔드] 완주 리포트 내 코스 커뮤니티 공유 UI 연계 (4번 김승현) - [완료 (100%)]**:
+   - `WalkReportScreen.tsx`에서 완주한 코스를 `POST /api/v1/community/share`로 등록하는 `ShareCourseModal` 연동 및 200m 공간 보호 마스킹 고지, 피드 자동 이동 플로우 완결 (`shareCourseFlow.test.ts` 통과).
+3. **[배포 준비] EAS Build 테스터용 독립 APK 패키징 사전 검증 (4번 김승현, 5번 김정님) - [완료 (100%)]**:
+   - EAS Cloud Build 완료 (`Build ID: cbf76e84-1716-40b5-8e23-e5aba630569d`, [APK 다운로드 링크](https://expo.dev/artifacts/eas/N6VL_NxLIfMFroFS-Kmul-JtlDUP1bVw4H3riyr1OHs.apk)). 10월 31일 5인 실기기 필드 테스트 준비 완료.
 
 ---
 

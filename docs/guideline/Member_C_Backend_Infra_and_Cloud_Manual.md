@@ -30,7 +30,7 @@ PostGIS는 대시보드에서 직접 활성화해야 합니다.
    ```
 
 ### 2.3 Row Level Security (RLS) 및 커뮤니티 테이블 정책 수동 적용
-SQL Editor에서 [`docs/sql/supabase_community_schema.sql`](file:///d:/코디세이/pet_walk_t01/docs/sql/supabase_community_schema.sql)을 실행하여 테이블 생성 및 RLS 정책을 수동 적용합니다:
+SQL Editor에서 [`docs/sql/supabase_community_schema.sql`](/pet_walk_t01/docs/sql/supabase_community_schema.sql)을 실행하여 테이블 생성 및 RLS 정책을 수동 적용합니다:
 ```sql
 -- community_courses 및 hazard_reports 테이블 생성
 CREATE TABLE IF NOT EXISTS public.community_courses (
@@ -59,23 +59,23 @@ CREATE POLICY "Allow public insert" ON public.community_courses FOR INSERT WITH 
 보행자 및 반려동물 보행 네트워크 계산을 위한 OSRM Foot Routing 및 ORS 어댑터를 관리합니다.
 
 ### 3.1 OSRM Foot Routing 및 투기적 병렬 보정
-1. [`agent/road_network_routes.py`](file:///d:/코디세이/pet_walk_t01/agent/road_network_routes.py) 및 [`agent/loop_route_planner.py`](file:///d:/코디세이/pet_walk_t01/agent/loop_route_planner.py)를 통해 보행 도로망 경로를 연산.
+1. [`backend/agent/road_network_routes.py`](/pet_walk_t01/backend/agent/road_network_routes.py) 및 [`backend/agent/loop_route_planner.py`](/pet_walk_t01/backend/agent/loop_route_planner.py)를 통해 보행 도로망 경로를 연산.
 2. **1.5초 응답 보장 아키텍처**:
    - 1회 OSRM 질의 타임아웃 1.2초 상한.
    - 첫 라운드에 3개 배율(0.8, 1.0, 1.25)을 동시에 질의하는 투기적 병렬(Speculative Parallel) 쿼리 적용.
    - 10분 TTL 캐시 레이어 및 서킷 브레이커 탑재.
 3. **오프라인 무결성 도로망 폴백**:
-   - OSRM 서비스 장애 시 [`agent/offline_walk_network.py`](file:///d:/코디세이/pet_walk_t01/agent/offline_walk_network.py)를 통해 건물 관통 없는 안전 도로망 루프 반환.
+   - OSRM 서비스 장애 시 [`backend/agent/offline_walk_network.py`](/pet_walk_t01/backend/agent/offline_walk_network.py)를 통해 건물 관통 없는 안전 도로망 루프 반환.
 
 ---
 
 ## 4. 백엔드 클라우드 호스팅 인프라 구축 (Render / Railway / 로컬 서비스)
 
-FastAPI 애플리케이션([`main.py`](file:///d:/코디세이/pet_walk_t01/main.py))을 인터넷망에 안전하게 배포하고 SSL 인증서를 연동합니다.
+FastAPI 애플리케이션([`backend/main.py`](/pet_walk_t01/backend/main.py))을 인터넷망에 안전하게 배포하고 SSL 인증서를 연동합니다.
 
 ### 4.1 Cloud PaaS 인스턴스 프로비저닝
 1. 호스팅 플랫폼 접속 ➔ **New Web Service** 선택.
-2. GitHub 저장소 연동 (`pet_walk_t01` 루트 지정).
+2. GitHub 저장소 연동 (`pet_walk_t01` 지정 및 **Root Directory: `backend`** 설정).
 3. **기본 런타임 설정**:
    - Environment: `Python 3.11`
    - Build Command: `pip install -r requirements.txt`
