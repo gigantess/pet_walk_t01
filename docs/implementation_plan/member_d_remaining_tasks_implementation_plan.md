@@ -229,7 +229,7 @@ mindmap
 ---
 
 #### 7️⃣ [T3-1 / US-F1] 기상청 열 위험 지수 / 골든타임 카드 실서버 연동
-* **현황**: 백엔드 `main.py`에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록 상태.
+* **현황**: 백엔드 [`backend/main.py`](file:///d:/코디세이/pet_walk_t01/backend/main.py)에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록 상태.
 * **액션 계획**:
   - `src/types/weather.ts`에 `HeatRiskResponse` DTO 선언.
   - `weatherService.ts`를 구현하여 현재는 계산 수식 기반 Mock을 반환하고, 백엔드 3번 노희선 엔지니어의 엔드포인트 오픈 즉시 `fetchLiveHeatRisk()`로 스위치 전환.

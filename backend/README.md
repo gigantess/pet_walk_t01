@@ -76,6 +76,6 @@ pytest test_case/ -v
 
 ## ☁️ 4. Supabase 데이터베이스 세팅
 
-Supabase 대시보드(SQL Editor)에서 [`backend/sql/supabase_schema.sql`](file:///d:/코디세이/pet_walk_t01/backend/sql/supabase_schema.sql) 스크립트를 실행하여 다음 테이블을 생성합니다:
+Supabase 대시보드(SQL Editor)에서 [`sql/supabase_schema.sql`](./sql/supabase_schema.sql) 스크립트를 실행하여 다음 테이블을 생성합니다:
 1. `community_courses`: 이웃과 공유된 안심 산책로 (200m 마스킹 적용)
 2. `hazard_reports`: 현장 돌발 위험(높은 턱, 계단, 공사 구간 등) 제보 데이터

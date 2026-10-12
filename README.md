@@ -6,8 +6,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-v1.0.0-009688.svg)](https://fastapi.tiangolo.com/)
 [![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB.svg)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-0%20Errors%20(Clean)-3178C6.svg)](frontend)
-[![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-103%2F103%20Passed-brightgreen.svg)](test_case)
-[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-70%2F70%20Passed-brightgreen.svg)](frontend)
+[![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-156%2F156%20Passed-brightgreen.svg)](backend/test_case)
+[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-78%2F78%20Passed-brightgreen.svg)](frontend)
 [![Code Quality](https://img.shields.io/badge/SonarLint-Line%20%E2%89%A4%20250%20(100%25)-success.svg)](frontend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -43,7 +43,8 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
-# 백엔드 및 AI 에이전트 필수 패키지 설치
+# 백엔드 디렉토리 이동 및 필수 패키지 설치
+cd backend
 pip install -r requirements.txt
 ```
 
@@ -54,6 +55,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # 또는 python 모듈 직접 실행 방식:
 py -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# (참고: 저장소 루트에서 실행 시: uvicorn backend.main:app --port 8000 --reload)
 ```
 
 #### 3) 서버 정상 가동 확인 및 API 문서 접속
@@ -109,10 +111,11 @@ open mockup/index.html
 백엔드와 프론트엔드 모두 100% 통과하는 강력한 품질 가드레일을 갖추고 있습니다.
 
 ```bash
-# 1. 백엔드 Pytest 전수 검증 (103개 테스트 100% Pass)
-python -m pytest test_case/ -v
+# 1. 백엔드 Pytest 전수 검증 (156개 테스트 100% Pass)
+python -m pytest   # 루트에서 실행 시 backend/test_case 자동 감지
+# 또는: cd backend && pytest test_case/ -v
 
-# 2. 프론트엔드 Vitest 단위 테스트 (14개 파일, 70개 테스트 100% Pass)
+# 2. 프론트엔드 Vitest 단위 테스트 (17개 파일, 78개 테스트 100% Pass)
 cd frontend && npm test
 
 # 3. 프론트엔드 TypeScript 무결성 검증 (0 Errors)
@@ -355,38 +358,48 @@ graph LR
 
 ## 🧪 7. TDD 테스트 스위트 및 품질 가드레일 (Test-Driven Development)
 
-본 프로젝트는 **TDD(Test-Driven Development) 및 ATDD(인수 테스트 주도 개발)**를 기반으로 구축되었으며, 18개 핵심 스토리 및 Phase 2 확장 백로그의 모든 인수 조건(Acceptance Criteria)과 완료 정의(DoD)를 테스트 코드로 100% 사전 검증합니다. (상세 가이드: [`test_case/README.md`](test_case/README.md))
+본 프로젝트는 **TDD(Test-Driven Development) 및 ATDD(인수 테스트 주도 개발)**를 기반으로 구축되었으며, 18개 핵심 스토리 및 Phase 2 확장 백로그의 모든 인수 조건(Acceptance Criteria)과 완료 정의(DoD)를 테스트 코드로 100% 사전 검증합니다. (상세 가이드: [`backend/test_case/README.md`](backend/test_case/README.md))
 
 ### 7.1 테스트 스위트 구성 및 실행 결과
 
 ```bash
-# 전체 TDD 테스트 스위트 실행 (103개 테스트 100% Pass)
-python -m pytest test_case/ -v
+# 전체 백엔드 TDD 테스트 스위트 실행 (20개 파일, 156개 테스트 100% Pass)
+python -m pytest
+# 또는: cd backend && pytest test_case/ -v
 ```
 
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.14.x / pytest-9.x
-rootdir: .
-collected 103 items
+rootdir: d:\코디세이\pet_walk_t01, configfile: pytest.ini, testpaths: backend/test_case
+collected 156 items
 
-test_case/test_api_contracts.py ...                                      [  2%]
-test_case/test_langgraph_walk_agent.py ......                            [  8%]
-test_case/test_loop_target_duration.py ............                      [ 20%]
-test_case/test_mobile_and_voice_navigation.py ........                   [ 28%]
-test_case/test_phase2_extended_features.py ..........                    [ 37%]
-test_case/test_supabase_repository.py ...                                [ 40%]
-test_case/test_surface_cost_model.py ....................                [ 60%]
-test_case/test_thermal_and_parking.py ......                             [ 66%]
-test_case/test_vision_safety_inspector.py .............                  [ 78%]
-test_case/test_walk_plan_agent_schema.py .............                   [ 91%]
-test_case/test_walk_tracking_and_feedback.py .........                   [100%]
+backend/test_case/test_api_contracts.py ...                                   [  1%]
+backend/test_case/test_building_avoidance.py ...........                      [  8%]
+backend/test_case/test_eas_update_ota.py ..                                   [ 10%]
+backend/test_case/test_hazard_service.py .....                                 [ 13%]
+backend/test_case/test_langgraph_walk_agent.py ......                         [ 17%]
+backend/test_case/test_loop_target_duration.py ............                   [ 25%]
+backend/test_case/test_mobile_and_voice_navigation.py ........                [ 30%]
+backend/test_case/test_offline_walk_network.py ........                        [ 35%]
+backend/test_case/test_phase2_extended_features.py ..........                 [ 41%]
+backend/test_case/test_road_network_routes.py ......                          [ 45%]
+backend/test_case/test_route_geometry_validation.py .............             [ 53%]
+backend/test_case/test_spatial_masking.py ...                                 [ 55%]
+backend/test_case/test_supabase_repository.py ...                             [ 57%]
+backend/test_case/test_surface_cost_model.py ....................             [ 70%]
+backend/test_case/test_surface_slope_evaluation.py .....                      [ 73%]
+backend/test_case/test_thermal_and_parking.py ......                          [ 77%]
+backend/test_case/test_vision_safety_inspector.py .............               [ 85%]
+backend/test_case/test_walk_plan_agent_schema.py .............                [ 94%]
+backend/test_case/test_walk_plan_latency.py ........                          [ 99%]
+backend/test_case/test_walk_tracking_and_feedback.py ..                      [100%]
 
-============================ 103 passed in 0.74s ==============================
+============================ 156 passed in 6.29s ==============================
 ```
 
 ```bash
-# 모바일 프론트엔드 단위 테스트 실행 (14개 파일, 70개 테스트 100% Pass)
+# 모바일 프론트엔드 Vitest 단위 테스트 실행 (17개 파일, 78개 테스트 100% Pass)
 cd frontend && npm test
 ```
 
