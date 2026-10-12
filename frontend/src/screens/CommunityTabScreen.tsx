@@ -23,6 +23,7 @@ import { CardWrapper } from '../components/common/CardWrapper';
 import { fetchCommunityFeeds, CommunityFeedItem } from '../services/communityApi';
 import { RouteMapView } from '../components/map/RouteMapView';
 import { RouteFeatureCollection, RouteStepPin, LonLat } from '../types/route';
+import { LandmarkCategoryCode } from '../types/landmarkCategory';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -94,6 +95,7 @@ export const CommunityTabScreen: React.FC<CommunityTabScreenProps> = ({
 
   // 2번 인터랙션: 전체화면 상세 경로 모달 대상
   const [modalFeed, setModalFeed] = useState<CommunityFeedItem | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<LandmarkCategoryCode>('ALL');
 
   const loadFeeds = async () => {
     setIsLoading(true);
@@ -119,6 +121,19 @@ export const CommunityTabScreen: React.FC<CommunityTabScreenProps> = ({
     }
     setModalFeed(null);
   };
+
+  const CATEGORY_CHIPS: readonly { code: LandmarkCategoryCode; label: string }[] = [
+    { code: 'ALL', label: '전체' },
+    { code: 'LM_SEOUL_FOREST', label: '🌳 서울숲 · 성동' },
+    { code: 'LM_CITY_HALL', label: '🏛️ 시청 · 중구' },
+    { code: 'LM_SEONGSAN', label: '🌲 성산공원 · 마포' },
+    { code: 'LM_GANGNAM', label: '🏙️ 강남역 · 강남' },
+  ];
+
+  const filteredFeeds =
+    selectedCategory === 'ALL'
+      ? feeds
+      : feeds.filter((f) => f.landmark_code === selectedCategory);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -153,12 +168,33 @@ export const CommunityTabScreen: React.FC<CommunityTabScreenProps> = ({
         </Text>
       </CardWrapper>
 
+      {/* 행정구역 및 랜드마크 필터 칩 바 */}
+      <View style={styles.filterChipContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
+          {CATEGORY_CHIPS.map((chip) => {
+            const isSelected = selectedCategory === chip.code;
+            return (
+              <TouchableOpacity
+                key={chip.code}
+                activeOpacity={0.75}
+                onPress={() => setSelectedCategory(chip.code)}
+                style={[styles.filterChip, isSelected && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {/* 공유된 안심 코스 피드 목록 */}
       <Text style={styles.feedListTitle}>
-        이웃들이 공유한 안심 산책로 ({feeds.length}개)
+        이웃들이 공유한 안심 산책로 ({filteredFeeds.length}개)
       </Text>
 
-      {feeds.map((feed) => {
+      {filteredFeeds.map((feed) => {
         const isExpanded = expandedCourseId === feed.course_id;
         const feedRoute = buildRouteFromMaskedPolyline(feed.masked_polyline);
         const feedPins = buildPinsFromCoords(feed.masked_polyline);
@@ -170,13 +206,24 @@ export const CommunityTabScreen: React.FC<CommunityTabScreenProps> = ({
               activeOpacity={0.75}
               onPress={() => handleToggleAccordion(feed.course_id)}
             >
-              <View style={styles.feedHeader}>
-                <Text style={styles.feedTitle}>{feed.title}</Text>
-                {feed.is_origin_masked && (
-                  <View style={styles.maskedChip}>
-                    <Text style={styles.maskedChipText}>🔒 집 위치 보호됨</Text>
+              {/* 랜드마크 및 행정구역 뱃지 행 */}
+              <View style={styles.landmarkRow}>
+                {feed.landmark_name && (
+                  <View style={styles.landmarkChip}>
+                    <Text style={styles.landmarkChipText}>
+                      📍 {feed.landmark_name} · {feed.region_name}
+                    </Text>
                   </View>
                 )}
+                {feed.is_origin_masked && (
+                  <View style={styles.maskedChip}>
+                    <Text style={styles.maskedChipText}>🔒 200m 보호</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.feedHeader}>
+                <Text style={styles.feedTitle}>{feed.title}</Text>
               </View>
               <View style={styles.feedMetaRow}>
                 <Text style={styles.feedMetaText}>
@@ -312,8 +359,41 @@ const styles = StyleSheet.create({
   refreshText: { fontSize: 11, color: TOKENS.colors.textMuted },
   cardHeaderTitle: { fontSize: 14, fontWeight: '700', color: TOKENS.colors.textMain },
   cardBodyText: { fontSize: 12, color: TOKENS.colors.textMuted, lineHeight: 18, marginTop: 6 },
+  filterChipContainer: { marginBottom: 12 },
+  filterChipScroll: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
+  filterChip: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: TOKENS.colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: TOKENS.colors.primary,
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: TOKENS.colors.textMuted,
+  },
+  filterChipTextActive: {
+    color: TOKENS.colors.primaryDark,
+    fontWeight: '700',
+  },
   feedListTitle: { fontSize: 14, fontWeight: '700', color: TOKENS.colors.textMain, marginBottom: 10, marginTop: 4 },
   feedCard: { marginBottom: 12, paddingVertical: 12, paddingHorizontal: 14 },
+  landmarkRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  landmarkChip: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  landmarkChipText: { fontSize: 11, color: '#1D4ED8', fontWeight: '700' },
   feedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   feedTitle: { fontSize: 14, fontWeight: '700', color: TOKENS.colors.textMain, flex: 1, marginRight: 8 },
   maskedChip: { backgroundColor: '#F0FDF4', paddingVertical: 2, paddingHorizontal: 6, borderRadius: 6, borderWidth: 1, borderColor: '#DCFCE7' },

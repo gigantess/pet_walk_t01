@@ -425,13 +425,13 @@ const styles = StyleSheet.create({
     padding: 16,
     ...(Platform.OS === 'web'
       ? ({
-          position: 'fixed' as any,
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 99999,
-        } as any)
+        position: 'fixed' as any,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+      } as any)
       : {}),
   },
   modalCard: {
