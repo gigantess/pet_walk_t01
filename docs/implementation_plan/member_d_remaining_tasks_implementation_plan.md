@@ -82,7 +82,7 @@ mindmap
 
 | 트랙 | 과제 ID | 작업 명칭 | 연관 스토리 / 분류 | 난이도 / 공수 | 의존성 | 우선순위 |
 |:---:|:---:|---|---|:---:|:---:|:---:|
-| **Track 1** | **T1-1** | **EAS Build Standalone APK 1회 패키징 & 무선 OTA 배포 구축** | **US-H1** (MVP) | 상 / 18 h | 외부 콘솔 (Member D 전담) | **Must (최우선)** |
+| **Track 1** | **T1-1** | **EAS Build Standalone APK 1회 패키징 & 무선 OTA 배포 구축** | **US-H1** (MVP) | 상 / 18 h | **완료 (100% - EAS 프로젝트 연동, preview 채널 바인딩, Standalone APK 클라우드 빌드 가동)** | **완료 (Must)** |
 | **Track 1** | **T1-2** | **산책 완주 리포트에서 커뮤니티 코스 공유(`POST /community/share`) 플로우 연동** | **US-G2** (MVP) | 중 / 8 h | 백엔드 API 기구축 | **Must** |
 | **Track 1** | **T1-3** | **현장 위험 제보 등록 모달 & 동적 우회 재탐색 API(`POST /reroute`) 연동** | **US-D2** (P2 연계) | 중상 / 10 h | 백엔드 API 기구축 | **Should** |
 | **Track 2** | **T2-1** | **산책 중 한 손 원터치 배변 마킹 FAB & 완주 리포트 타임라인** | **US-18** (P2 선행) | 중 / 8 h | 0% (로컬 완결) | **Must** |
@@ -107,32 +107,34 @@ mindmap
   - 에뮬레이터나 개발자 PC가 없는 테스터(팀원 1번, 5번 및 외부 5인 실사용자)가 Android 스마트폰에서 직접 설치할 수 있는 독립 APK를 **10월 30일 Code Freeze 시점에 단 1회 패키징**.
   - 4주차(10/31~11/7) CBT 기간 중 모든 JS/UI 핫픽스는 `eas update` 무선 OTA로 앱 재설치 없이 5초 내 실시간 배포.
 * **상세 작업 절차 ([`Member_D_Mobile_Infra_and_EAS_Manual.md`](file:///d:/코디세이/pet_walk_t01/docs/guideline/Member_D_Mobile_Infra_and_EAS_Manual.md) 정합)**:
-  1. **EAS CLI 및 프로젝트 연동**:
+  1. **EAS CLI 및 프로젝트 연동 (완료)**:
      ```bash
      cd frontend
-     eas login
-     eas init --id <petwalk-mobile-id>
+     # Project Full Name: @pettrail/petwalk-production
+     # Project ID: 52ded2f2-d6e7-420f-9c9f-3d999f262454
+     # Slug: petwalk-production / Package: com.petwalk.app
+     npx eas-cli project:info
      ```
-  2. **Google Cloud Console Android Maps SDK 설정**:
-     - Google Cloud Console에서 `Maps SDK for Android` 활성화.
-     - 패키지명: `com.petwalk.app`.
-     - 디버그 및 EAS 빌드 서버 SHA-1 인증서 지문 등록 후 `app.json`에 `android.config.googleMaps.apiKey` 주입.
-  3. **`frontend/eas.json` 검증 및 빌드 스크립트 정비**:
+  2. **`frontend/eas.json` 검증 및 빌드 스크립트 정비 (완료)**:
      ```json
      {
        "cli": { "version": ">= 12.0.0" },
        "build": {
          "preview": {
            "distribution": "internal",
+           "channel": "preview",
            "android": { "buildType": "apk" }
          },
-         "production": {}
+         "production": { "channel": "production" }
        }
      }
      ```
-     - `package.json`에 편의 스크립트 추가: `"build:apk": "eas build -p android --profile preview"`, `"ota:update": "eas update --branch preview --message '핫픽스 반영'"`
-  4. **무선 OTA 채널 구성**:
-     - `preview` 채널을 기본 타깃으로 설정하여 GitHub 머지 또는 CLI 명령 시 무점검 자동 업데이트 파이프라인 확립.
+     - `package.json`에 편의 스크립트 추가 완료: `"build:apk": "eas build -p android --profile preview"`, `"ota:update": "eas update --branch preview --message 'UI 핫픽스 실시간 반영'"`
+  3. **무선 OTA 채널 및 Standalone APK 클라우드 빌드 가동 (완료)**:
+     - `preview` 채널 및 브랜치 자동 바인딩 완료.
+     - EAS Cloud Android Standalone APK 빌드 트리거 및 큐 진입 완료 (`Build ID: cbf76e84-1716-40b5-8e23-e5aba630569d`).
+     - [Expo 대시보드 실시간 빌드 로그 확인 링크](https://expo.dev/accounts/pettrail/projects/petwalk-production/builds/cbf76e84-1716-40b5-8e23-e5aba630569d)
+     - `npx expo export --platform web` 및 `--platform android` 로컬 정적/바이트코드 번들 빌드 전수 통과 완료.
 
 ---
 

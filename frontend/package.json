@@ -32,6 +32,9 @@
     "web": "expo start --web",
     "test": "vitest run",
     "check": "tsc --noEmit",
+    "export": "expo export",
+    "export:web": "expo export --platform web",
+    "export:android": "expo export --platform android",
     "build:apk": "eas build -p android --profile preview",
     "ota:update": "eas update --branch preview --message \"UI 핫픽스 실시간 반영\""
   },

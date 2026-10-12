@@ -73,12 +73,21 @@ npm run web
 npm run android
 ```
 
-### 3.4 단위 테스트 및 타입 검사
+### 3.4 로컬 프로덕션 번들 내보내기 (Export)
 ```bash
-# Vitest 단위 테스트 78개 실행
+# Web 프로덕션 정적 번들 생성 (dist/)
+npm run export:web
+
+# Android Hermes 바이트코드 번들 생성 (dist/)
+npm run export:android
+```
+
+### 3.5 단위 테스트 및 타입 검사
+```bash
+# Vitest 단위 테스트 78개 실행 (100% Pass)
 npm test
 
-# TypeScript 정적 타입 검사
+# TypeScript 정적 타입 검사 (0 Errors)
 npm run check
 ```
 
@@ -86,12 +95,26 @@ npm run check
 
 ## 📱 4. EAS 빌드 및 무선 OTA 배포 (Member D)
 
-### 4.1 테스터용 독립 APK 1회 패키징
+본 프로젝트는 **EAS(Expo Application Services)**와 연동되어 클라우드 자동 빌드 및 무선 무점검 핫픽스 체계를 갖추고 있습니다.
+
+- **EAS Project**: `@pettrail/petwalk-production` (`52ded2f2-d6e7-420f-9c9f-3d999f262454`)
+- **Package ID**: `com.petwalk.app`
+- **배포 대시보드**: [Expo 대시보드 바로가기](https://expo.dev/accounts/pettrail/projects/petwalk-production)
+
+### 4.1 테스터용 독립 실행형 APK 빌드 (EAS Build)
+에뮬레이터가 없는 팀원 및 5인 필드 테스터용 Standalone `.apk` 생성:
 ```bash
-eas build -p android --profile preview
+npm run build:apk
+# 또는: npx eas-cli build -p android --profile preview
+```
+- 빌드 상태 및 진행 로그 확인:
+```bash
+npx eas-cli build:view
 ```
 
 ### 4.2 무선 무점검 실시간 핫픽스 (EAS Update)
+스마트폰에 앱이 이미 설치된 상태에서 JS/UI 코드를 앱 재설치 없이 5초 내 실시간 반영:
 ```bash
-eas update --branch preview --message "UI 핫픽스 실시간 반영"
+npm run ota:update
+# 또는: npx eas-cli update --branch preview --message "UI 핫픽스 실시간 반영"
 ```

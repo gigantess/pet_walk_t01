@@ -86,7 +86,7 @@ pie title 편안하개 MVP 스토리 포인트 달성 현황 (총 62 pt)
 | **US-F1** | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | 중 / 3 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 지면열 수지식 연산 및 DTO 단위 테스트 완료<br>• **잔여 과제: `backend/main.py`에 `GET /api/v1/weather/heat-risk` 엔드포인트 미등록** | **대기 중 (40%)** | `backend/test_case/test_thermal_and_parking.py` (테스트 통과) |
 | **US-G1** | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | 하 / 2 pt | 2번 전황진(데이터)<br>3번 노희선(서버)<br>5번 김정님(UI) | • 반경 1.5km 주차장 필터링 DTO 테스트 완료<br>• **잔여 과제: 주차장 목록 조회 API 및 플래너 토글 UI 미개방** | **대기 중 (40%)** | `backend/test_case/test_thermal_and_parking.py` (테스트 통과) |
 | **US-G2** | 간편 이메일 가입 및 코스 공유 (200m 마스킹) | 중 / 4 pt | 3번 노희선(서버)<br>2번 전황진(데이터)<br>5번 김정님(UI) | • 최근접 교차로(Node) 스냅 200m 공간 절단 마스킹 완벽 구현<br>• Supabase DB 영속 연동 및 커뮤니티 피드 조회/상세/원터치 산책 시작 완료<br>• 잔여: 완주 리포트 내 공유 생성 모달 연결 | **완료 (90%)** | `backend/agent/spatial_masking.py`, `backend/agent/supabase_repository.py`, `CommunityTabScreen.tsx` |
-| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 / 5 pt | 5인 전원 (Lead: 김정님/김승현) | • Expo SDK 57 및 `eas.json` 프로필 구성 준비 완료<br>• 10월 30일 마일스톤에 맞추어 독립 APK 1회 패키징 및 OTA 가동 예정 | **대기 중 (20%)** | Expo SDK 57 세팅 완료 |
+| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 / 5 pt | 5인 전원 (Lead: 김정님/김승현) | • Expo SDK 57 및 EAS Build(`preview` APK) 클라우드 빌드 가동 완료<br>• `preview` 채널 무선 OTA 파이프라인 및 Web/Android 번들 빌드 100% 완료<br>• 잔여: 10/31 5인 필드 테스터 실기기 배포 및 피드백 수집 | **완료 (90%)** | EAS Cloud APK 빌드 가동 (`cbf76e84...`), Vitest 78건 통과 |
 
 ---
 
@@ -149,7 +149,7 @@ flowchart LR
 | **1번** | **조현정 (팀장)** | **프로젝트 총괄·AI 기능 설계**<br>(PM & AI Agent Lead) | 55 h (18.5%) | **95% 달성** | • LangGraph ReAct Walk Planning Agent 코어 수립<br>• Pydantic Strict 스키마 기반 무상태 맥락 주입<br>• 체급별 속도 상수 및 $\pm 15\%$ 수렴 웨이포인트 보정 총괄 |
 | **2번** | **전황진 (데이터)** | **지도·공간데이터·AI 분석**<br>(AI & Spatial Data Engineer) | 53 h (17.8%) | **85% 달성** | • DEM 고도차 기반 15도 미만 무장애 보행망 분석<br>• 기상청 단기예보 지면열 추정 수지식 모델 수립<br>• 교차로(Node) 스냅 200m 공간 마스킹 알고리즘 완성 |
 | **3번** | **노희선 (서버)** | **서버·맞춤 경로 계산**<br>(Backend & Spatial Routing Lead) | 74 h (24.8%) | **88% 달성** | • FastAPI v1 REST API 코어 (`backend/main.py`) 구축<br>• OSRM Foot Routing 투기적 병렬 1.5초 캐시 아키텍처 완성<br>• Supabase PostgreSQL 영속 연동 + 인메모리 듀얼 모드 구축<br>• 건물 관통 방지 및 위험 우회 재탐색 (`/reroute`) 연동 |
-| **4번** | **김승현 (앱)** | **모바일 앱·GPS·음성 안내**<br>(Frontend & Mobile App Lead) | 78 h (26.2%) | **96% 달성** | • React Native (Expo SDK 57) + Expo Web 통합 개발 환경 완결<br>• 백그라운드 GPS & `expo-speech` 30m 전 음성 안내 엔진 개발<br>• Local-First 스토리지 (`@편안하개:*`) 및 100회 산책 기록 영구 보존<br>• Phase 2 선행 스토리(US-21, 23, 29) 100% 조기 구현 |
+| **4번** | **김승현 (앱)** | **모바일 앱·GPS·음성 안내**<br>(Frontend & Mobile App Lead) | 78 h (26.2%) | **100% 달성** | • React Native (Expo SDK 57) + Expo Web 통합 개발 환경 완결<br>• 백그라운드 GPS & `expo-speech` 30m 전 음성 안내 엔진 개발<br>• Local-First 스토리지 (`@편안하개:*`) 및 100회 산책 기록 영구 보존<br>• Phase 2 선행 스토리(US-21, 23, 29) 조기 구현<br>• EAS Cloud Standalone APK 빌드 가동 및 무선 OTA 파이프라인 완성 |
 | **5번** | **김정님 (UI)** | **화면 구현·통합 테스트**<br>(UI/UX & Experience Lead) | 38 h (12.7%) | **90% 달성** | • 편안하개 디자인 시스템 (`src/theme/tokens.ts`) 에메랄드/3색 구축<br>• 앱 전역 질병 용어 100% 배제 긍정적 웰니스 카피라이팅 정립<br>• 6대 핵심 화면(플래너, 프리뷰, 다크포켓, 리포트, 커뮤니티, 프로필) 완성<br>• 5인 대면 CBT(10/31~11/7) 계획 및 사용성 평가 총괄 |
 
 ---

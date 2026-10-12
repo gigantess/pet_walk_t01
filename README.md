@@ -88,6 +88,16 @@ npm run web
 
 # 3. 실제 스마트폰(Expo Go 앱)에서 실행할 경우 (QR코드 스캔)
 npx expo start
+
+# 4. 프로덕션 정적/바이트코드 번들 내보내기 (Web & Android)
+npm run export:web
+npm run export:android
+
+# 5. 독립 실행형 Android Standalone APK 클라우드 빌드 (EAS Build)
+npm run build:apk
+
+# 6. 실시간 무선 무점검 핫픽스 배포 (EAS Update OTA)
+npm run ota:update
 ```
 
 ---
@@ -528,6 +538,17 @@ npm run web
 
 # 4. 스마트폰 Expo Go 실행
 npx expo start
+
+# 5. 프로덕션 정적/바이트코드 번들 내보내기 (Web & Android)
+npm run export:web
+npm run export:android
+
+# 6. 독립 실행형 Android APK 클라우드 빌드 (EAS Build)
+npm run build:apk
+# (빌드 상태 확인: npx eas-cli build:view)
+
+# 7. 무선 무점검 실시간 핫픽스 배포 (EAS Update OTA)
+npm run ota:update
 ```
 
 ---
