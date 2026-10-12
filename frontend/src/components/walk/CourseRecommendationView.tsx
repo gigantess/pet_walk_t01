@@ -18,6 +18,7 @@ import { getCoursePlanById } from '../../services/sampleRoute';
 import { TOKENS } from '../../theme/tokens';
 import { AppIcon } from '../common/AppIcon';
 import { CoursePlan } from '../../types/bookmark';
+import { buildCourseSummary } from '../../services/routeGeometry';
 import { DogProfile } from '../../types/dogProfile';
 import { RecommendedCourse, WalkPreferences } from '../../types/walkSettings';
 import { RouteMapView } from '../map/RouteMapView';
@@ -58,20 +59,26 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
   }, [dog, preferences]);
 
   const currentCourse = courses[selectedCourseIndex] ?? courses[0];
+  const candidatePlan = currentCourse?.id ? planResult?.coursePlans?.[currentCourse.id] : undefined;
   const activePlan = useMemo(() => {
-    if (planResult?.coursePlans && currentCourse?.id && planResult.coursePlans[currentCourse.id]) {
-      return planResult.coursePlans[currentCourse.id];
+    if (candidatePlan) {
+      return candidatePlan;
     }
-    const isLiveFirstCourse = Boolean(planResult?.isLiveServer && selectedCourseIndex === 0);
-    return getCoursePlanById(
-      currentCourse?.id,
-      isLiveFirstCourse && planResult ? planResult : undefined,
-    );
-  }, [currentCourse?.id, planResult, selectedCourseIndex]);
+    // 서버 버전이 per-course plan을 주지 않는 경우 첫 후보는 서버 응답
+    // GeoJSON을 사용한다. getCoursePlanById의 정적 ID 매핑이 이를 덮지 않게 한다.
+    if (planResult?.isLiveServer && selectedCourseIndex === 0) {
+      return { route: planResult.route, stepPins: planResult.stepPins };
+    }
+    return getCoursePlanById(currentCourse?.id);
+  }, [candidatePlan, currentCourse?.id, planResult, selectedCourseIndex]);
 
   const activeRoute = activePlan.route;
   const activePins = activePlan.stepPins;
   const plan: CoursePlan = useMemo(() => ({ route: activeRoute, stepPins: activePins }), [activeRoute, activePins]);
+  const activeSummary = useMemo(
+    () => buildCourseSummary(activeRoute, dog.speedKmH),
+    [activeRoute, dog.speedKmH],
+  );
   const bookmarkCandidate = useMemo(
     () => (currentCourse ? createBookmark(currentCourse, plan, dog.name) : null),
     [currentCourse, plan, dog.name],
@@ -113,6 +120,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
 
         <View style={styles.mapWrapper}>
           <RouteMapView
+            key={currentCourse.id}
             route={activeRoute}
             stepPins={activePins}
             speedKmH={dog.speedKmH}
@@ -121,7 +129,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
           />
         </View>
 
-        <CourseInfoCard course={currentCourse} rank={selectedCourseIndex + 1} bookmark={bookmarkCandidate} />
+        <CourseInfoCard course={currentCourse} summary={activeSummary} rank={selectedCourseIndex + 1} bookmark={bookmarkCandidate} />
 
         <RouteReasonCard
           reasonText={currentCourse.reason}

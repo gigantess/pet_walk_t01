@@ -7,9 +7,21 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, Image, TouchableOpacity } from 'react-native';
-import Svg, { Polyline, Circle, G, Text as SvgText } from 'react-native-svg';
+import { View, Text, StyleSheet, Dimensions, Pressable, Image, TouchableOpacity, Platform } from 'react-native';
+import NativeSvg, { Polyline as NativePolyline, Circle as NativeCircle, G as NativeG, Text as NativeSvgText } from 'react-native-svg';
 import { TOKENS } from '../../theme/tokens';
+
+const isWeb = Platform.OS === 'web';
+const cleanWebProps = ({ accessible, style, ...props }: any) => {
+  const flat = Array.isArray(style) ? StyleSheet.flatten(style) : style;
+  return flat ? { style: flat, ...props } : props;
+};
+
+const Svg: React.ComponentType<any> = isWeb ? (props: any) => <svg {...cleanWebProps(props)} /> : NativeSvg;
+const Polyline: React.ComponentType<any> = isWeb ? (props: any) => <polyline {...cleanWebProps(props)} /> : NativePolyline;
+const Circle: React.ComponentType<any> = isWeb ? (props: any) => <circle {...cleanWebProps(props)} /> : NativeCircle;
+const G: React.ComponentType<any> = isWeb ? (props: any) => <g {...cleanWebProps(props)} /> : NativeG;
+const SvgText: React.ComponentType<any> = isWeb ? (props: any) => <text {...cleanWebProps(props)} /> : NativeSvgText;
 import { LonLat, RouteFeatureCollection, RouteStepPin, RouteSegmentFeature } from '../../types/route';
 import { buildCourseSummary } from '../../services/routeGeometry';
 import { calculateOsmTiles } from '../../services/osmTileService';

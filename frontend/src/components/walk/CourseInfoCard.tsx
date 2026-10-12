@@ -10,11 +10,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { AppIcon, AppIconName } from '../common/AppIcon';
 import { RecommendedCourse } from '../../types/walkSettings';
+import { CourseSummary } from '../../types/route';
 import { BookmarkedRoute } from '../../types/bookmark';
 import { BookmarkToggleButton } from '../bookmark/BookmarkToggleButton';
 
 export interface CourseInfoCardProps {
   readonly course: RecommendedCourse;
+  readonly summary: CourseSummary;
   readonly rank: number;
   readonly bookmark: BookmarkedRoute | null;
 }
@@ -27,7 +29,7 @@ const StatBox: React.FC<{ icon: AppIconName; label: string; value: string }> = (
   </View>
 );
 
-export const CourseInfoCard: React.FC<CourseInfoCardProps> = ({ course, rank, bookmark }) => (
+export const CourseInfoCard: React.FC<CourseInfoCardProps> = ({ course, summary, rank, bookmark }) => (
   <View style={styles.card}>
     <View style={styles.header}>
       <Text style={styles.name}>{course.name}</Text>
@@ -39,7 +41,7 @@ export const CourseInfoCard: React.FC<CourseInfoCardProps> = ({ course, rank, bo
       </View>
     </View>
     <Text style={styles.stats}>
-      {course.distanceKm} · 약 {course.estimatedMinutes}분
+      {summary.totalDistanceKm.toFixed(2)} km · 약 {summary.estimatedMinutes}분
     </Text>
     <View style={styles.statsRow}>
       <StatBox icon="soft" label="폭신한 길" value={course.softRatio} />

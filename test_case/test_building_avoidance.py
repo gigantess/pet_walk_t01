@@ -21,6 +21,8 @@ from agent.building_geometry import (
     count_building_penetrations,
     verify_building_avoidance,
 )
+from agent.loop_route_planner import plan_loop_candidates
+
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
@@ -79,6 +81,25 @@ class TestBuildingAvoidanceSpatialIntegrity:
                 f"{cand.name}: 서울시청 권역 건물 관통 선분 발견 ({cnt}/{total}건, {ratio*100:.1f}%). "
                 f"상세: {details[:2]}"
             )
+
+    def test_supported_area_offline_route_uses_safe_walk_network(
+        self,
+        seoul_center_buildings: List[Polygon],
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """OSRM 장애 시에도 지원 권역은 목표 거리 오차보다 보행망 경로를 우선한다."""
+        monkeypatch.setattr("agent.loop_route_planner.fetch_osrm_foot_route", lambda *args, **kwargs: None)
+
+        plans = plan_loop_candidates(37.5665, 126.9780, 1234.0)
+
+        assert len(plans) == 3
+        assert all(plan.source in {"offline_network", "static_seoul"} for plan in plans.values())
+        assert all(plan.distance_m > 0 for plan in plans.values())
+        assert all(len(plan.coords) > 10 for plan in plans.values())
+        assert len({round(plan.distance_m) for plan in plans.values()}) == 3
+        for plan in plans.values():
+            assert count_building_penetrations(plan.coords, seoul_center_buildings)[2] == 0.0
+
 
     def test_gangnam_route_zero_building_penetration(self, gangnam_buildings: List[Polygon]):
         """강남역 출발 경로가 삼성타운/메리츠타워 등 대형 오피스 빌딩을 관통하지 않아야 한다."""

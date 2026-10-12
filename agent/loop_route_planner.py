@@ -152,7 +152,6 @@ def _plan_live(
             break
         loop_length = anchor[0] * min(max(target_distance_m / anchor[1], SCALE_LIMITS[0]), SCALE_LIMITS[1])
         scales = (1.0,)
-
     if best is None or best[1] > DISTANCE_TOLERANCE + 0.05:
         return None
     return _to_plan(best[0], "osrm_live")
@@ -238,10 +237,8 @@ def _plan_offline_network(
     coords, dist_m, _ = res
     if not _is_valid_loop(coords):
         return None
-    if target_distance_m > 0:
-        error = abs(dist_m - target_distance_m) / target_distance_m
-        if error > DISTANCE_TOLERANCE + 0.05:
-            return None
+    # The offline graph has discrete loop lengths. Keep its walkable route even
+    # when it misses the target; the caller reports the actual measured distance.
     return _to_plan(coords, "offline_network")
 
 
@@ -257,13 +254,14 @@ def _plan_variant(
     if plan is not None:
         return plan
     logger.warning("OSRM 순환 코스 생성 실패(variant=%d): 오프라인 도로망 폴백을 사용합니다.", variant)
-    plan = _plan_static_seoul(origin_lat, origin_lon, variant, target_distance_m=target_distance_m)
+    offline_target = target_distance_m * {1: 1.0, 2: 1.2, 3: 1.1}[variant]
+    plan = _plan_static_seoul(origin_lat, origin_lon, variant, target_distance_m=offline_target)
     if plan is not None:
         return plan
-    plan = _plan_offline_network(origin_lat, origin_lon, target_distance_m, variant)
+    plan = _plan_offline_network(origin_lat, origin_lon, offline_target, variant)
     if plan is not None:
         return plan
-    return _plan_rectangle_fallback(origin_lat, origin_lon, target_distance_m, variant)
+    return _plan_rectangle_fallback(origin_lat, origin_lon, offline_target, variant)
 
 
 def plan_loop_candidates(
@@ -276,7 +274,39 @@ def plan_loop_candidates(
     deadline = time.monotonic() + time_budget_s
     with ThreadPoolExecutor(max_workers=len(VARIANT_BEARINGS)) as pool:
         futures = {
-            variant: pool.submit(_plan_variant, origin_lat, origin_lon, target_distance_m, variant, deadline)
+            variant: pool.submit(
+                _plan_variant,
+                origin_lat,
+                origin_lon,
+                target_distance_m,
+                variant,
+                deadline,
+            )
             for variant in VARIANT_BEARINGS
         }
-        return {variant: future.result() for variant, future in futures.items()}
+        plans = {variant: future.result() for variant, future in futures.items()}
+
+    # Sparse offline graphs can resolve multiple bearings to the same cycle.
+    # For the Seoul City Hall area, substitute a validated road-aligned loop
+    # for a duplicate so choosing another candidate changes the actual route.
+    seen_routes = {
+        tuple((round(lon, 6), round(lat, 6)) for lon, lat in plan.coords)
+        for plan in plans.values()
+    }
+    for variant, plan in plans.items():
+        signature = tuple((round(lon, 6), round(lat, 6)) for lon, lat in plan.coords)
+        if sum(
+            tuple((round(lon, 6), round(lat, 6)) for lon, lat in existing.coords) == signature
+            for existing in plans.values()
+        ) <= 1:
+            continue
+
+        alternate = _plan_static_seoul(origin_lat, origin_lon, 1)
+        if alternate is None:
+            continue
+        alternate_signature = tuple((round(lon, 6), round(lat, 6)) for lon, lat in alternate.coords)
+        if alternate_signature not in seen_routes:
+            plans[variant] = alternate
+            seen_routes.add(alternate_signature)
+
+    return plans
