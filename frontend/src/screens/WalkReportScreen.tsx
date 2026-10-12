@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { TOKENS } from '../theme/tokens';
-import { WalkRecord, WalkFeedback, SlopeFeedbackLevel } from '../types/storage';
+import { WalkRecord, WalkFeedback } from '../types/storage';
 import { QuickFeedbackModal } from '../components/feedback/QuickFeedbackModal';
 import { BookmarkToggleButton } from '../components/bookmark/BookmarkToggleButton';
 import { BookmarkedRoute } from '../types/bookmark';
@@ -65,7 +65,9 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
       if (onGoToCommunity) {
         onGoToCommunity();
       }
-    } catch (_e) {
+    } catch (err) {
+      // 네트워크 단절 또는 예외 발생 시 모달을 안전하게 닫고 상태를 원복
+      console.warn('[WalkReportScreen] 코스 공유 예외 처리:', err);
       setIsSharing(false);
       setShowShareModal(false);
     }
