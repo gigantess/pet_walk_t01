@@ -16,6 +16,7 @@ import { calculateOsmTiles } from '../../services/osmTileService';
 import { CourseSummaryCard } from './CourseSummaryCard';
 import { RealOsmWebView } from './RealOsmWebView';
 import { RouteMapLegend, SEGMENT_COLORS } from './RouteMapLegend';
+import { AppIcon } from '../common/AppIcon';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAP_WIDTH = Math.min(SCREEN_WIDTH - 40, 360);
@@ -71,17 +72,19 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
           style={[styles.modeTab, mapMode === 'course' && styles.modeTabActive]}
           onPress={() => setMapMode('course')}
         >
-          <Text style={[styles.modeTabText, mapMode === 'course' && styles.modeTabTextActive]}>
-            🧭 안심 코스 뷰
-          </Text>
+          <View style={styles.modeTabContent}>
+            <AppIcon name="map" size={15} color={mapMode === 'course' ? TOKENS.colors.primaryDark : TOKENS.colors.textMuted} />
+            <Text style={[styles.modeTabText, mapMode === 'course' && styles.modeTabTextActive]}>안심 코스 뷰</Text>
+          </View>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.modeTab, mapMode === 'real_osm' && styles.modeTabActive]}
           onPress={() => setMapMode('real_osm')}
         >
-          <Text style={[styles.modeTabText, mapMode === 'real_osm' && styles.modeTabTextActive]}>
-            🗺️ 실제 OSM 지도
-          </Text>
+          <View style={styles.modeTabContent}>
+            <AppIcon name="map" size={15} color={mapMode === 'real_osm' ? TOKENS.colors.primaryDark : TOKENS.colors.textMuted} />
+            <Text style={[styles.modeTabText, mapMode === 'real_osm' && styles.modeTabTextActive]}>실제 OSM 지도</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -202,6 +205,7 @@ const styles = StyleSheet.create({
   modeTabTextActive: {
     color: TOKENS.colors.primaryDark,
   },
+  modeTabContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
   mapCanvas: {
     width: MAP_WIDTH,
     height: MAP_HEIGHT,
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: TOKENS.colors.border,
-    backgroundColor: '#F0F7F3',
+    backgroundColor: TOKENS.colors.mapGround,
     position: 'relative',
     alignSelf: 'center',
   },
