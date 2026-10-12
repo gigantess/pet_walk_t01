@@ -4,9 +4,30 @@
  */
 
 import React from 'react';
-import Svg, { Circle, Ellipse, G, Line, Path, Polygon, Rect } from 'react-native-svg';
+import { Platform } from 'react-native';
+import NativeSvg, {
+  Circle as NativeCircle,
+  Ellipse as NativeEllipse,
+  G as NativeG,
+  Line as NativeLine,
+  Path as NativePath,
+  Polygon as NativePolygon,
+  Rect as NativeRect,
+} from 'react-native-svg';
 import { TOKENS } from '../../theme/tokens';
 import { EnvironmentId } from '../../types/walkSettings';
+
+const isWeb = Platform.OS === 'web';
+
+// 웹 브라우저 환경에서는 표준 HTML5 SVG 엘리먼트로 렌더링하여 react-native-svg 웹 충돌 방지
+const Svg: React.ComponentType<any> = isWeb ? ({ accessible, ...props }: any) => <svg {...props} /> : NativeSvg;
+const G: React.ComponentType<any> = isWeb ? (props: any) => <g {...props} /> : NativeG;
+const Path: React.ComponentType<any> = isWeb ? (props: any) => <path {...props} /> : NativePath;
+const Circle: React.ComponentType<any> = isWeb ? (props: any) => <circle {...props} /> : NativeCircle;
+const Ellipse: React.ComponentType<any> = isWeb ? (props: any) => <ellipse {...props} /> : NativeEllipse;
+const Line: React.ComponentType<any> = isWeb ? (props: any) => <line {...props} /> : NativeLine;
+const Polygon: React.ComponentType<any> = isWeb ? (props: any) => <polygon {...props} /> : NativePolygon;
+const Rect: React.ComponentType<any> = isWeb ? (props: any) => <rect {...props} /> : NativeRect;
 
 export type AppIconName =
   | EnvironmentId

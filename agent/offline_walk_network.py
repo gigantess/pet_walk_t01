@@ -316,6 +316,10 @@ def plan_offline_network_loop(
 
     cleaned = collapse_backtracks(dense_coords)
     actual_length = round(polyline_length_m(cleaned), 1)
+    # Small target distances can collapse to a zero-length path after removing
+    # immediate reversals. Let the caller try another fallback in that case.
+    if len(cleaned) < 4 or actual_length <= 80.0:
+        return None
 
     meta = {
         "region": region,

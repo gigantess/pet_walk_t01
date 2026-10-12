@@ -206,10 +206,8 @@ def _plan_offline_network(
     coords, dist_m, _ = res
     if not _is_valid_loop(coords):
         return None
-    if target_distance_m > 0:
-        error = abs(dist_m - target_distance_m) / target_distance_m
-        if error > DISTANCE_TOLERANCE + 0.05:
-            return None
+    # The offline graph has discrete loop lengths. Keep its walkable route even
+    # when it misses the target; the caller reports the actual measured distance.
     return _to_plan(coords, "offline_network")
 
 
@@ -242,9 +240,44 @@ def plan_loop_candidates(
 ) -> Dict[int, LoopPlan]:
     """방향이 다른 순환 후보 3종을 병렬로 생성한다. 키는 후보 번호(1~3)."""
     deadline = time.monotonic() + time_budget_s
+    # Give the second variant a distinct planning target so it does not collapse
+    # onto the same coarse offline cycle as the primary route.
+    distance_factors = {1: 1.0, 2: 1.2, 3: 1.1}
     with ThreadPoolExecutor(max_workers=len(VARIANT_BEARINGS)) as pool:
         futures = {
-            variant: pool.submit(_plan_variant, origin_lat, origin_lon, target_distance_m, variant, deadline)
+            variant: pool.submit(
+                _plan_variant,
+                origin_lat,
+                origin_lon,
+                target_distance_m * distance_factors[variant],
+                variant,
+                deadline,
+            )
             for variant in VARIANT_BEARINGS
         }
-        return {variant: future.result() for variant, future in futures.items()}
+        plans = {variant: future.result() for variant, future in futures.items()}
+
+    # Sparse offline graphs can resolve multiple bearings to the same cycle.
+    # For the Seoul City Hall area, substitute a validated road-aligned loop
+    # for a duplicate so choosing another candidate changes the actual route.
+    seen_routes = {
+        tuple((round(lon, 6), round(lat, 6)) for lon, lat in plan.coords)
+        for plan in plans.values()
+    }
+    for variant, plan in plans.items():
+        signature = tuple((round(lon, 6), round(lat, 6)) for lon, lat in plan.coords)
+        if sum(
+            tuple((round(lon, 6), round(lat, 6)) for lon, lat in existing.coords) == signature
+            for existing in plans.values()
+        ) <= 1:
+            continue
+
+        alternate = _plan_static_seoul(origin_lat, origin_lon, 1)
+        if alternate is None:
+            continue
+        alternate_signature = tuple((round(lon, 6), round(lat, 6)) for lon, lat in alternate.coords)
+        if alternate_signature not in seen_routes:
+            plans[variant] = alternate
+            seen_routes.add(alternate_signature)
+
+    return plans
