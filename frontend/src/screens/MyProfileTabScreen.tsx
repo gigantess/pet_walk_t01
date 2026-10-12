@@ -121,11 +121,11 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         </TouchableOpacity>
       </CardWrapper>
 
-      {/* 산책 체감 피드백 테스트 */}
+      {/* AI 경로 보정 시뮬레이터 (개발/시연용 가상 피드백) */}
       <CardWrapper variant="flat">
-        <Text style={styles.cardHeaderTitle}>🧪 산책 체감 피드백 테스트</Text>
+        <Text style={styles.cardHeaderTitle}>🧪 [시연/테스트] AI 산책로 보정 시뮬레이터</Text>
         <Text style={styles.backupDesc}>
-          보행 후 체감 피드백에 따라 AI가 다음 추천 경로를 자동으로 보정하는 기능을 테스트합니다.
+          실제 산책을 돌지 않고도 가상의 보행 피드백을 즉시 주입하여, AI 에이전트가 다음 산책로 추천 시 경사도를 자동으로 낮추어 관절 안심 코스로 보정하는 기능을 테스트합니다.
         </Text>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
           <TouchableOpacity
@@ -133,7 +133,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}
           >
             <Text style={{ color: '#991B1B', fontSize: 12, fontWeight: '600' }}>
-              + 가파른 길 피드백
+              + 가상 "언덕/경사 부담" 피드백 주입
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -141,7 +141,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}
           >
             <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '600' }}>
-              + 완만한 길 피드백
+              + 가상 "완만하고 편안함" 피드백 주입
             </Text>
           </TouchableOpacity>
         </View>

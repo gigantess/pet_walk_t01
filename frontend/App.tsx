@@ -164,7 +164,12 @@ export default function App() {
     };
     await LocalStorageService.appendWalkRecord(sampleWalk);
     setFeedbackSummary(await FeedbackContextService.buildRecentFeedbackContext());
-    Alert.alert('피드백 등록', dissatisfied ? '⚠️ 가파른 경사 불만족이 반영되었습니다.' : '👍 완만길 만족이 등록되었습니다.');
+    Alert.alert(
+      '시연용 가상 피드백 반영',
+      dissatisfied
+        ? '⚠️ 가상의 직전 산책에 "언덕/경사 부담" 피드백이 주입되었습니다. 다음 산책로 추천 시 AI가 완만한 코스 위주로 자동 보정합니다.'
+        : '👍 가상의 직전 산책에 "완만한 길 만족" 피드백이 주입되었습니다.',
+    );
   };
 
   return (

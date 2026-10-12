@@ -12,11 +12,16 @@ import NativeSvg, { Polyline as NativePolyline, Circle as NativeCircle, G as Nat
 import { TOKENS } from '../../theme/tokens';
 
 const isWeb = Platform.OS === 'web';
-const Svg: React.ComponentType<any> = isWeb ? ({ accessible, ...props }: any) => <svg {...props} /> : NativeSvg;
-const Polyline: React.ComponentType<any> = isWeb ? (props: any) => <polyline {...props} /> : NativePolyline;
-const Circle: React.ComponentType<any> = isWeb ? (props: any) => <circle {...props} /> : NativeCircle;
-const G: React.ComponentType<any> = isWeb ? (props: any) => <g {...props} /> : NativeG;
-const SvgText: React.ComponentType<any> = isWeb ? (props: any) => <text {...props} /> : NativeSvgText;
+const cleanWebProps = ({ accessible, style, ...props }: any) => {
+  const flat = Array.isArray(style) ? StyleSheet.flatten(style) : style;
+  return flat ? { style: flat, ...props } : props;
+};
+
+const Svg: React.ComponentType<any> = isWeb ? (props: any) => <svg {...cleanWebProps(props)} /> : NativeSvg;
+const Polyline: React.ComponentType<any> = isWeb ? (props: any) => <polyline {...cleanWebProps(props)} /> : NativePolyline;
+const Circle: React.ComponentType<any> = isWeb ? (props: any) => <circle {...cleanWebProps(props)} /> : NativeCircle;
+const G: React.ComponentType<any> = isWeb ? (props: any) => <g {...cleanWebProps(props)} /> : NativeG;
+const SvgText: React.ComponentType<any> = isWeb ? (props: any) => <text {...cleanWebProps(props)} /> : NativeSvgText;
 import { LonLat, RouteFeatureCollection, RouteStepPin, RouteSegmentFeature } from '../../types/route';
 import { buildCourseSummary } from '../../services/routeGeometry';
 import { calculateOsmTiles } from '../../services/osmTileService';
