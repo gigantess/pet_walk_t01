@@ -11,6 +11,11 @@ FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API).
 - GET /health (헬스체크)
 """
 
+from dotenv import load_dotenv
+
+# .env 를 가장 먼저 읽어야 agent.* 모듈 import 시 os.getenv(SUPABASE_URL 등) 가 값을 본다.
+load_dotenv()
+
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
