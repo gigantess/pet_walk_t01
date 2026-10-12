@@ -191,7 +191,9 @@ def plan_walk_route(req: Dict[str, Any]):
     client_dog = {
         "dog_id": req.get("dog_id", "dog_default"),
         "name": dog_name,
-        "breed": "반려견",
+        "breed": req.get("breed", "반려견"),
+        "age_years": req.get("age_years", 4),
+        "weight_kg": req.get("weight_kg", 4.0),
         "speed_kmh": req.get("speed_kmh", 2.8),
         "joint_care_level": req.get("joint_care_level", 1),
     }

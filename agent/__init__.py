@@ -21,6 +21,8 @@ from agent.walk_planning_agent import (
     calibrate_max_slope_with_feedback,
     score_candidate_route,
     get_standard_speed_kmh,
+    generate_loop_candidates,
+    LoopCandidateRequest,
 )
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     "calibrate_max_slope_with_feedback",
     "score_candidate_route",
     "get_standard_speed_kmh",
+    "generate_loop_candidates",
+    "LoopCandidateRequest",
 ]
