@@ -433,8 +433,11 @@ cd frontend && npm test
 | [`docs/03_편안하개_Agile_User_Stories.md`](docs/03_편안하개_Agile_User_Stories.md) | 8대 에픽(A~H), 18개 애자일 사용자 스토리 명세서 및 인수 조건(DoD) | 백로그 / 기능 명세 |
 | [`docs/04_ai_problem_definition.md`](docs/04_ai_problem_definition.md) | AI 문제 정의서 (아키텍처, 5대 핵심 문제, 성공 지표 및 평가 기준) | AI 문제 정의 |
 | [`docs/05_편안하개_프로젝트_수행계획서_일정.md`](docs/05_편안하개_프로젝트_수행계획서_일정.md) | 프로젝트 전체 일정, 주차별 R&R, 간트 차트 및 4단계 마일스톤 수행계획 | 마일스톤 / 일정 |
-| [`docs/implementation_plan/frontend_phase2_stories_implementation_plan.md`](docs/implementation_plan/frontend_phase2_stories_implementation_plan.md) | 프론트엔드 Phase 2(US-29, US-23, US-21) 상세 구현 계획서 | Phase 2 구현 계획 |
-| [`docs/implementation_plan/99.member4_implementation_status_report.md`](docs/implementation_plan/99.member4_implementation_status_report.md) | 멤버4 구현 완료 보고서 및 산출물 종합 보고서 | 구현 보고서 |
+| [`docs/implementation_plan/조현정_향후_구현계획.md`](docs/implementation_plan/조현정_향후_구현계획.md) | 1번 조현정(팀장 / PM & AI Agent Lead) 향후 주차별 구현 계획서 | PM / AI 코어 |
+| [`docs/implementation_plan/전황진_향후_구현계획.md`](docs/implementation_plan/전황진_향후_구현계획.md) | 2번 전황진(데이터 / AI & Spatial Data Engineer) 향후 주차별 구현 계획서 | GIS / 공간데이터 |
+| [`docs/implementation_plan/노희선_향후_구현계획.md`](docs/implementation_plan/노희선_향후_구현계획.md) | 3번 노희선(서버 / Backend & Spatial Routing Lead) 향후 주차별 구현 계획서 | 서버 / REST API |
+| [`docs/implementation_plan/김승현_향후_구현계획.md`](docs/implementation_plan/김승현_향후_구현계획.md) | 4번 김승현(앱 / Frontend & Mobile App Lead) 향후 주차별 구현 계획서 | 모바일 / EAS 배포 |
+| [`docs/implementation_plan/김정님_향후_구현계획.md`](docs/implementation_plan/김정님_향후_구현계획.md) | 5번 김정님(UI / UI/UX & Experience Lead) 향후 주차별 구현 계획서 | UI/UX / 5인 CBT |
 | [`docs/screenshots/README.md`](docs/screenshots/README.md) | 주요 모바일 구동 화면 스크린샷 9종 갤러리 및 상세 설명 | 화면 갤러리 |
 
 ---
@@ -452,10 +455,13 @@ pet_walk_t01/
 │   ├── 04_ai_problem_definition.md            # AI 문제 정의서 (아키텍처, 5대 문제, 성공 지표)
 │   ├── 05_편안하개_Member4_모바일_구현계획서.md # 멤버4 모바일 전담 6단계 구현 계획서
 │   ├── 05_편안하개_프로젝트_수행계획서_일정.md # 프로젝트 수행 기간, 간트 차트 및 마일스톤
-│   ├── implementation_plan/                   # 상세 구현 계획 및 상태 보고서
-│   │   ├── frontend_phase2_stories_implementation_plan.md # Phase 2 스토리(US-29, 23, 21) 구현 계획서
-│   │   ├── 99.member4_implementation_status_report.md     # 멤버4 구현 완료 보고서
-│   │   └── member_d_remaining_tasks_implementation_plan.md# 멤버D 남은 작업 상세 계획서
+│   ├── implementation_plan/                   # 멤버별 향후 상세 구현 계획서 (주차별/단계별)
+│   │   ├── 조현정_향후_구현계획.md                # 1번 조현정 (팀장 / PM & AI 코어)
+│   │   ├── 전황진_향후_구현계획.md                # 2번 전황진 (데이터 / GIS & 열환경)
+│   │   ├── 노희선_향후_구현계획.md                # 3번 노희선 (서버 / REST API & 라우팅)
+│   │   ├── 김승현_향후_구현계획.md                # 4번 김승현 (앱 / 모바일 & EAS 배포)
+│   │   ├── 김정님_향후_구현계획.md                # 5번 김정님 (UI / UX 디자인 & 5인 CBT)
+│   │   └── old/                               # 기구축 완료 및 아카이빙된 기존 계획서
 │   └── screenshots/                           # 📸 주요 구동 화면 고화질 스크린샷 (01~09)
 ├── backend/                                   # ⚡ [Supabase & 백엔드] FastAPI REST API & AI Agent
 │   ├── README.md                              # 백엔드 아키텍처 및 로컬 실행/테스트 가이드
