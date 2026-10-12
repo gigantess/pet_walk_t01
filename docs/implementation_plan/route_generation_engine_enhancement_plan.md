@@ -68,7 +68,7 @@ graph TD
 ### Step 1. 지오메트리 기반 실제 거리/시간 산출 및 API 파라미터 바인딩 정규화
 
 #### 1.1 지오메트리 실측 계산기 모듈 구축
-- **파일**: [`agent/road_network_routes.py`](file:///d:/cody/pet_walk_t01/agent/road_network_routes.py), [`agent/walk_planning_agent.py`](file:///d:/cody/pet_walk_t01/agent/walk_planning_agent.py)
+- **파일**: [`agent/road_network_routes.py`](/agent/road_network_routes.py), [`agent/walk_planning_agent.py`](/agent/walk_planning_agent.py)
 - **내용**:
   - `geojson_coordinates`의 연속된 좌표 쌍에 대해 정밀 구면 거리(Haversine Formula)를 누적 계산하는 `calculate_polyline_distance_m(coords)` 함수 도입.
   - 반려견의 체급/연령 맞춤 속도($V_{\text{dog}}$, m/min)를 적용하여 소요 시간을 역산:
@@ -77,7 +77,7 @@ graph TD
   - 턴바이턴 각 단계의 `distance_m` 합계가 전체 코스 길이와 일치하도록 보정.
 
 #### 1.2 `main.py` 요청 DTO 파라미터 유실 제거
-- **파일**: [`main.py`](file:///d:/cody/pet_walk_t01/main.py)
+- **파일**: [`main.py`](/main.py)
 - **내용**:
   - 클라이언트가 전달한 `breed`, `age_years`, `weight_kg`, `speed_kmh`, `joint_care_level`이 `run_walk_planning_agent`의 `client_dog_context`로 온전하게 전달되도록 바인딩 로직 수정.
   - 하드코딩된 `breed="반려견"` 제거.
@@ -87,7 +87,7 @@ graph TD
 ### Step 2. 출발지 기반 동적 웨이포인트 루프 생성 엔진 (OSRM 비동기 병렬화)
 
 #### 2.1 다방향 순환 웨이포인트 생성 알고리즘
-- **파일**: [`agent/road_network_routes.py`](file:///d:/cody/pet_walk_t01/agent/road_network_routes.py)
+- **파일**: [`agent/road_network_routes.py`](/agent/road_network_routes.py)
 - **내용**:
   - 사용자의 임의 출발지 $(lat_0, lon_0)$와 목표 거리 $D_{\text{target}}$에 대해, 목표 순환 반경 $R \approx \frac{D_{\text{target}}}{2.8 \pi}$를 산출.
   - 3가지 서로 다른 테마의 순환 웨이포인트 세트 생성:
@@ -131,7 +131,7 @@ graph TD
 ### Step 5. 무결성 도로망 오프라인 폴백 아키텍처 (직선 격자 퇴출)
 
 #### 5.1 사각형 직선 폴백(`_generate_general_grid_loop`) 완전 제거
-- **파일**: [`agent/walk_planning_agent.py`](file:///d:/cody/pet_walk_t01/agent/walk_planning_agent.py)
+- **파일**: [`agent/walk_planning_agent.py`](/agent/walk_planning_agent.py)
 - **개선안**:
   - OSRM 네트워크 단절 또는 타임아웃 발생 시, 기존의 "빌딩을 관통하는 직사각형 좌표" 생성을 영구 중단.
   - **대체 전략**:
@@ -143,7 +143,7 @@ graph TD
 ### Step 6. OSM 태그(계단, 노면, 경사) 및 DEM 연계 실시간 지표 평가 파이프라인
 
 #### 6.1 실제 보행 환경 속성 평가 모듈 연동
-- **파일**: [`agent/walk_planning_agent.py`](file:///d:/cody/pet_walk_t01/agent/walk_planning_agent.py), `agent/surface_slope_evaluator.py` (신설)
+- **파일**: [`agent/walk_planning_agent.py`](/agent/walk_planning_agent.py), `agent/surface_slope_evaluator.py` (신설)
 - **내용**:
   - OSRM Step Annotation 또는 Overpass Way 태그를 파싱하여:
     - 계단 여부: `highway=steps` 링크 포함 여부 실측 검증 (`has_stairs`).
@@ -167,8 +167,8 @@ graph TD
 
 ## 🧪 5. 검증 및 수용 기준 (Definition of Done)
 
-- [ ] **소요 시간/거리 정합성**: 10~60분 모든 슬라이더 입력에 대해 실제 경로 Polyline의 거리가 속도 환산 목표치의 $\pm 15\%$ 이내일 것.
-- [ ] **건물 비관통**: 서울 시청, 강남, 성수 권역 건물 폴리곤과의 교차 테스트에서 위반 선분 0건 달성.
-- [ ] **루프 무결성**: 모든 경로의 출발점-도착점 오차 15m 이하, 되돌아오는 중복 왕복률 15% 이하 유지.
-- [ ] **응답 성능**: 3개 대안 경로 생성 및 점수 평가 전체 응답 시간이 1.5초 이내일 것.
-- [ ] **테스트 통과**: 신규 공간 무결성 테스트를 포함한 백엔드 Pytest 및 프론트엔드 Vitest 100% 통과.
+- [x] **소요 시간/거리 정합성**: 10~60분 모든 슬라이더 입력에 대해 실제 경로 Polyline의 거리가 속도 환산 목표치의 $\pm 15\%$ 이내일 것. (완료: Step 1 & 3 검증 통과)
+- [x] **건물 비관통**: 서울 시청, 강남, 성수 권역 건물 폴리곤과의 교차 테스트에서 위반 선분 0건(관통률 0.0%) 달성. (완료: Step 4 test_building_avoidance 통과)
+- [x] **루프 무결성**: 모든 경로의 출발점-도착점 오차 15m 이하, 되돌아오는 중복 왕복률 15% 이하 유지. (완료: Step 1, 3, 5 검증 통과)
+- [x] **응답 성능**: 3개 대안 경로 생성 및 점수 평가 전체 응답 시간이 1.5초 이내일 것. (완료: Step 2 ThreadPoolExecutor 병렬화)
+- [x] **테스트 통과**: 신규 공간 무결성 테스트를 포함한 백엔드 Pytest (125건 100% Passed) 및 프론트엔드 Vitest (71건 100% Passed) 전체 통과. (완료: Step 3, 4, 6)

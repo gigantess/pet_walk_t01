@@ -21,6 +21,7 @@ from agent.road_network_routes import (
     V3_ROAD_ALIGNED_COORDS,
     fetch_osrm_foot_route,
 )
+from agent.offline_walk_network import plan_offline_network_loop
 from agent.route_geometry import (
     backtrack_ratio,
     collapse_backtracks,
@@ -192,6 +193,26 @@ def _plan_rectangle_fallback(
     return _to_plan(coords, "rectangle_fallback")
 
 
+def _plan_offline_network(
+    origin_lat: float,
+    origin_lon: float,
+    target_distance_m: float,
+    variant: int,
+) -> Optional[LoopPlan]:
+    """오프라인 실제 보행 도로망 그래프에서 건물 관통 없는 순환 코스 생성."""
+    res = plan_offline_network_loop(origin_lat, origin_lon, target_distance_m, variant)
+    if res is None:
+        return None
+    coords, dist_m, _ = res
+    if not _is_valid_loop(coords):
+        return None
+    if target_distance_m > 0:
+        error = abs(dist_m - target_distance_m) / target_distance_m
+        if error > DISTANCE_TOLERANCE + 0.05:
+            return None
+    return _to_plan(coords, "offline_network")
+
+
 def _plan_variant(
     origin_lat: float,
     origin_lon: float,
@@ -199,12 +220,15 @@ def _plan_variant(
     variant: int,
     deadline: float,
 ) -> LoopPlan:
-    """실시간 → 정적 도로망 → 직사각형 폴백 순으로 후보 1개를 생성한다."""
+    """실시간 → 정적 도로망 → 오프라인 도로망 그래프 → 비상 폴백 순으로 후보 1개를 생성한다."""
     plan = _plan_live(origin_lat, origin_lon, target_distance_m, variant, deadline)
     if plan is not None:
         return plan
-    logger.warning("OSRM 순환 코스 생성 실패(variant=%d): 오프라인 폴백을 사용합니다.", variant)
+    logger.warning("OSRM 순환 코스 생성 실패(variant=%d): 오프라인 도로망 폴백을 사용합니다.", variant)
     plan = _plan_static_seoul(origin_lat, origin_lon, variant, target_distance_m=target_distance_m)
+    if plan is not None:
+        return plan
+    plan = _plan_offline_network(origin_lat, origin_lon, target_distance_m, variant)
     if plan is not None:
         return plan
     return _plan_rectangle_fallback(origin_lat, origin_lon, target_distance_m, variant)
