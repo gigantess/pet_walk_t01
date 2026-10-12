@@ -22,3 +22,5 @@ build/
 scratch/
 docs/05_편안하개_Member4_모바일_구현계획서.md
 error/*.png
+# Python virtualenv
+.venv/

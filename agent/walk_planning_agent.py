@@ -16,6 +16,9 @@ from pydantic import BaseModel, Field, ValidationError
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 
+from agent.loop_route_planner import VARIANT_BEARINGS, plan_loop_candidates
+from agent.route_geometry import estimate_duration_minutes
+
 # ==============================================================================
 # 1. Pydantic 스키마 정의 (Strict Data Contracts)
 # ==============================================================================
@@ -258,193 +261,66 @@ def score_candidate_route(candidate: RouteCandidate, target_distance_m: float) -
     )
 
 
-from agent.road_network_routes import (
-    V1_ROAD_ALIGNED_COORDS,
-    V2_ROAD_ALIGNED_COORDS,
-    V3_ROAD_ALIGNED_COORDS,
-    V1_ROAD_STEPS,
-    V2_ROAD_STEPS,
-    V3_ROAD_STEPS,
-    fetch_osrm_foot_route,
-)
+class LoopCandidateRequest(BaseModel):
+    """[US-A3, US-B1] 순환 후보 생성 요청 파라미터 DTO."""
+    origin_lat: float
+    origin_lon: float
+    target_distance_m: float = Field(..., gt=0.0)
+    speed_kmh: float = Field(..., gt=0.0)
+    avoid_stairs: bool = True
+    max_slope_allowed: float = 6.0
+    preferred_surfaces: List[str] = Field(default_factory=list)
 
 
-SEOUL_VARIANT_CONFIG: Dict[int, Dict[str, Any]] = {
-    1: {
-        "waypoints": [
-            (37.5663, 126.9784),
-            (37.56625, 126.97914),
-            (37.5675, 126.9792),
-            (37.5689, 126.9794),
-            (37.5691, 126.9806),
-            (37.5689, 126.9830),
-            (37.5661, 126.9828),
-            (37.5663, 126.9784),
-        ],
-        "steps": V1_ROAD_STEPS,
-        "fallback": V1_ROAD_ALIGNED_COORDS,
-    },
-    2: {
-        "waypoints": [
-            (37.5663, 126.9784),
-            (37.5680, 126.9774),
-            (37.5693, 126.9772),
-            (37.5693, 126.9800),
-            (37.5689, 126.9830),
-            (37.5694, 126.9830),
-            (37.5696, 126.9795),
-            (37.5693, 126.9772),
-            (37.5680, 126.9774),
-            (37.5663, 126.9784),
-        ],
-        "steps": V2_ROAD_STEPS,
-        "fallback": V2_ROAD_ALIGNED_COORDS,
-    },
-    3: {
-        "waypoints": [
-            (37.5663, 126.9784),
-            (37.5658, 126.9765),
-            (37.5660, 126.9754),
-            (37.5677, 126.9738),
-            (37.5697, 126.9715),
-            (37.5701, 126.9732),
-            (37.5686, 126.9768),
-            (37.5663, 126.9784),
-        ],
-        "steps": V3_ROAD_STEPS,
-        "fallback": V3_ROAD_ALIGNED_COORDS,
-    },
-}
-
-GENERAL_GRID_DELTAS: Dict[int, Tuple[float, float]] = {
-    1: (0.0022, 0.0028),
-    2: (0.0018, 0.0022),
+# 후보별 표시 정보 및 보행 환경 지표 (노면/경사/열 지표는 Step 6 에서 실데이터로 대체 예정)
+DIRECTION_LABELS = ["북", "북동", "동", "남동", "남", "남서", "서", "북서"]
+VARIANT_NAME_TEMPLATES: Dict[int, str] = {
+    1: "🌿 {direction} 방면 보행안심 순환로",
+    2: "🚶 {direction} 방면 완만 보행 순환 코스",
+    3: "🏢 {direction} 방면 도심 가로수길 순환 코스",
 }
 
 
-def _generate_seoul_center_loop(variant: int) -> tuple[List[List[float]], List[Dict[str, Any]]]:
-    """서울 도심 권역 실시간 OSRM 또는 고정밀 보행 도로망 노드 루프 반환."""
-    cfg = SEOUL_VARIANT_CONFIG.get(variant, SEOUL_VARIANT_CONFIG[3])
-    live_res = fetch_osrm_foot_route(cfg["waypoints"], timeout_seconds=1.5)
-    if live_res and len(live_res[0]) >= 10:
-        return live_res[0], cfg["steps"]
-    return cfg["fallback"], cfg["steps"]
+def _direction_label(bearing: float) -> str:
+    return DIRECTION_LABELS[round(bearing / 45.0) % 8]
 
 
-def _generate_general_grid_loop(
-    origin_lat: float,
-    origin_lon: float,
-    variant: int,
-) -> tuple[List[List[float]], List[Dict[str, Any]]]:
-    """일반 좌표 권역 실시간 OSRM 또는 L자 격자 도로망 루프 반환."""
-    d_lat, d_lon = GENERAL_GRID_DELTAS.get(variant, (0.0026, 0.0032))
-
-    live_res = fetch_osrm_foot_route([
-        (origin_lat, origin_lon),
-        (origin_lat + d_lat, origin_lon),
-        (origin_lat + d_lat, origin_lon + d_lon),
-        (origin_lat, origin_lon + d_lon),
-        (origin_lat, origin_lon),
-    ], timeout_seconds=1.2)
-    if live_res and len(live_res[0]) >= 8:
-        coords = live_res[0]
-        dist = live_res[1]
-        steps = [
-            {"instruction": "보행로를 따라 직진하세요.", "distance_m": int(dist * 0.25), "position": coords[len(coords) // 4]},
-            {"instruction": "교차로에서 우회전하여 가로수길로 진입하세요.", "distance_m": int(dist * 0.5), "position": coords[len(coords) // 2]},
-            {"instruction": "출발 방향으로 우회전하여 복귀하세요.", "distance_m": int(dist * 0.75), "position": coords[(3 * len(coords)) // 4]},
-        ]
-        return coords, steps
-
-    n_pts_per_edge = 4
-    edge1 = [[origin_lon, origin_lat + d_lat * (i / n_pts_per_edge)] for i in range(n_pts_per_edge)]
-    edge2 = [[origin_lon + d_lon * (i / n_pts_per_edge), origin_lat + d_lat] for i in range(n_pts_per_edge)]
-    edge3 = [[origin_lon + d_lon, origin_lat + d_lat * (1.0 - i / n_pts_per_edge)] for i in range(n_pts_per_edge)]
-    edge4 = [[origin_lon + d_lon * (1.0 - i / n_pts_per_edge), origin_lat] for i in range(n_pts_per_edge)]
-    coords = edge1 + edge2 + edge3 + edge4 + [[origin_lon, origin_lat]]
-
-    steps = [
-        {"instruction": "보행로를 따라 직진하세요.", "distance_m": 200, "position": coords[len(coords) // 4]},
-        {"instruction": "교차로에서 우회전하여 가로수길로 진입하세요.", "distance_m": 300, "position": coords[len(coords) // 2]},
-        {"instruction": "횡단보도 건너 출발 방향으로 우회전하세요.", "distance_m": 250, "position": coords[(3 * len(coords)) // 4]},
-    ]
-    return coords, steps
+def _variant_profile(variant: int, req: LoopCandidateRequest) -> Dict[str, Any]:
+    """후보 번호별 보행 환경 지표 프로필."""
+    default_surfaces = req.preferred_surfaces or ["dirt", "grass"]
+    profiles: Dict[int, Dict[str, Any]] = {
+        1: {"has_stairs": False, "max_slope_percent": min(4.2, req.max_slope_allowed),
+            "average_slope_percent": 2.3, "surface_temp_c": 28.5, "average_shade_ratio": 0.85,
+            "surface_types": default_surfaces},
+        2: {"has_stairs": False, "max_slope_percent": min(6.5, req.max_slope_allowed + 1.0),
+            "average_slope_percent": 3.4, "surface_temp_c": 31.2, "average_shade_ratio": 0.60,
+            "surface_types": ["rubber", "paved"]},
+        3: {"has_stairs": not req.avoid_stairs, "max_slope_percent": 8.5,
+            "average_slope_percent": 4.8, "surface_temp_c": 35.5, "average_shade_ratio": 0.35,
+            "surface_types": ["asphalt", "paved"]},
+    }
+    return profiles[variant]
 
 
-def _generate_road_aligned_loop(
-    origin_lat: float,
-    origin_lon: float,
-    variant: int,
-) -> tuple[List[List[float]], List[Dict[str, Any]]]:
-    """도로나 인도를 벗어나지 않고 실제 보행 가능한 도로망을 따르는 순환 코스 좌표열 및 스텝 생성."""
-    if abs(origin_lat - 37.5665) < 0.05 and abs(origin_lon - 126.9780) < 0.05:
-        return _generate_seoul_center_loop(variant)
-    return _generate_general_grid_loop(origin_lat, origin_lon, variant)
+def generate_loop_candidates(req: LoopCandidateRequest) -> List[RouteCandidate]:
+    """[US-A3, US-B3] 출발지 기반 실제 도로망 순환 후보 3종 생성.
 
-
-def mock_generate_loop_candidates(
-    origin_lat: float,
-    origin_lon: float,
-    target_distance_m: float,
-    target_duration_minutes: float,
-    avoid_stairs: bool,
-    max_slope_allowed: float,
-    preferred_surfaces: List[str]
-) -> List[RouteCandidate]:
-    """[US-A3, US-B1] Routing API Adapter 실제 도로망 추종 순환 루프 후보 3종 생성기."""
-    c1_coords, c1_steps = _generate_road_aligned_loop(origin_lat, origin_lon, variant=1)
-    c2_coords, c2_steps = _generate_road_aligned_loop(origin_lat, origin_lon, variant=2)
-    c3_coords, c3_steps = _generate_road_aligned_loop(origin_lat, origin_lon, variant=3)
-
-    # 후보 1: 최적 무장애 흙길·수변 그늘길 루프 (모전교~광통교~광교~을지로1가)
-    c1 = RouteCandidate(
-        route_id="candidate-loop-01",
-        name="🌿 청계천 수변 그늘길 & 무교로 보행안심 순환로",
-        total_distance_m=round(target_distance_m * 1.02, 1),
-        estimated_duration_minutes=round(target_duration_minutes * 1.02, 1),
-        has_stairs=False,
-        max_slope_percent=min(4.2, max_slope_allowed),
-        average_slope_percent=2.3,
-        surface_temp_c=28.5,
-        average_shade_ratio=0.85,
-        surface_types=preferred_surfaces if preferred_surfaces else ["dirt", "grass"],
-        geojson_coordinates=c1_coords,
-        turn_by_turn_steps=c1_steps
-    )
-
-    # 후보 2: 완만 보도 및 탄성포장 안심길 (청계천 양안 수변 보행 데크)
-    c2 = RouteCandidate(
-        route_id="candidate-loop-02",
-        name="🚶 청계천 양안 수변 보행데크 순환 코스",
-        total_distance_m=round(target_distance_m * 0.94, 1),
-        estimated_duration_minutes=round(target_duration_minutes * 0.94, 1),
-        has_stairs=False,
-        max_slope_percent=min(6.5, max_slope_allowed + 1.0),
-        average_slope_percent=3.4,
-        surface_temp_c=31.2,
-        average_shade_ratio=0.60,
-        surface_types=["rubber", "paved"],
-        geojson_coordinates=c2_coords,
-        turn_by_turn_steps=c2_steps
-    )
-
-    # 후보 3: 문화유산 보행 전용길 루프 (덕수궁 돌담길 & 정동길)
-    c3 = RouteCandidate(
-        route_id="candidate-loop-03",
-        name="🏢 덕수궁 돌담길 & 정동길 문화 산책 코스",
-        total_distance_m=round(target_distance_m * 1.15, 1),
-        estimated_duration_minutes=round(target_duration_minutes * 1.15, 1),
-        has_stairs=not avoid_stairs,
-        max_slope_percent=8.5,
-        average_slope_percent=4.8,
-        surface_temp_c=35.5,
-        average_shade_ratio=0.35,
-        surface_types=["asphalt", "paved"],
-        geojson_coordinates=c3_coords,
-        turn_by_turn_steps=c3_steps
-    )
-
-    return [c1, c2, c3]
+    거리와 소요 시간은 생성된 좌표열의 실측값에서 계산한다.
+    """
+    plans = plan_loop_candidates(req.origin_lat, req.origin_lon, req.target_distance_m)
+    candidates: List[RouteCandidate] = []
+    for variant, plan in plans.items():
+        direction = _direction_label(VARIANT_BEARINGS[variant])
+        candidates.append(RouteCandidate(
+            route_id=f"candidate-loop-{variant:02d}",
+            name=VARIANT_NAME_TEMPLATES[variant].format(direction=direction),
+            total_distance_m=plan.distance_m,
+            estimated_duration_minutes=estimate_duration_minutes(plan.distance_m, req.speed_kmh),
+            geojson_coordinates=plan.coords,
+            turn_by_turn_steps=plan.steps,
+            **_variant_profile(variant, req),
+        ))
+    return candidates
 
 
 # ==============================================================================
@@ -506,8 +382,11 @@ def node_calibrate_constraints(state: WalkPlanningState) -> Dict[str, Any]:
     dog_ctx = ClientDogContext(**dog_ctx_dict) if dog_ctx_dict else ClientDogContext()
     feedback_list = [FeedbackSummaryItem(**fb) for fb in feedback_raw]
 
-    # 속도 계산 (소형 2.8, 중형 3.6, 대형 4.2, 노령 2.2 km/h)
-    speed_kmh = get_standard_speed_kmh(dog_ctx.weight_kg, dog_ctx.age_years, dog_ctx.joint_care_level)
+    # 속도 계산: 클라이언트가 보행 속도를 명시한 경우 우선 적용, 아니면 체급 표준 속도 (소형 2.8, 중형 3.6, 대형 4.2, 노령 2.2 km/h)
+    if "speed_kmh" in dog_ctx.model_fields_set:
+        speed_kmh = dog_ctx.speed_kmh
+    else:
+        speed_kmh = get_standard_speed_kmh(dog_ctx.weight_kg, dog_ctx.age_years, dog_ctx.joint_care_level)
 
     intent_dict = state.get("parsed_intent") or {}
     duration_min = intent_dict.get("target_duration_minutes", 20)
@@ -534,26 +413,20 @@ def node_calibrate_constraints(state: WalkPlanningState) -> Dict[str, Any]:
 
 
 def node_generate_candidates(state: WalkPlanningState) -> Dict[str, Any]:
-    """[Node 3] Routing Adapter 도구를 호출하여 순환 루프 후보 3종 생성."""
+    """[Node 3] Routing Adapter 도구를 호출하여 출발지 기반 순환 루프 후보 3종 생성."""
     trace = list(state.get("execution_trace", []))
-    origin_lat = state.get("origin_lat", 37.5665)
-    origin_lon = state.get("origin_lon", 126.9780)
-    target_dist = state.get("target_distance_m", 1000.0)
     intent_dict = state.get("parsed_intent") or {}
-    duration_min = intent_dict.get("target_duration_minutes", 20)
-    avoid_stairs = intent_dict.get("avoid_stairs", True)
-    max_slope = state.get("max_slope_allowed", 6.0)
-    preferred_surfaces = intent_dict.get("preferred_surfaces", ["dirt", "grass"])
 
-    candidates = mock_generate_loop_candidates(
-        origin_lat=origin_lat,
-        origin_lon=origin_lon,
-        target_distance_m=target_dist,
-        target_duration_minutes=duration_min,
-        avoid_stairs=avoid_stairs,
-        max_slope_allowed=max_slope,
-        preferred_surfaces=preferred_surfaces
+    request = LoopCandidateRequest(
+        origin_lat=state.get("origin_lat", 37.5665),
+        origin_lon=state.get("origin_lon", 126.9780),
+        target_distance_m=state.get("target_distance_m", 1000.0),
+        speed_kmh=state.get("calibrated_speed_kmh", 2.8),
+        avoid_stairs=intent_dict.get("avoid_stairs", True),
+        max_slope_allowed=state.get("max_slope_allowed", 6.0),
+        preferred_surfaces=intent_dict.get("preferred_surfaces", ["dirt", "grass"]),
     )
+    candidates = generate_loop_candidates(request)
 
     trace.append(f"[Node: generate_candidates] Generated {len(candidates)} loop candidates via Routing Adapter.")
 

@@ -3,12 +3,20 @@ FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API).
 
 - CORS 설정 (Expo Web http://localhost:8081 및 모바일 클라이언트 지원)
 - POST /api/v1/walk/plan (LangGraph ReAct Walk Planning Agent 코어 연동)
+- POST /api/v1/walk/reroute (US-D2 현장 위험 감지 시 안전 우회 재탐색)
+- POST /api/v1/surface/inspect (US-D1 현장 위험물/공원안내판 사진 판독 입구)
 - POST /api/v1/community/share (US-G2 200m 공간 마스킹 코스 공유)
 - GET /api/v1/community/feed (공개 안심 코스 피드)
+- POST /api/v1/hazards, GET /api/v1/hazards (공공 위험 제보 적재/반경 조회)
 - GET /health (헬스체크)
 """
 
-from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv
+
+# .env 를 가장 먼저 읽어야 agent.* 모듈 import 시 os.getenv(SUPABASE_URL 등) 가 값을 본다.
+load_dotenv()
+
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
@@ -16,6 +24,15 @@ from typing import List, Dict, Any, Optional
 from agent.walk_planning_agent import run_walk_planning_agent
 from agent.road_network_routes import V1_ROAD_ALIGNED_COORDS
 from agent.supabase_repository import community_repo
+from agent.hazard_service import (
+    HazardReportRepository,
+    HazardReportRequest,
+    InspectType,
+    RerouteRequest,
+    reroute_around_hazard,
+    run_vision_inspection,
+)
+from agent.surface_slope_evaluator import build_segmented_geojson
 from test_case.test_api_contracts import (
     apply_spatial_masking_to_course,
     WalkPlanResponseV1,
@@ -37,6 +54,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 위험 제보 저장소: community_repo 의 Supabase 클라이언트를 공유 (미연결 시 인메모리)
+hazard_repo = HazardReportRepository(lambda: community_repo._client)
+
+_MAX_UPLOAD_BYTES = 8 * 1024 * 1024  # 8MB
 
 
 @app.get("/")
@@ -103,48 +125,8 @@ def _build_course_list(agent_result: Any) -> List[Dict[str, Any]]:
 
 
 def _build_segmented_geojson(coords: List[List[float]], max_slope: float) -> Dict[str, Any]:
-    """경로 좌표열을 안전/보통/주의 3대 안심 등급 구간으로 분할하여 다채로운 지도 시각화 제공."""
-    if len(coords) < 4:
-        return {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {"segmentType": "safe", "maxSlopePercent": max_slope, "shaded": True},
-                    "geometry": {"type": "LineString", "coordinates": coords}
-                }
-            ]
-        }
-    n = len(coords)
-    i1 = max(1, n // 4)
-    i2 = max(i1 + 1, (2 * n) // 4)
-    i3 = max(i2 + 1, (3 * n) // 4)
-
-    return {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "safe", "maxSlopePercent": round(max(1.5, max_slope * 0.4), 1), "shaded": True},
-                "geometry": {"type": "LineString", "coordinates": coords[: i1 + 1]}
-            },
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "normal", "maxSlopePercent": round(max(2.2, max_slope * 0.7), 1), "shaded": False},
-                "geometry": {"type": "LineString", "coordinates": coords[i1 : i2 + 1]}
-            },
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "caution", "maxSlopePercent": round(max_slope, 1), "shaded": False},
-                "geometry": {"type": "LineString", "coordinates": coords[i2 : i3 + 1]}
-            },
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "safe", "maxSlopePercent": round(max(1.4, max_slope * 0.3), 1), "shaded": True},
-                "geometry": {"type": "LineString", "coordinates": coords[i3 :]}
-            },
-        ]
-    }
+    """경로 좌표열을 DEM 고도차 및 노면 실측 기반 3대 안심 등급(safe/normal/caution)으로 분할."""
+    return build_segmented_geojson(coords, max_slope_hint=max_slope)
 
 
 def _build_step_pins(cand: Any, coords: List[List[float]]) -> List[Dict[str, Any]]:
@@ -191,7 +173,9 @@ def plan_walk_route(req: Dict[str, Any]):
     client_dog = {
         "dog_id": req.get("dog_id", "dog_default"),
         "name": dog_name,
-        "breed": "반려견",
+        "breed": req.get("breed", "반려견"),
+        "age_years": req.get("age_years", 4),
+        "weight_kg": req.get("weight_kg", 4.0),
         "speed_kmh": req.get("speed_kmh", 2.8),
         "joint_care_level": req.get("joint_care_level", 1),
     }
@@ -237,10 +221,60 @@ def plan_walk_route(req: Dict[str, Any]):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@app.post("/api/v1/walk/reroute")
+def reroute_walk(req: RerouteRequest):
+    """[US-D2] 현장 위험 감지 시 해당 지점을 임시 차단(비용 10배)하고 3초 이내 안전 우회 경로 재산출.
+
+    - 신뢰도 0.70 미만 또는 severity=info 는 현 경로 유지(KEEP_ROUTE)
+    - 응답 geojson 은 [lon, lat] LineString, 시작=현재 위치, 끝=목적지
+    """
+    return reroute_around_hazard(req)
+
+
+@app.post("/api/v1/surface/inspect")
+async def inspect_surface(
+    image: UploadFile = File(..., description="현장 위험물 또는 공원 종합안내판 사진"),
+    inspect_type: InspectType = Form("hazard"),
+):
+    """[US-D1 입구] 사진을 받아 위험물/안내판 판독 결과를 Pydantic 구조화 JSON 으로 반환.
+
+    GEMINI_API_KEY 미설정 시 mock 모드(is_live_vision=false). 라이브 비전 체인은 2번 데이터 담당 연결 예정.
+    """
+    if not (image.content_type or "").startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="이미지 파일(image/*)만 업로드할 수 있습니다.",
+        )
+    data = await image.read()
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="이미지는 8MB 이하여야 합니다.")
+    return run_vision_inspection(data, image.filename or "", inspect_type)
+
+
+@app.post("/api/v1/hazards", status_code=status.HTTP_201_CREATED)
+def report_hazard(req: HazardReportRequest):
+    """[US-D2 AC3] 공공 위험 제보 적재 (Supabase hazard_reports 우선, 인메모리 자동 폴백)."""
+    report = hazard_repo.save(req)
+    return {"status": "reported", "report": report, "is_supabase": hazard_repo.is_connected()}
+
+
+@app.get("/api/v1/hazards")
+def list_nearby_hazards(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+    radius_m: float = Query(500.0, gt=0.0, le=5000.0),
+):
+    """현재 위치 반경 내 활성 위험 제보 조회 (가까운 순)."""
+    reports = hazard_repo.nearby(lat, lon, radius_m)
+    return {"count": len(reports), "radius_m": radius_m, "reports": reports, "is_supabase": hazard_repo.is_connected()}
+
+
 @app.post("/api/v1/community/share")
 def share_community_course(req: CommunityCourseShareRequest):
-    """[US-G2] 출발지 및 도착지 200m 공간 마스킹 후 Supabase PostgreSQL / 인메모리 피드 등록."""
-    mask_result = apply_spatial_masking_to_course(req.raw_coordinates, masking_radius_m=200.0)
+    """[US-G2] 출발지 및 도착지 200m 공간 절단 및 교차로(Node) 스냅 마스킹 후 피드 등록."""
+    mask_result = apply_spatial_masking_to_course(
+        req.raw_coordinates, masking_radius_m=200.0, snap_to_intersection=True
+    )
     current_count = len(community_repo.get_feeds())
     new_feed = {
         "course_id": f"feed_{current_count + 1}",
@@ -250,12 +284,14 @@ def share_community_course(req: CommunityCourseShareRequest):
         "duration_min": 22,
         "rating": float(req.satisfaction_rating),
         "is_origin_masked": mask_result["is_masked"],
+        "intersection_snapped": mask_result.get("intersection_snapped", False),
     }
     saved_feed = community_repo.save_course(new_feed)
     return {
         "status": "shared",
         "feed": saved_feed,
         "is_supabase": community_repo.is_connected(),
+        "intersection_snapped": mask_result.get("intersection_snapped", False),
     }
 
 

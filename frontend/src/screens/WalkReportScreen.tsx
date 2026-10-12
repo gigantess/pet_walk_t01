@@ -12,6 +12,7 @@ import { WalkRecord, WalkFeedback, SlopeFeedbackLevel } from '../types/storage';
 import { QuickFeedbackModal } from '../components/feedback/QuickFeedbackModal';
 import { BookmarkToggleButton } from '../components/bookmark/BookmarkToggleButton';
 import { BookmarkedRoute } from '../types/bookmark';
+import { AppIcon } from '../components/common/AppIcon';
 
 export interface WalkReportScreenProps {
   record: WalkRecord;
@@ -22,9 +23,9 @@ export interface WalkReportScreenProps {
 }
 
 function getSlopeRatingLabel(rating?: SlopeFeedbackLevel): string {
-  if (rating === 'gentle') return '🌿 완만/평지 (관절 편안)';
-  if (rating === 'moderate') return '🚶 적당함';
-  if (rating === 'steep') return '⛰️ 가파름 (다음 코스 자동 완화)';
+  if (rating === 'gentle') return '완만/평지 (관절 편안)';
+  if (rating === 'moderate') return '적당함';
+  if (rating === 'steep') return '가파름 (다음 코스 자동 완화)';
   return '';
 }
 
@@ -43,7 +44,10 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 완주 축하 배너 */}
         <View style={styles.congratsCard}>
-          <Text style={styles.congratsBadge}>WALK COMPLETE 🐾</Text>
+          <View style={styles.congratsBadge}>
+            <Text style={styles.congratsBadgeText}>WALK COMPLETE</Text>
+            <AppIcon name="paw" size={14} color="#FFFFFF" />
+          </View>
           <Text style={styles.congratsTitle}>오늘 산책을 무사히 마쳤어요!</Text>
           <Text style={styles.congratsSubtitle}>
             {dogName}와 함께 발바닥과 관절이 편안한 산책을 완주했습니다.
@@ -61,7 +65,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
         {/* 핵심 보행 통계 4분할 그리드 */}
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>📍</Text>
+            <AppIcon name="location" size={19} color={TOKENS.colors.primary} />
             <Text style={styles.statLabel}>총 이동 거리</Text>
             <Text style={styles.statValue}>
               {record.totalDistanceKm.toFixed(2)}
@@ -70,7 +74,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
           </View>
 
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>⏱</Text>
+            <AppIcon name="clock" size={19} color={TOKENS.colors.primary} />
             <Text style={styles.statLabel}>산책 소요 시간</Text>
             <Text style={styles.statValue}>
               {record.durationMinutes}
@@ -79,7 +83,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
           </View>
 
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>⚡</Text>
+            <AppIcon name="speed" size={19} color={TOKENS.colors.primary} />
             <Text style={styles.statLabel}>평균 속도</Text>
             <Text style={styles.statValue}>
               {record.averageSpeedKmH.toFixed(1)}
@@ -88,7 +92,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
           </View>
 
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>🌿</Text>
+            <AppIcon name="soft" size={19} color={TOKENS.colors.primary} />
             <Text style={styles.statLabel}>완만 노면 달성률</Text>
             <Text style={[styles.statValue, { color: TOKENS.colors.primaryDark }]}>
               {safeRatioPercent}
@@ -100,19 +104,25 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
         {/* 피드백 상태 카드 */}
         <View style={styles.feedbackCard}>
           <View style={styles.feedbackCardHeader}>
-            <Text style={styles.feedbackCardTitle}>📝 산책 체감 피드백</Text>
-            <TouchableOpacity onPress={() => setShowFeedbackModal(true)}>
-              <Text style={styles.feedbackEditBtn}>
-                {record.feedback ? '수정하기 ✏️' : '남기기 +'}
-              </Text>
+            <View style={styles.feedbackTitleRow}>
+              <AppIcon name="edit" size={17} color={TOKENS.colors.primaryDark} />
+              <Text style={styles.feedbackCardTitle}>산책 체감 피드백</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowFeedbackModal(true)} style={styles.feedbackEditAction}>
+              <Text style={styles.feedbackEditBtn}>{record.feedback ? '수정하기' : '남기기'}</Text>
+              <AppIcon name={record.feedback ? 'edit' : 'plus'} size={14} color={TOKENS.colors.primary} />
             </TouchableOpacity>
           </View>
 
           {record.feedback ? (
             <View style={styles.feedbackContent}>
-              <Text style={styles.feedbackScoreText}>
-                만족도: {'⭐'.repeat(record.feedback.comfortScore)} ({record.feedback.comfortScore}점)
-              </Text>
+              <View style={styles.feedbackScoreRow}>
+                <Text style={styles.feedbackScoreText}>만족도:</Text>
+                {Array.from({ length: record.feedback.comfortScore }, (_, index) => (
+                  <AppIcon key={index} name="star" size={15} color={TOKENS.colors.primary} filled />
+                ))}
+                <Text style={styles.feedbackScoreText}>({record.feedback.comfortScore}점)</Text>
+              </View>
               {Boolean(record.feedback.slopeRating) && (
                 <Text style={styles.feedbackSlopeText}>
                   경사도: {getSlopeRatingLabel(record.feedback.slopeRating)}
@@ -136,7 +146,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
               style={styles.noFeedbackNotice}
             >
               <Text style={styles.noFeedbackText}>
-                3초 빠른 피드백을 남겨주시면 다음 산책 경로에 반영돼요! 🐾
+                3초 빠른 피드백을 남겨주시면 다음 산책 경로에 반영돼요.
               </Text>
             </TouchableOpacity>
           )}
@@ -151,7 +161,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
       {/* 하단 홈으로 돌아가기 버튼 */}
       <View style={styles.bottomBar}>
         <TouchableOpacity activeOpacity={0.88} onPress={onGoHome} style={styles.homeBtn}>
-          <Text style={styles.homeBtnText}>홈으로 돌아가기 ✓</Text>
+          <Text style={styles.homeBtnText}>홈으로 돌아가기</Text>
         </TouchableOpacity>
       </View>
 
@@ -170,13 +180,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: TOKENS.colors.background },
   scrollContent: { padding: 20, paddingBottom: 110 },
   congratsCard: {
-    backgroundColor: '#ECFDF5', borderWidth: 1.5, borderColor: TOKENS.colors.primaryMint,
+    backgroundColor: TOKENS.colors.primaryWash, borderWidth: 1.5, borderColor: TOKENS.colors.primaryMint,
     borderRadius: TOKENS.borderRadius.card, padding: 20, alignItems: 'center', marginBottom: 16,
   },
   congratsBadge: {
-    backgroundColor: TOKENS.colors.primary, color: '#FFFFFF', fontSize: 11, fontWeight: '800',
-    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: TOKENS.colors.primary, paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 12, marginBottom: 8,
   },
+  congratsBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   congratsTitle: { fontSize: 20, fontWeight: '800', color: TOKENS.colors.textMain, marginBottom: 6, textAlign: 'center' },
   congratsSubtitle: { fontSize: 13, color: TOKENS.colors.textMuted, textAlign: 'center', lineHeight: 18 },
   bookmarkRow: {
@@ -190,7 +202,6 @@ const styles = StyleSheet.create({
     width: '48%', backgroundColor: TOKENS.colors.surface, borderRadius: 16,
     borderWidth: 1, borderColor: TOKENS.colors.border, padding: 14,
   },
-  statIcon: { fontSize: 18, marginBottom: 4 },
   statLabel: { fontSize: 11, color: TOKENS.colors.textMuted, fontWeight: '600', marginBottom: 2 },
   statValue: { fontSize: 20, fontWeight: '800', color: TOKENS.colors.textMain },
   statUnit: { fontSize: 12, fontWeight: '500', color: TOKENS.colors.textMuted },
@@ -199,10 +210,13 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: TOKENS.colors.border, padding: 16, marginBottom: 16,
   },
   feedbackCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  feedbackTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   feedbackCardTitle: { fontSize: 14, fontWeight: '700', color: TOKENS.colors.textMain },
+  feedbackEditAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   feedbackEditBtn: { fontSize: 12, fontWeight: '600', color: TOKENS.colors.primary },
   feedbackContent: { gap: 6 },
   feedbackScoreText: { fontSize: 13, fontWeight: '600', color: TOKENS.colors.textMain },
+  feedbackScoreRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   feedbackSlopeText: { fontSize: 12, fontWeight: '600', color: TOKENS.colors.primaryDark },
   feedbackTagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   tagBadge: { backgroundColor: TOKENS.colors.primaryLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
