@@ -320,7 +320,12 @@ def get_weather_heat_risk(
 
     for h in range(24):
         air_temp = round(26.5 + 4.5 * math.cos(((h - 14) / 12) * math.pi), 1)
-        sky = "clear" if 10 <= h <= 15 else "partly_cloudy" if 6 <= h <= 18 else "clear"
+        if 10 <= h <= 15:
+            sky = "clear"
+        elif 6 <= h <= 18:
+            sky = "partly_cloudy"
+        else:
+            sky = "clear"
         dto = determine_heat_risk_dto(hour=h, air_temp=air_temp, sky=sky)
         hourly.append(dto.model_dump() if hasattr(dto, "model_dump") else dto.dict())
         if dto.is_golden_time and (6 <= h <= 22):
