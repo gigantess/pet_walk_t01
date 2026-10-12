@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import NativeSvg, {
   Circle as NativeCircle,
   Ellipse as NativeEllipse,
@@ -18,8 +18,6 @@ import { TOKENS } from '../../theme/tokens';
 import { EnvironmentId } from '../../types/walkSettings';
 
 const isWeb = Platform.OS === 'web';
-
-import { StyleSheet } from 'react-native';
 
 const cleanWebProps = ({ accessible, style, ...props }: any) => {
   const flat = Array.isArray(style) ? StyleSheet.flatten(style) : style;

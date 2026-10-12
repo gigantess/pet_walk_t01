@@ -23,6 +23,7 @@ from agent.building_geometry import (
 )
 from agent.loop_route_planner import plan_loop_candidates
 
+
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 
@@ -98,6 +99,7 @@ class TestBuildingAvoidanceSpatialIntegrity:
         assert len({round(plan.distance_m) for plan in plans.values()}) == 3
         for plan in plans.values():
             assert count_building_penetrations(plan.coords, seoul_center_buildings)[2] == 0.0
+
 
     def test_gangnam_route_zero_building_penetration(self, gangnam_buildings: List[Polygon]):
         """강남역 출발 경로가 삼성타운/메리츠타워 등 대형 오피스 빌딩을 관통하지 않아야 한다."""

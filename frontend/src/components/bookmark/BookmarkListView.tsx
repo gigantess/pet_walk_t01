@@ -17,6 +17,7 @@ import { CardWrapper } from '../common/CardWrapper';
 import { AppIcon } from '../common/AppIcon';
 import { RouteMapView } from '../map/RouteMapView';
 
+
 export interface BookmarkListViewProps {
   readonly onStartBookmark: (bookmark: BookmarkedRoute) => void;
   readonly dogSpeedKmH?: number;
