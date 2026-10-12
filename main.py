@@ -32,6 +32,7 @@ from agent.hazard_service import (
     reroute_around_hazard,
     run_vision_inspection,
 )
+from agent.surface_slope_evaluator import build_segmented_geojson
 from test_case.test_api_contracts import (
     apply_spatial_masking_to_course,
     WalkPlanResponseV1,
@@ -124,48 +125,8 @@ def _build_course_list(agent_result: Any) -> List[Dict[str, Any]]:
 
 
 def _build_segmented_geojson(coords: List[List[float]], max_slope: float) -> Dict[str, Any]:
-    """경로 좌표열을 안전/보통/주의 3대 안심 등급 구간으로 분할하여 다채로운 지도 시각화 제공."""
-    if len(coords) < 4:
-        return {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {"segmentType": "safe", "maxSlopePercent": max_slope, "shaded": True},
-                    "geometry": {"type": "LineString", "coordinates": coords}
-                }
-            ]
-        }
-    n = len(coords)
-    i1 = max(1, n // 4)
-    i2 = max(i1 + 1, (2 * n) // 4)
-    i3 = max(i2 + 1, (3 * n) // 4)
-
-    return {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "safe", "maxSlopePercent": round(max(1.5, max_slope * 0.4), 1), "shaded": True},
-                "geometry": {"type": "LineString", "coordinates": coords[: i1 + 1]}
-            },
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "normal", "maxSlopePercent": round(max(2.2, max_slope * 0.7), 1), "shaded": False},
-                "geometry": {"type": "LineString", "coordinates": coords[i1 : i2 + 1]}
-            },
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "caution", "maxSlopePercent": round(max_slope, 1), "shaded": False},
-                "geometry": {"type": "LineString", "coordinates": coords[i2 : i3 + 1]}
-            },
-            {
-                "type": "Feature",
-                "properties": {"segmentType": "safe", "maxSlopePercent": round(max(1.4, max_slope * 0.3), 1), "shaded": True},
-                "geometry": {"type": "LineString", "coordinates": coords[i3 :]}
-            },
-        ]
-    }
+    """경로 좌표열을 DEM 고도차 및 노면 실측 기반 3대 안심 등급(safe/normal/caution)으로 분할."""
+    return build_segmented_geojson(coords, max_slope_hint=max_slope)
 
 
 def _build_step_pins(cand: Any, coords: List[List[float]]) -> List[Dict[str, Any]]:
@@ -212,7 +173,9 @@ def plan_walk_route(req: Dict[str, Any]):
     client_dog = {
         "dog_id": req.get("dog_id", "dog_default"),
         "name": dog_name,
-        "breed": "반려견",
+        "breed": req.get("breed", "반려견"),
+        "age_years": req.get("age_years", 4),
+        "weight_kg": req.get("weight_kg", 4.0),
         "speed_kmh": req.get("speed_kmh", 2.8),
         "joint_care_level": req.get("joint_care_level", 1),
     }

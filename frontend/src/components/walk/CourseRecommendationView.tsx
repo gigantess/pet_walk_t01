@@ -16,6 +16,7 @@ import {
 } from '../../services/courseAdaptivePlanner';
 import { getCoursePlanById } from '../../services/sampleRoute';
 import { TOKENS } from '../../theme/tokens';
+import { AppIcon } from '../common/AppIcon';
 import { CoursePlan } from '../../types/bookmark';
 import { DogProfile } from '../../types/dogProfile';
 import { RecommendedCourse, WalkPreferences } from '../../types/walkSettings';
@@ -81,7 +82,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity activeOpacity={0.7} onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backIcon}>‹</Text>
+          <AppIcon name="back" size={24} color={TOKENS.colors.textMain} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>추천 산책 코스</Text>
         <View style={styles.headerPlaceholder} />
@@ -92,7 +93,7 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
 
         <View style={styles.titleSection}>
           <View style={styles.sparkleBadge}>
-            <Text style={styles.sparkleIcon}>✨</Text>
+            <AppIcon name="sparkle" size={18} color={TOKENS.colors.primaryDark} />
           </View>
           <Text style={styles.mainTitle}>
             {dog.name}에게 맞는 산책 코스를{'\n'}찾았어요.
@@ -154,7 +155,6 @@ const styles = StyleSheet.create({
     backgroundColor: TOKENS.colors.surface,
   },
   backButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 26, color: TOKENS.colors.textMain, fontWeight: '300' },
   headerTitle: { fontSize: 16, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
   headerPlaceholder: { width: 36 },
   scrollContent: { padding: 20, paddingBottom: 110 },
@@ -168,7 +168,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  sparkleIcon: { fontSize: 16 },
   mainTitle: { fontSize: 22, fontWeight: '800', color: TOKENS.colors.textMain, letterSpacing: -0.5, marginBottom: 6, lineHeight: 28 },
   subTitle: { fontSize: 13, color: TOKENS.colors.textMuted, lineHeight: 18 },
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
