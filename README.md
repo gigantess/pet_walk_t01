@@ -421,8 +421,7 @@ cd frontend && npm test
 ```text
 pet_walk_t01/
 ├── README.md                                  # [본 문서] 프로젝트 통합 개요 및 실행 가이드
-├── main.py                                    # ⚡ FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API)
-├── requirements.txt                           # Python 백엔드 및 AI 에이전트 의존성 명세서
+├── pytest.ini                                 # 루트 단위 테스트 통합 설정
 ├── docs/                                      # 프로젝트 기획, 스크린샷 및 공식 산출물 문서
 │   ├── 01_편안하개_인프라_구축_및_환경설정_가이드.md # 전체 4대 인프라 레이어 및 환경 설정 가이드
 │   ├── 02_편안하개_Team_building.md            # 5인 팀 R&R 및 4대 기술 엔지니어링 전략
@@ -432,53 +431,36 @@ pet_walk_t01/
 │   ├── 05_편안하개_프로젝트_수행계획서_일정.md # 프로젝트 수행 기간, 간트 차트 및 마일스톤
 │   ├── implementation_plan/                   # 상세 구현 계획 및 상태 보고서
 │   │   ├── frontend_phase2_stories_implementation_plan.md # Phase 2 스토리(US-29, 23, 21) 구현 계획서
-│   │   └── 99.member4_implementation_status_report.md     # 멤버4 구현 완료 보고서
+│   │   ├── 99.member4_implementation_status_report.md     # 멤버4 구현 완료 보고서
+│   │   └── member_d_remaining_tasks_implementation_plan.md# 멤버D 남은 작업 상세 계획서
 │   └── screenshots/                           # 📸 주요 구동 화면 고화질 스크린샷 (01~09)
-│       ├── 01_onboarding_wizard.png           # 신규 견주 안심 산책 온보딩 위저드
-│       ├── 02_home_screen.png                 # 메인 홈 화면 (골든타임 위젯, 활성견 카드)
-│       ├── 03_walk_settings.png               # 맞춤 산책 조건 설정 (시간 칩, 선호 환경)
-│       ├── 04_course_recommendation.png       # 실시간 AI 추천 코스 & OSM 지도 프리뷰
-│       ├── 05_location_consent_modal.png      # 위치 정보 수집 동의 및 Local-First 고지 모달
-│       ├── 06_dark_pocket_mode.png            # 초절전 True Black 다크 포켓 모드 HUD
-│       ├── 07_walk_report.png                 # 완주 체크인 & 인포그래픽 리포트
-│       ├── 08_my_profile_and_bookmarks.png    # 마이 프로필 & 찜한 코스 보관함
-│       ├── 09_community_feed.png              # 동네 이웃 안심 산책로 피드 (200m 마스킹)
-│       └── README.md                          # 스크린샷 갤러리 상세 문서
-├── agent/                                     # 🤖 LangGraph ReAct Walk Planning Agent 코어
-│   ├── __init__.py                            # 에이전트 패키지 초기화
-│   ├── walk_planning_agent.py                 # 의도 파싱, 제약 보정, 후보 경로 생성 및 브리핑 오케스트레이션
-│   └── supabase_repository.py                 # 커뮤니티 안심 피드 및 오프라인 폴백 저장소
-├── frontend/                                  # 📱 [공식 모바일 앱 & 웹] React Native / Expo SDK 57
-│   ├── App.tsx                                # 메인 애플리케이션 (Screen 01~05 통합 라우팅, 249줄 준수)
+├── backend/                                   # ⚡ [Supabase & 백엔드] FastAPI REST API & AI Agent
+│   ├── README.md                              # 백엔드 아키텍처 및 로컬 실행/테스트 가이드
+│   ├── main.py                                # FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API)
+│   ├── requirements.txt                       # Python 백엔드 및 AI 에이전트 의존성 명세서
+│   ├── pytest.ini                             # 백엔드 단위 테스트 설정
+│   ├── .env.example                           # Supabase 및 외부 API 환경 변수 템플릿
+│   ├── sql/                                   # Supabase PostgreSQL DDL 테이블 및 인덱스 정의
+│   │   └── supabase_schema.sql                # 커뮤니티 코스 & 위험 제보 PostGIS 스키마
+│   ├── agent/                                 # 🤖 LangGraph ReAct Walk Planning Agent 코어
+│   │   ├── walk_planning_agent.py             # 의도 파싱, 제약 보정, 후보 경로 생성 및 브리핑
+│   │   ├── loop_route_planner.py              # OSRM 순환 루프 1.5초 캐시 생성기
+│   │   ├── surface_slope_evaluator.py         # 무장애 노면 및 DEM 경사도 3색 평가기
+│   │   ├── building_geometry.py               # 건물 관통 방지 검증 모듈
+│   │   ├── spatial_masking.py                 # 200m 교차로 스냅 마스킹 모듈
+│   │   ├── supabase_repository.py             # Supabase 클라우드 저장소 (Dual-Mode)
+│   │   └── hazard_service.py                  # 위험 제보 및 동적 우회 서비스
+│   ├── fixtures/                              # 테스트용 서울시 건물 외곽선 GeoJSON
+│   └── test_case/                             # 🧪 TDD 종합 테스트 스위트 (156개 Pytest 전수 Pass)
+├── frontend/                                  # 📱 [Expo 모바일 앱 & 웹] React Native / Expo SDK 57
+│   ├── README.md                              # 프론트엔드 모바일 아키텍처 및 실행 가이드
+│   ├── App.tsx                                # 메인 애플리케이션 (Screen 01~05 통합 라우팅)
 │   ├── app.json                               # Expo 앱 매니페스트 및 설정
+│   ├── eas.json                               # EAS Build (APK) & EAS Update (무선 OTA) 설정
 │   ├── package.json                           # React Native, Expo, Vitest 의존성
-│   └── src/
-│       ├── theme/tokens.ts                    # 디자인 시스템 토큰 (고대비 야외 시인성 규격)
-│       ├── types/                             # DogProfile, Route, Storage, Bookmark, Consent DTO
-│       ├── services/                          # LocalStorage, TTS, OSM 타일, 북마크, 동의 서비스
-│       ├── hooks/                             # useWalkGuidance, useLocationConsent
-│       ├── screens/                           # HomeScreen, WalkTabScreen, CommunityTabScreen, MyProfileTabScreen, DarkPocketScreen, WalkReportScreen
-│       └── components/                        # Onboarding, Walk, Profile, Bookmark, Privacy, Map 컴포넌트
-├── mockup/                                    # 🎨 예상 사용 시나리오 스크린 갤러리 및 UI 목업
-│   ├── index.html                             # 인터랙티브 스크린 뷰어 웹 애플리케이션
-│   ├── 01_walk_planner.jpg ~ 06_...jpg        # 핵심 사용자 여정 화면 고화질 목업
-│   └── PawTrail Screen-01 ~ 04/               # 개별 모바일 스크린 UI 목업 에셋
-├── test_case/                                 # 🧪 TDD 종합 테스트 스위트 (103개 Pytest 전수 Pass)
-│   ├── README.md                              # TDD 스위트 구조 및 실행 가이드
-│   ├── conftest.py                            # 테스트 Fixture 및 Mock 데이터
-│   ├── test_langgraph_walk_agent.py           # [1번 코어] LangGraph ReAct 전주기 오케스트레이션
-│   ├── test_walk_plan_agent_schema.py         # 자연어 파싱, 프로필, 피드백 보정
-│   ├── test_loop_target_duration.py           # 보행 속도 모델 및 순환 루프 수렴 검증
-│   ├── test_surface_cost_model.py             # 계단 회피, DEM 경사도, 그늘길 비용 함수
-│   ├── test_mobile_and_voice_navigation.py    # Polyline 색상 분기, TTS 음성 안내
-│   ├── test_vision_safety_inspector.py        # Gemini Cascading 체인, 턱/장애물 판독
-│   ├── test_walk_tracking_and_feedback.py     # 로컬 GPS 저장, EAS OTA, CBT 튜닝
-│   ├── test_thermal_and_parking.py            # 기상청 지면열 추정, P&R 주차장 필터
-│   ├── test_api_contracts.py                  # 200m 공간 마스킹 및 REST API Contract
-│   ├── test_phase2_extended_features.py       # 긴급 귀환, 다견, 즐겨찾기, 헥사곤 점령
-│   └── test_supabase_repository.py            # Supabase 연동 및 오프라인 폴백 검증
+│   └── src/                                   # components, screens, services, theme, hooks, types
 └── .github/workflows/                         # GitHub Actions CI 파이프라인
-    └── ci.yml                                 # pytest(103개) + mobile vitest(70개) & tsc 자동 머지
+    └── ci.yml                                 # pytest(156개) + mobile vitest(78개) & tsc 자동 머지
 ```
 
 ---
@@ -493,12 +475,11 @@ pet_walk_t01/
 
 ---
 
-### 9.2 백엔드 가동 및 API 테스트
+### 9.2 백엔드 가동 및 API 테스트 (Backend & Supabase)
 
 ```bash
-# 1. 저장소 클론
-git clone https://github.com/haru2014/pet_walk_t01.git
-cd pet_walk_t01
+# 1. 백엔드 폴더 이동
+cd backend
 
 # 2. 파이썬 가상환경 생성 및 활성화
 python -m venv .venv
@@ -513,6 +494,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # 5. 브라우저에서 Swagger UI 접속하여 실시간 API 테스트
 # URL: http://localhost:8000/docs
+
+# 6. 백엔드 156개 전수 단위 테스트 실행
+pytest test_case/ -v
 ```
 
 ---
@@ -538,10 +522,14 @@ npx expo start
 ### 9.4 의존성 설치 및 TDD/단위 테스트 실행
 
 ```bash
-# 백엔드 Pytest 전수 검증 (103개 테스트 100% Pass)
-python -m pytest test_case/ -v
+# 백엔드 Pytest 전수 검증 (156개 테스트 100% Pass)
+# 방법 1) 루트에서 바로 실행 (pytest.ini 기반 backend/test_case 자동 탐색)
+python -m pytest
 
-# 프론트엔드 Vitest 단위 테스트 (70개 테스트 100% Pass)
+# 방법 2) backend 폴더로 이동 후 실행
+cd backend && pytest test_case/ -v
+
+# 프론트엔드 Vitest 단위 테스트 (78개 테스트 100% Pass)
 cd frontend && npm test
 
 # 프론트엔드 TypeScript 무결성 검증 (0 Errors)
