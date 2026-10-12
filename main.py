@@ -3,12 +3,15 @@ FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API).
 
 - CORS 설정 (Expo Web http://localhost:8081 및 모바일 클라이언트 지원)
 - POST /api/v1/walk/plan (LangGraph ReAct Walk Planning Agent 코어 연동)
+- POST /api/v1/walk/reroute (US-D2 현장 위험 감지 시 안전 우회 재탐색)
+- POST /api/v1/surface/inspect (US-D1 현장 위험물/공원안내판 사진 판독 입구)
 - POST /api/v1/community/share (US-G2 200m 공간 마스킹 코스 공유)
 - GET /api/v1/community/feed (공개 안심 코스 피드)
+- POST /api/v1/hazards, GET /api/v1/hazards (공공 위험 제보 적재/반경 조회)
 - GET /health (헬스체크)
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
@@ -16,6 +19,14 @@ from typing import List, Dict, Any, Optional
 from agent.walk_planning_agent import run_walk_planning_agent
 from agent.road_network_routes import V1_ROAD_ALIGNED_COORDS
 from agent.supabase_repository import community_repo
+from agent.hazard_service import (
+    HazardReportRepository,
+    HazardReportRequest,
+    InspectType,
+    RerouteRequest,
+    reroute_around_hazard,
+    run_vision_inspection,
+)
 from test_case.test_api_contracts import (
     apply_spatial_masking_to_course,
     WalkPlanResponseV1,
@@ -37,6 +48,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 위험 제보 저장소: community_repo 의 Supabase 클라이언트를 공유 (미연결 시 인메모리)
+hazard_repo = HazardReportRepository(lambda: community_repo._client)
+
+_MAX_UPLOAD_BYTES = 8 * 1024 * 1024  # 8MB
 
 
 @app.get("/")
@@ -235,6 +251,54 @@ def plan_walk_route(req: Dict[str, Any]):
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/v1/walk/reroute")
+def reroute_walk(req: RerouteRequest):
+    """[US-D2] 현장 위험 감지 시 해당 지점을 임시 차단(비용 10배)하고 3초 이내 안전 우회 경로 재산출.
+
+    - 신뢰도 0.70 미만 또는 severity=info 는 현 경로 유지(KEEP_ROUTE)
+    - 응답 geojson 은 [lon, lat] LineString, 시작=현재 위치, 끝=목적지
+    """
+    return reroute_around_hazard(req)
+
+
+@app.post("/api/v1/surface/inspect")
+async def inspect_surface(
+    image: UploadFile = File(..., description="현장 위험물 또는 공원 종합안내판 사진"),
+    inspect_type: InspectType = Form("hazard"),
+):
+    """[US-D1 입구] 사진을 받아 위험물/안내판 판독 결과를 Pydantic 구조화 JSON 으로 반환.
+
+    GEMINI_API_KEY 미설정 시 mock 모드(is_live_vision=false). 라이브 비전 체인은 2번 데이터 담당 연결 예정.
+    """
+    if not (image.content_type or "").startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="이미지 파일(image/*)만 업로드할 수 있습니다.",
+        )
+    data = await image.read()
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="이미지는 8MB 이하여야 합니다.")
+    return run_vision_inspection(data, image.filename or "", inspect_type)
+
+
+@app.post("/api/v1/hazards", status_code=status.HTTP_201_CREATED)
+def report_hazard(req: HazardReportRequest):
+    """[US-D2 AC3] 공공 위험 제보 적재 (Supabase hazard_reports 우선, 인메모리 자동 폴백)."""
+    report = hazard_repo.save(req)
+    return {"status": "reported", "report": report, "is_supabase": hazard_repo.is_connected()}
+
+
+@app.get("/api/v1/hazards")
+def list_nearby_hazards(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+    radius_m: float = Query(500.0, gt=0.0, le=5000.0),
+):
+    """현재 위치 반경 내 활성 위험 제보 조회 (가까운 순)."""
+    reports = hazard_repo.nearby(lat, lon, radius_m)
+    return {"count": len(reports), "radius_m": radius_m, "reports": reports, "is_supabase": hazard_repo.is_connected()}
 
 
 @app.post("/api/v1/community/share")
