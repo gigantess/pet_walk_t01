@@ -18,7 +18,7 @@ export function routeFingerprint(route: RouteFeatureCollection): string {
   const coords = route.features.flatMap((f) => f.geometry.coordinates);
   if (coords.length === 0) return 'empty';
   const first = coords[0];
-  const last = coords[coords.length - 1];
+  const last = coords.at(-1) ?? first;
   return [coords.length, first[0].toFixed(5), first[1].toFixed(5), last[0].toFixed(5), last[1].toFixed(5)].join('_');
 }
 

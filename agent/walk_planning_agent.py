@@ -258,117 +258,128 @@ def score_candidate_route(candidate: RouteCandidate, target_distance_m: float) -
     )
 
 
+from agent.road_network_routes import (
+    V1_ROAD_ALIGNED_COORDS,
+    V2_ROAD_ALIGNED_COORDS,
+    V3_ROAD_ALIGNED_COORDS,
+    V1_ROAD_STEPS,
+    V2_ROAD_STEPS,
+    V3_ROAD_STEPS,
+    fetch_osrm_foot_route,
+)
+
+
+SEOUL_VARIANT_CONFIG: Dict[int, Dict[str, Any]] = {
+    1: {
+        "waypoints": [
+            (37.5663, 126.9784),
+            (37.56625, 126.97914),
+            (37.5675, 126.9792),
+            (37.5689, 126.9794),
+            (37.5691, 126.9806),
+            (37.5689, 126.9830),
+            (37.5661, 126.9828),
+            (37.5663, 126.9784),
+        ],
+        "steps": V1_ROAD_STEPS,
+        "fallback": V1_ROAD_ALIGNED_COORDS,
+    },
+    2: {
+        "waypoints": [
+            (37.5663, 126.9784),
+            (37.5680, 126.9774),
+            (37.5693, 126.9772),
+            (37.5693, 126.9800),
+            (37.5689, 126.9830),
+            (37.5694, 126.9830),
+            (37.5696, 126.9795),
+            (37.5693, 126.9772),
+            (37.5680, 126.9774),
+            (37.5663, 126.9784),
+        ],
+        "steps": V2_ROAD_STEPS,
+        "fallback": V2_ROAD_ALIGNED_COORDS,
+    },
+    3: {
+        "waypoints": [
+            (37.5663, 126.9784),
+            (37.5658, 126.9765),
+            (37.5660, 126.9754),
+            (37.5677, 126.9738),
+            (37.5697, 126.9715),
+            (37.5701, 126.9732),
+            (37.5686, 126.9768),
+            (37.5663, 126.9784),
+        ],
+        "steps": V3_ROAD_STEPS,
+        "fallback": V3_ROAD_ALIGNED_COORDS,
+    },
+}
+
+GENERAL_GRID_DELTAS: Dict[int, Tuple[float, float]] = {
+    1: (0.0022, 0.0028),
+    2: (0.0018, 0.0022),
+}
+
+
+def _generate_seoul_center_loop(variant: int) -> tuple[List[List[float]], List[Dict[str, Any]]]:
+    """서울 도심 권역 실시간 OSRM 또는 고정밀 보행 도로망 노드 루프 반환."""
+    cfg = SEOUL_VARIANT_CONFIG.get(variant, SEOUL_VARIANT_CONFIG[3])
+    live_res = fetch_osrm_foot_route(cfg["waypoints"], timeout_seconds=1.5)
+    if live_res and len(live_res[0]) >= 10:
+        return live_res[0], cfg["steps"]
+    return cfg["fallback"], cfg["steps"]
+
+
+def _generate_general_grid_loop(
+    origin_lat: float,
+    origin_lon: float,
+    variant: int,
+) -> tuple[List[List[float]], List[Dict[str, Any]]]:
+    """일반 좌표 권역 실시간 OSRM 또는 L자 격자 도로망 루프 반환."""
+    d_lat, d_lon = GENERAL_GRID_DELTAS.get(variant, (0.0026, 0.0032))
+
+    live_res = fetch_osrm_foot_route([
+        (origin_lat, origin_lon),
+        (origin_lat + d_lat, origin_lon),
+        (origin_lat + d_lat, origin_lon + d_lon),
+        (origin_lat, origin_lon + d_lon),
+        (origin_lat, origin_lon),
+    ], timeout_seconds=1.2)
+    if live_res and len(live_res[0]) >= 8:
+        coords = live_res[0]
+        dist = live_res[1]
+        steps = [
+            {"instruction": "보행로를 따라 직진하세요.", "distance_m": int(dist * 0.25), "position": coords[len(coords) // 4]},
+            {"instruction": "교차로에서 우회전하여 가로수길로 진입하세요.", "distance_m": int(dist * 0.5), "position": coords[len(coords) // 2]},
+            {"instruction": "출발 방향으로 우회전하여 복귀하세요.", "distance_m": int(dist * 0.75), "position": coords[(3 * len(coords)) // 4]},
+        ]
+        return coords, steps
+
+    n_pts_per_edge = 4
+    edge1 = [[origin_lon, origin_lat + d_lat * (i / n_pts_per_edge)] for i in range(n_pts_per_edge)]
+    edge2 = [[origin_lon + d_lon * (i / n_pts_per_edge), origin_lat + d_lat] for i in range(n_pts_per_edge)]
+    edge3 = [[origin_lon + d_lon, origin_lat + d_lat * (1.0 - i / n_pts_per_edge)] for i in range(n_pts_per_edge)]
+    edge4 = [[origin_lon + d_lon * (1.0 - i / n_pts_per_edge), origin_lat] for i in range(n_pts_per_edge)]
+    coords = edge1 + edge2 + edge3 + edge4 + [[origin_lon, origin_lat]]
+
+    steps = [
+        {"instruction": "보행로를 따라 직진하세요.", "distance_m": 200, "position": coords[len(coords) // 4]},
+        {"instruction": "교차로에서 우회전하여 가로수길로 진입하세요.", "distance_m": 300, "position": coords[len(coords) // 2]},
+        {"instruction": "횡단보도 건너 출발 방향으로 우회전하세요.", "distance_m": 250, "position": coords[(3 * len(coords)) // 4]},
+    ]
+    return coords, steps
+
+
 def _generate_road_aligned_loop(
     origin_lat: float,
     origin_lon: float,
     variant: int,
 ) -> tuple[List[List[float]], List[Dict[str, Any]]]:
-    """도로나 인도를 벗어나지 않고 실제 보행 가능한 도로망을 따르는 순환 코스 좌표열 및 스텝 생성.
-
-    서울광장 / 시청 / 을지로 권역(lat 37.56~, lon 126.97~)인 경우:
-    - variant 1: 청계천 수변 그늘길 & 무교로 보행안심길 순환로 (12개 실제 보도 포인트)
-    - variant 2: 청계천 양안 수변 보행데크 순환로 (13개 수변 데크 포인트)
-    - variant 3: 덕수궁 돌담길 & 정동길 문화 산책로 (12개 보행전용길 포인트)
-
-    그 외 일반 좌표 권역인 경우:
-    - 건물을 관통하는 대각선 경로가 아닌, 도로망 격자(격자 보도) 축을 따라 직각 회전하는 도로 추종 루프 생성.
-    """
-    is_seoul_center = (abs(origin_lat - 37.5665) < 0.05 and abs(origin_lon - 126.9780) < 0.05)
-
-    if is_seoul_center:
-        if variant == 1:
-            coords = [
-                [126.9784, 37.5663],  # 서울광장 동측 보행로 (출발)
-                [126.9786, 37.5670],  # 서울도서관 북측 무교로 입구
-                [126.9790, 37.5680],  # 무교로 보행전용 가로수길 (남측)
-                [126.9796, 37.5692],  # 무교로-모전교 교차로 (모전교 남단)
-                [126.9806, 37.5691],  # 청계천 북측 수변 산책 데크 진입
-                [126.9820, 37.5690],  # 광통교 하부 그늘 쉼터 보행로
-                [126.9830, 37.5689],  # 광교 하류 수변 데크
-                [126.9830, 37.5678],  # 광교 남단 완만 경사로
-                [126.9830, 37.5667],  # 남대문로 가로수 보행로
-                [126.9815, 37.5665],  # 을지로1가 북측 보행 전용 보도
-                [126.9798, 37.5664],  # 시청 삼거리 방면 보행로
-                [126.9784, 37.5663],  # 서울광장 복귀
-            ]
-            steps = [
-                {"instruction": "서울광장에서 서울도서관 옆 무교로 보행길로 직진하세요.", "distance_m": 180, "position": [126.9786, 37.5670]},
-                {"instruction": "모전교에서 청계천 수변 산책로로 우회전하여 진입하세요.", "distance_m": 260, "position": [126.9796, 37.5692]},
-                {"instruction": "광통교 하부 그늘길을 따라 직진하세요.", "distance_m": 280, "position": [126.9820, 37.5690]},
-                {"instruction": "광교 남단 보행로를 따라 남대문로로 완만하게 우회전하세요.", "distance_m": 230, "position": [126.9830, 37.5678]},
-                {"instruction": "을지로1가 가로수길을 따라 서울광장 방면으로 직진하세요.", "distance_m": 220, "position": [126.9815, 37.5665]},
-            ]
-            return coords, steps
-        elif variant == 2:
-            coords = [
-                [126.9784, 37.5663],  # 서울광장
-                [126.9775, 37.5676],  # 시청 북측 보도
-                [126.9772, 37.5693],  # 청계광장 소라탑 진입
-                [126.9782, 37.5695],  # 청계광장 수변 테라스
-                [126.9800, 37.5693],  # 청계천 남측 수변 데크 (모전교 하부)
-                [126.9818, 37.5692],  # 광통교 하부 완만 탄성포장길
-                [126.9835, 37.5690],  # 광교 하부 수변 쉼터
-                [126.9834, 37.5694],  # 광교 보행교 건너 북측 데크로 회전
-                [126.9816, 37.5695],  # 청계천 북측 수변 데크 (그늘길)
-                [126.9795, 37.5696],  # 모전교 북측 수변 보행로
-                [126.9778, 37.5695],  # 청계광장 북측 경사로
-                [126.9780, 37.5680],  # 무교로 연결 보도
-                [126.9784, 37.5663],  # 서울광장 복귀
-            ]
-            steps = [
-                {"instruction": "청계광장 방면으로 보도를 따라 이동하세요.", "distance_m": 250, "position": [126.9772, 37.5693]},
-                {"instruction": "청계천 남측 수변 보행데크로 진입하여 광교 방향으로 직진하세요.", "distance_m": 420, "position": [126.9800, 37.5693]},
-                {"instruction": "광교 하류에서 북측 보행데크로 완만하게 회전하세요.", "distance_m": 120, "position": [126.9834, 37.5694]},
-                {"instruction": "청계천 북측 그늘 산책로를 따라 청계광장으로 복귀하세요.", "distance_m": 410, "position": [126.9795, 37.5696]},
-            ]
-            return coords, steps
-        else:
-            coords = [
-                [126.9784, 37.5663],  # 서울광장
-                [126.9765, 37.5658],  # 대한문 앞 보행로
-                [126.9754, 37.5660],  # 덕수궁 돌담길 진입 (보행전용 돌포장길)
-                [126.9745, 37.5668],  # 시립미술관 입구 분수대
-                [126.9738, 37.5677],  # 정동교회 앞 로터리
-                [126.9725, 37.5685],  # 정동극장 앞 가로수길
-                [126.9715, 37.5697],  # 예원학교 앞 정동길 북단
-                [126.9732, 37.5701],  # 새문안로 연결 완만 보행로
-                [126.9755, 37.5697],  # 서울역사박물관-구세군회관 앞 보도
-                [126.9768, 37.5686],  # 세종대로 보행로 남진
-                [126.9775, 37.5674],  # 시청역 1번출구 앞
-                [126.9784, 37.5663],  # 서울광장 복귀
-            ]
-            steps = [
-                {"instruction": "대한문 좌측 덕수궁 돌담길 보행로로 진입하세요.", "distance_m": 220, "position": [126.9754, 37.5660]},
-                {"instruction": "정동교회 앞 분수대에서 정동극장 방면으로 우측 보행로를 따라 직진하세요.", "distance_m": 350, "position": [126.9738, 37.5677]},
-                {"instruction": "정동길 북단에서 새문안로 연결 보행로로 우회전하세요.", "distance_m": 280, "position": [126.9732, 37.5701]},
-                {"instruction": "세종대로 가로수 보행로를 따라 서울광장으로 복귀하세요.", "distance_m": 380, "position": [126.9768, 37.5686]},
-            ]
-            return coords, steps
-
-    # 일반 좌표: 도로망 격자(Manhattan Perimeter)를 따라 직각 회전하여 건물 관통 방지
-    if variant == 1:
-        d_lat, d_lon = 0.0022, 0.0028
-    elif variant == 2:
-        d_lat, d_lon = 0.0018, 0.0022
-    else:
-        d_lat, d_lon = 0.0026, 0.0032
-    coords = [
-        [origin_lon, origin_lat],
-        [origin_lon, origin_lat + d_lat * 0.5],
-        [origin_lon, origin_lat + d_lat],
-        [origin_lon + d_lon * 0.5, origin_lat + d_lat],
-        [origin_lon + d_lon, origin_lat + d_lat],
-        [origin_lon + d_lon, origin_lat + d_lat * 0.5],
-        [origin_lon + d_lon, origin_lat],
-        [origin_lon + d_lon * 0.5, origin_lat],
-        [origin_lon, origin_lat],
-    ]
-    steps = [
-        {"instruction": "보행로를 따라 직진하세요.", "distance_m": 200, "position": coords[2]},
-        {"instruction": "교차로에서 우회전하여 가로수길로 진입하세요.", "distance_m": 300, "position": coords[4]},
-        {"instruction": "횡단보도 건너 출발 방향으로 우회전하세요.", "distance_m": 250, "position": coords[6]},
-    ]
-    return coords, steps
+    """도로나 인도를 벗어나지 않고 실제 보행 가능한 도로망을 따르는 순환 코스 좌표열 및 스텝 생성."""
+    if abs(origin_lat - 37.5665) < 0.05 and abs(origin_lon - 126.9780) < 0.05:
+        return _generate_seoul_center_loop(variant)
+    return _generate_general_grid_loop(origin_lat, origin_lon, variant)
 
 
 def mock_generate_loop_candidates(
