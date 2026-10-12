@@ -348,18 +348,25 @@ def get_weather_heat_risk(
     }
 
 
+_ZONE_YURIM = "유림공원"
+_ZONE_SONGGANG = "송강근린공원"
+_ZONE_DOAN = "도안호수공원"
+_ZONE_SEJONG = "세종호수공원"
+_FEE_FREE = "free"
+_FEE_PAID = "paid"
+
 _PILOT_PARKING_LOTS = [
-    {"parking_id": "pkg_yurim_01", "name": "유림공원 부설 공영주차장", "entrance_lat": 36.3628, "entrance_lon": 127.3592, "is_public": True, "fee_type": "free", "park_zone": "유림공원"},
-    {"parking_id": "pkg_yurim_02", "name": "유성구청 공영주차장", "entrance_lat": 36.3615, "entrance_lon": 127.3598, "is_public": True, "fee_type": "paid", "park_zone": "유림공원"},
-    {"parking_id": "pkg_yurim_03", "name": "어은교 갑천변 노상 공영주차장", "entrance_lat": 36.3640, "entrance_lon": 127.3575, "is_public": True, "fee_type": "free", "park_zone": "유림공원"},
-    {"parking_id": "pkg_songgang_01", "name": "송강근린공원 공영주차장", "entrance_lat": 36.4320, "entrance_lon": 127.3810, "is_public": True, "fee_type": "free", "park_zone": "송강근린공원"},
-    {"parking_id": "pkg_songgang_02", "name": "송강동 공영노상주차장", "entrance_lat": 36.4305, "entrance_lon": 127.3790, "is_public": True, "fee_type": "free", "park_zone": "송강근린공원"},
-    {"parking_id": "pkg_doan_01", "name": "도안호수공원 임시 공영주차장", "entrance_lat": 36.3458, "entrance_lon": 127.3428, "is_public": True, "fee_type": "free", "park_zone": "도안호수공원"},
-    {"parking_id": "pkg_doan_02", "name": "갑천생태공원 둔치 주차장", "entrance_lat": 36.3435, "entrance_lon": 127.3455, "is_public": True, "fee_type": "free", "park_zone": "도안호수공원"},
-    {"parking_id": "pkg_sejong_01", "name": "세종호수공원 제1주차장", "entrance_lat": 36.5065, "entrance_lon": 127.2655, "is_public": True, "fee_type": "free", "park_zone": "세종호수공원"},
-    {"parking_id": "pkg_sejong_02", "name": "세종호수공원 제2주차장", "entrance_lat": 36.5015, "entrance_lon": 127.2695, "is_public": True, "fee_type": "free", "park_zone": "세종호수공원"},
-    {"parking_id": "pkg_sejong_03", "name": "세종호수공원 제3주차장 (수목원 방면)", "entrance_lat": 36.4980, "entrance_lon": 127.2730, "is_public": True, "fee_type": "free", "park_zone": "세종호수공원"},
-    {"parking_id": "pkg_sejong_04", "name": "세종호수공원 제4주차장 (대통령기록관)", "entrance_lat": 36.5085, "entrance_lon": 127.2630, "is_public": True, "fee_type": "free", "park_zone": "세종호수공원"},
+    {"parking_id": "pkg_yurim_01", "name": "유림공원 부설 공영주차장", "entrance_lat": 36.3628, "entrance_lon": 127.3592, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_YURIM},
+    {"parking_id": "pkg_yurim_02", "name": "유성구청 공영주차장", "entrance_lat": 36.3615, "entrance_lon": 127.3598, "is_public": True, "fee_type": _FEE_PAID, "park_zone": _ZONE_YURIM},
+    {"parking_id": "pkg_yurim_03", "name": "어은교 갑천변 노상 공영주차장", "entrance_lat": 36.3640, "entrance_lon": 127.3575, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_YURIM},
+    {"parking_id": "pkg_songgang_01", "name": "송강근린공원 공영주차장", "entrance_lat": 36.4320, "entrance_lon": 127.3810, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_SONGGANG},
+    {"parking_id": "pkg_songgang_02", "name": "송강동 공영노상주차장", "entrance_lat": 36.4305, "entrance_lon": 127.3790, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_SONGGANG},
+    {"parking_id": "pkg_doan_01", "name": "도안호수공원 임시 공영주차장", "entrance_lat": 36.3458, "entrance_lon": 127.3428, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_DOAN},
+    {"parking_id": "pkg_doan_02", "name": "갑천생태공원 둔치 주차장", "entrance_lat": 36.3435, "entrance_lon": 127.3455, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_DOAN},
+    {"parking_id": "pkg_sejong_01", "name": "세종호수공원 제1주차장", "entrance_lat": 36.5065, "entrance_lon": 127.2655, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_SEJONG},
+    {"parking_id": "pkg_sejong_02", "name": "세종호수공원 제2주차장", "entrance_lat": 36.5015, "entrance_lon": 127.2695, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_SEJONG},
+    {"parking_id": "pkg_sejong_03", "name": "세종호수공원 제3주차장 (수목원 방면)", "entrance_lat": 36.4980, "entrance_lon": 127.2730, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_SEJONG},
+    {"parking_id": "pkg_sejong_04", "name": "세종호수공원 제4주차장 (대통령기록관)", "entrance_lat": 36.5085, "entrance_lon": 127.2630, "is_public": True, "fee_type": _FEE_FREE, "park_zone": _ZONE_SEJONG},
 ]
 
 
