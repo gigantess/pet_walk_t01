@@ -39,53 +39,23 @@ def calculate_haversine_distance_m(coord1: tuple, coord2: tuple) -> float:
     return round(R * c, 2)
 
 
+from agent.spatial_masking import (
+    apply_spatial_masking_to_course as _core_apply_spatial_masking,
+    calculate_haversine_distance_m,
+)
+
+
 def apply_spatial_masking_to_course(
     coordinates: List[List[float]],
-    masking_radius_m: float = 200.0
+    masking_radius_m: float = 200.0,
+    snap_to_intersection: bool = False,
 ) -> Dict[str, Any]:
-    """[US-G2] 출발지 및 도착지 반경 200m 공간 절단 및 지터링 마스킹 함수."""
-    if len(coordinates) < 4:
-        return {
-            "masked_coordinates": [],
-            "is_masked": False,
-            "error": "경로 좌표가 너무 짧아 마스킹을 적용할 수 없습니다."
-        }
-
-    origin = (coordinates[0][1], coordinates[0][0])       # (lat, lon)
-    destination = (coordinates[-1][1], coordinates[-1][0])
-
-    masked_coords = []
-    trimmed_start_count = 0
-    trimmed_end_count = 0
-
-    # 출발지 200m 이내 제거
-    for pt in coordinates:
-        curr = (pt[1], pt[0])
-        dist_from_origin = calculate_haversine_distance_m(origin, curr)
-        if dist_from_origin > masking_radius_m:
-            masked_coords.append(pt)
-        else:
-            trimmed_start_count += 1
-
-    # 도착지 200m 이내 제거 (뒤에서부터)
-    final_masked = []
-    for pt in reversed(masked_coords):
-        curr = (pt[1], pt[0])
-        dist_from_dest = calculate_haversine_distance_m(destination, curr)
-        if dist_from_dest > masking_radius_m:
-            final_masked.append(pt)
-        else:
-            trimmed_end_count += 1
-
-    final_masked.reverse()
-
-    return {
-        "masked_coordinates": final_masked,
-        "is_masked": True,
-        "trimmed_start_points": trimmed_start_count,
-        "trimmed_end_points": trimmed_end_count,
-        "masking_radius_m": masking_radius_m
-    }
+    """[US-G2] 출발지 및 도착지 반경 200m 공간 절단 및 교차로(Node) 스냅 마스킹 함수."""
+    return _core_apply_spatial_masking(
+        coordinates,
+        masking_radius_m=masking_radius_m,
+        snap_to_intersection=snap_to_intersection,
+    )
 
 
 # ==========================================

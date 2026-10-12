@@ -271,8 +271,10 @@ def list_nearby_hazards(
 
 @app.post("/api/v1/community/share")
 def share_community_course(req: CommunityCourseShareRequest):
-    """[US-G2] 출발지 및 도착지 200m 공간 마스킹 후 Supabase PostgreSQL / 인메모리 피드 등록."""
-    mask_result = apply_spatial_masking_to_course(req.raw_coordinates, masking_radius_m=200.0)
+    """[US-G2] 출발지 및 도착지 200m 공간 절단 및 교차로(Node) 스냅 마스킹 후 피드 등록."""
+    mask_result = apply_spatial_masking_to_course(
+        req.raw_coordinates, masking_radius_m=200.0, snap_to_intersection=True
+    )
     current_count = len(community_repo.get_feeds())
     new_feed = {
         "course_id": f"feed_{current_count + 1}",
@@ -282,12 +284,14 @@ def share_community_course(req: CommunityCourseShareRequest):
         "duration_min": 22,
         "rating": float(req.satisfaction_rating),
         "is_origin_masked": mask_result["is_masked"],
+        "intersection_snapped": mask_result.get("intersection_snapped", False),
     }
     saved_feed = community_repo.save_course(new_feed)
     return {
         "status": "shared",
         "feed": saved_feed,
         "is_supabase": community_repo.is_connected(),
+        "intersection_snapped": mask_result.get("intersection_snapped", False),
     }
 
 
