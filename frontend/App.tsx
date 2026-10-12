@@ -128,11 +128,11 @@ export default function App() {
   };
 
   const handleStartWalk = (course?: RecommendedCourse, plan?: CoursePlan) =>
-    beginWalk(course?.name ?? '편안한 숲길 코스', plan, course && plan ? createBookmark(course, plan, activeDog.name) : null);
+    void beginWalk(course?.name ?? '편안한 숲길 코스', plan, course && plan ? createBookmark(course, plan, activeDog.name) : null);
 
   /** US-29: 즐겨찾기 코스를 서버 재탐색 없이 저장된 경로로 즉시 산책 시작 */
   const handleStartBookmark = (bm: BookmarkedRoute) =>
-    beginWalk(bm.title, { route: bm.routeGeoJson, stepPins: bm.stepPins }, bm);
+    void beginWalk(bm.title, { route: bm.routeGeoJson, stepPins: bm.stepPins }, bm);
 
   /** US-G2: 이웃 커뮤니티 공유 코스로 산책 시작 */
   const handleStartCommunityWalk = (
@@ -140,7 +140,7 @@ export default function App() {
     route: RouteFeatureCollection,
     stepPins: readonly RouteStepPin[],
   ) => {
-    beginWalk(title, { route, stepPins: [...stepPins] }, null);
+    void beginWalk(title, { route, stepPins: [...stepPins] }, null);
   };
 
   const handleStopWalkAndReport = async () => {
