@@ -55,6 +55,11 @@ def seoul_forest_buildings() -> List[Polygon]:
 class TestBuildingAvoidanceSpatialIntegrity:
     """[US-A3] 건물 관통 0% 공간 기하 검증 스위트."""
 
+    @pytest.fixture(autouse=True)
+    def use_offline_routes(self, monkeypatch: pytest.MonkeyPatch):
+        """건물 회피 검증은 외부 OSRM 응답 변동 없이 재현 가능해야 한다."""
+        monkeypatch.setattr("agent.loop_route_planner.fetch_osrm_foot_route", lambda *args, **kwargs: None)
+
     def test_seoul_center_route_zero_building_penetration(self, seoul_center_buildings: List[Polygon]):
         """서울광장 출발 경로 3종이 시청사, 도서관, 호텔 등 도심 건물을 관통하지 않아야 한다."""
         req = LoopCandidateRequest(
