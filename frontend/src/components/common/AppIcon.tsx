@@ -55,6 +55,7 @@ export type AppIconName =
   | 'heart'
   | 'clock'
   | 'volume'
+  | 'volumeMute'
   | 'water'
   | 'mic'
   | 'trash'
@@ -154,6 +155,9 @@ export const AppIcon: React.FC<AppIconProps> = ({
       break;
     case 'volume':
       shape = <><Path d="M11 5 6 9H3v6h3l5 4V5Z" /><Path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13" /></>;
+      break;
+    case 'volumeMute':
+      shape = <><Path d="M11 5 6 9H3v6h3l5 4V5Z" /><Line x1="22" y1="9" x2="16" y2="15" /><Line x1="16" y1="9" x2="22" y2="15" /></>;
       break;
     case 'water':
       shape = <><Path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11Z" /><Path d="M9 15a3 3 0 0 0 3 3" /></>;

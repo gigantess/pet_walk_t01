@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   BOOKMARKED_ROUTES: '@편안하개:bookmarked_routes',
   LOCATION_CONSENT: '@편안하개:location_consent',
   HAS_SEEN_ONBOARDING: '@편안하개:has_seen_onboarding',
+  SOUND_SETTINGS: '@편안하개:sound_settings',
 } as const;
 
 export type SlopeFeedbackLevel = 'gentle' | 'moderate' | 'steep';

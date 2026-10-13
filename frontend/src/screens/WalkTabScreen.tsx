@@ -14,6 +14,7 @@ import { CourseRecommendationView } from '../components/walk/CourseRecommendatio
 import { CoursePlan } from '../types/bookmark';
 import { FeedbackSummaryPayload } from '../services/feedbackContext';
 import { AppIcon } from '../components/common/AppIcon';
+import { VoiceQuickControlBar } from '../components/voice/VoiceQuickControlBar';
 
 export interface WalkTabScreenProps {
   dog: DogProfile;
@@ -38,6 +39,8 @@ export const WalkTabScreen: React.FC<WalkTabScreenProps> = ({
         <Text style={styles.sectionSubtitle}>AI 추천 안심 코스</Text>
         <View style={styles.sectionTitleRow}><Text style={styles.sectionTitle}>{dog.name}와 걷는 순환 코스</Text><AppIcon name="map" size={20} color={TOKENS.colors.primaryDark} /></View>
       </View>
+
+      <VoiceQuickControlBar />
 
       <CourseRecommendationView
         dog={dog}

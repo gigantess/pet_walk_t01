@@ -12,6 +12,7 @@ import { WalkStats } from '../hooks/useWalkGuidance';
 import { SlideToUnlock } from '../components/common/SlideToUnlock';
 import { formatElapsed } from '../services/walkFormat';
 import { AppIcon } from '../components/common/AppIcon';
+import { VoiceQuickControlBar } from '../components/voice/VoiceQuickControlBar';
 
 export interface DarkPocketScreenProps {
   readonly dogName: string;
@@ -57,6 +58,8 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
       <Text style={[styles.subtitle, isOvertime && styles.subtitleOvertime]}>
         {getSubtitle()}
       </Text>
+
+      <VoiceQuickControlBar compact />
 
       <View style={styles.hud}>
         <HudItem label="경과 시간" value={formatElapsed(stats.elapsedSec)} unit="" />
