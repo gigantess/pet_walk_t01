@@ -10,7 +10,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { requestWalkPlan, RoutePlanResult } from '../../services/api';
 import { createBookmark } from '../../services/bookmarkService';
 import { generateAdaptiveCourses } from '../../services/courseAdaptivePlanner';
-import { getCoursePlanById } from '../../services/sampleRoute';
+import { getCoursePlanById, getCoursePlanByParkId } from '../../services/sampleRoute';
 import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 import { CoursePlan } from '../../types/bookmark';
@@ -63,8 +63,8 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
     if (planResult?.isLiveServer && selectedCourseIndex === 0) {
       return { route: planResult.route, stepPins: planResult.stepPins };
     }
-    return getCoursePlanById(currentCourse?.id);
-  }, [candidatePlan, currentCourse?.id, planResult, selectedCourseIndex]);
+    return getCoursePlanById(currentCourse?.id, getCoursePlanByParkId(preferences?.pilotParkId));
+  }, [candidatePlan, currentCourse?.id, planResult, selectedCourseIndex, preferences?.pilotParkId]);
 
   const activeRoute = activePlan.route;
   const activePins = activePlan.stepPins;

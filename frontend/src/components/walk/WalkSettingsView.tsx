@@ -8,10 +8,11 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 import { DogProfile } from '../../types/dogProfile';
+import { PILOT_PARKS, getPilotParkById } from '../../types/pilotParks';
 import {
   EnvironmentId,
   WALK_ENVIRONMENTS,
@@ -40,6 +41,9 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
 }) => {
   const { colors } = useAppTheme();
   const [subTab, setSubTab] = useState<PlannerSubTab>('basic');
+  const [pilotParkId, setPilotParkId] = useState<string>(
+    initialPreferences?.pilotParkId ?? 'yurim'
+  );
   const [duration, setDuration] = useState<number | null>(
     initialPreferences?.durationMinutes ?? 30
   );
@@ -59,17 +63,21 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
     );
   };
 
+  const currentPark = getPilotParkById(pilotParkId);
+
   const handleSubmit = () => {
     onFindRoute({
       durationMinutes: isFreeWalk ? null : duration,
       environments,
       requestText,
       isFreeWalk,
+      pilotParkId,
     });
   };
 
   const selectedLabels: string[] = [
     dog.name,
+    currentPark.badgeLabel,
     formatDurationLabel(duration, isFreeWalk),
     ...WALK_ENVIRONMENTS.filter((opt) => environments.includes(opt.id)).map((opt) => opt.label),
     ...(requestText.trim() ? ['직접 입력'] : []),
@@ -87,11 +95,58 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
       </View>
 
       <View style={styles.contentWrap}>
+        {/* 상단 4대 파일럿 거점 공원 원터치 선택 칩 */}
+        <View style={styles.parkSection}>
+          <View style={styles.parkTitleRow}>
+            <Text style={[styles.parkSectionTitle, { color: colors.textMuted }]}>
+              대전·세종 파일럿 실증 거점
+            </Text>
+            <Text style={[styles.parkTargetNote, { color: colors.primaryDark }]}>
+              {currentPark.name}
+            </Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.parkScrollRow}
+          >
+            {PILOT_PARKS.map((park) => {
+              const isSelected = park.id === pilotParkId;
+              return (
+                <TouchableOpacity
+                  key={park.id}
+                  activeOpacity={0.8}
+                  onPress={() => setPilotParkId(park.id)}
+                  style={[
+                    styles.parkChip,
+                    {
+                      backgroundColor: isSelected ? colors.primary : colors.surface,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.parkChipText,
+                      {
+                        color: isSelected ? colors.textWhite : colors.textMain,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
+                  >
+                    {park.badgeLabel}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
         {/* 상단 컴팩트 타이틀 & 브리핑 */}
         <View style={[styles.briefingBar, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
           <AppIcon name="sparkle" size={16} color={colors.primaryDark} />
           <Text style={[styles.briefingText, { color: colors.primaryDark }]} numberOfLines={1}>
-            {dog.name}의 관절 안심 케어에 맞춘 맞춤 길을 찾아요.
+            {currentPark.shortName} 산책로에 맞춘 {dog.name}의 안심 길을 찾아요.
           </Text>
         </View>
 
@@ -188,6 +243,18 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
   headerPlaceholder: { width: 32 },
   contentWrap: { flex: 1, padding: 16, justifyContent: 'space-between' },
+  parkSection: { marginBottom: 10 },
+  parkTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  parkSectionTitle: { fontSize: 11, fontWeight: '700', letterSpacing: -0.2 },
+  parkTargetNote: { fontSize: 11, fontWeight: '700' },
+  parkScrollRow: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
+  parkChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  parkChipText: { fontSize: 12 },
   briefingBar: {
     flexDirection: 'row',
     alignItems: 'center',
