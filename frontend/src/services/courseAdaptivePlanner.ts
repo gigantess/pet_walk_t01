@@ -12,6 +12,7 @@ import {
   RecommendedCourse,
   WALK_ENVIRONMENTS,
   WalkPreferences,
+  formatDurationLabel,
 } from '../types/walkSettings';
 import { FeedbackSummaryPayload } from './feedbackContext';
 
@@ -155,13 +156,15 @@ export function generateAdaptiveBriefing(
   preferences?: WalkPreferences,
   feedback?: FeedbackSummaryPayload | null,
 ): string {
+  const isFree = preferences?.isFreeWalk;
   const targetMinutes = preferences?.durationMinutes ?? 30;
+  const timeDesc = isFree ? '자유 산책' : `${formatDurationLabel(targetMinutes)}`;
   const envs = preferences?.environments ?? [];
   const envSummary = buildEnvironmentSummaryText(envs);
   const feedbackNote = feedback && feedback.recommended_max_slope_offset < 0
     ? ` (최근 피드백: 경사도 ${Math.abs(feedback.recommended_max_slope_offset)}% 완화)`
     : '';
-  return `${dog.name}를 위한 ${targetMinutes}분 맞춤 코스예요. (${envSummary} 반영${feedbackNote})`;
+  return `${dog.name}를 위한 ${timeDesc} 맞춤 코스예요. (${envSummary} 반영${feedbackNote})`;
 }
 
 /** 사용자 선택 조건을 상단 태그 칩 문구 배열로 동적 변환한다. */
@@ -169,8 +172,9 @@ export function buildAdaptiveConditionLabels(
   dog: DogProfile,
   preferences?: WalkPreferences,
 ): string[] {
+  const isFree = preferences?.isFreeWalk;
   const minutes = preferences?.durationMinutes ?? 30;
-  const durationLabel = minutes === 60 ? '1시간' : `${minutes}분`;
+  const durationLabel = formatDurationLabel(minutes, isFree);
   const envs = preferences?.environments ?? ['soft', 'shade', 'stairs'];
 
   const labelMap = new Map(WALK_ENVIRONMENTS.map((e) => [e.id, e.label]));

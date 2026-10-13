@@ -17,6 +17,8 @@ export interface DarkPocketScreenProps {
   readonly dogName: string;
   readonly stats: WalkStats;
   readonly onUnlock: () => void;
+  readonly targetMinutes?: number | null;
+  readonly isFreeWalk?: boolean;
 }
 
 const HudItem: React.FC<{ value: string; unit: string; label: string }> = ({ value, unit, label }) => (
@@ -29,22 +31,45 @@ const HudItem: React.FC<{ value: string; unit: string; label: string }> = ({ val
   </View>
 );
 
-export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({ dogName, stats, onUnlock }) => (
-  <View style={styles.container}>
-    <View style={styles.titleRow}><AppIcon name="paw" size={20} color={TOKENS.colors.pocketHud} /><Text style={styles.title}>{dogName}와 안심 산책 중</Text></View>
-    <Text style={styles.subtitle}>화면이 꺼져도 음성으로 안내해요</Text>
+export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
+  dogName,
+  stats,
+  onUnlock,
+  targetMinutes,
+  isFreeWalk,
+}) => {
+  const isOvertime = !isFreeWalk && !!targetMinutes && stats.elapsedSec >= targetMinutes * 60;
+  const overtimeMinutes = isOvertime ? Math.floor((stats.elapsedSec - targetMinutes! * 60) / 60) : 0;
 
-    <View style={styles.hud}>
-      <HudItem label="경과 시간" value={formatElapsed(stats.elapsedSec)} unit="" />
-      <HudItem label="이동 거리" value={stats.distanceKm.toFixed(2)} unit="km" />
-      <HudItem label="현재 속도" value={stats.speedKmH.toFixed(1)} unit="km/h" />
-    </View>
+  const getSubtitle = () => {
+    if (isFreeWalk) return '자유 산책 모드 · 시간 제한 없이 안심 기록 중';
+    if (isOvertime) return `목표 ${targetMinutes}분 달성 (+${overtimeMinutes}분) · 자유 산책 기록 지속 중`;
+    if (targetMinutes) return `목표: ${targetMinutes}분 · 화면이 꺼져도 음성으로 안내해요`;
+    return '화면이 꺼져도 음성으로 안내해요';
+  };
 
-    <View style={styles.unlockArea}>
-      <SlideToUnlock onUnlock={onUnlock} />
+  return (
+    <View style={styles.container}>
+      <View style={styles.titleRow}>
+        <AppIcon name="paw" size={20} color={TOKENS.colors.pocketHud} />
+        <Text style={styles.title}>{dogName}와 안심 산책 중</Text>
+      </View>
+      <Text style={[styles.subtitle, isOvertime && styles.subtitleOvertime]}>
+        {getSubtitle()}
+      </Text>
+
+      <View style={styles.hud}>
+        <HudItem label="경과 시간" value={formatElapsed(stats.elapsedSec)} unit="" />
+        <HudItem label="이동 거리" value={stats.distanceKm.toFixed(2)} unit="km" />
+        <HudItem label="현재 속도" value={stats.speedKmH.toFixed(1)} unit="km/h" />
+      </View>
+
+      <View style={styles.unlockArea}>
+        <SlideToUnlock onUnlock={onUnlock} />
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -67,6 +92,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,
+  },
+  subtitleOvertime: {
+    color: '#FBBF24',
+    opacity: 0.95,
+    fontWeight: '700',
   },
   hud: {
     flex: 1,

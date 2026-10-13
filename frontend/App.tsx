@@ -230,7 +230,15 @@ export default function App() {
       <SafeAreaView style={[styles.safeArea, subScreen === 'pocket' && styles.safeAreaPocket]}>
         <StatusBar barStyle={subScreen === 'pocket' ? 'light-content' : 'dark-content'} backgroundColor={subScreen === 'pocket' ? TOKENS.colors.pocketBg : TOKENS.colors.background} />
         {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
-        {subScreen === 'pocket' && <DarkPocketScreen dogName={activeDog.name} stats={walk.stats} onUnlock={handlePocketUnlock} />}
+        {subScreen === 'pocket' && (
+          <DarkPocketScreen
+            dogName={activeDog.name}
+            stats={walk.stats}
+            targetMinutes={preferences.durationMinutes}
+            isFreeWalk={preferences.isFreeWalk}
+            onUnlock={handlePocketUnlock}
+          />
+        )}
         {subScreen === 'report' && completedRecord && (
           <WalkReportScreen
             record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
