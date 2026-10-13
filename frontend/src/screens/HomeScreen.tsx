@@ -10,12 +10,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAppTheme } from '../theme/themeManager';
 import { DogProfile } from '../types/dogProfile';
 import { HomeDogCard } from '../components/home/HomeDogCard';
 import { GoldenTimeWidget } from '../components/home/GoldenTimeWidget';
-import { AiPlannerBanner } from '../components/home/AiPlannerBanner';
 import { RecentWalkCard } from '../components/home/RecentWalkCard';
 import { FeedbackContextService, FeedbackSummaryPayload } from '../services/feedbackContext';
 import { AppIcon } from '../components/common/AppIcon';
@@ -123,11 +122,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         statusNotice={goldenNotice}
       />
 
-      {/* 4. AI 산책 도우미 배너 ("오늘 어디로 산책할까요?" 원형 복원) */}
-      <AiPlannerBanner
+      {/* 4. '산책' 버튼 (누르면 '산책 설정' 페이지로 이동) */}
+      <TouchableOpacity
+        activeOpacity={0.85}
         onPress={onOpenPlanner}
-        examplePrompt='"30분 정도 걷고 싶어"'
-      />
+        style={[styles.walkNavButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      >
+        <View style={styles.walkNavContent}>
+          <View style={[styles.walkNavIconBadge, { backgroundColor: colors.primaryLight }]}>
+            <AppIcon name="paw" size={16} color={colors.primaryDark} />
+          </View>
+          <View style={styles.walkNavTextWrap}>
+            <Text style={[styles.walkNavTitle, { color: colors.textMain }]}>산책</Text>
+            <Text style={[styles.walkNavSub, { color: colors.textMuted }]}>원하는 시간·공원·노면 조건 설정</Text>
+          </View>
+          <Text style={[styles.walkNavArrow, { color: colors.primary }]}>➔</Text>
+        </View>
+      </TouchableOpacity>
 
       {/* 5. 최근 산책 요약 카드 ("오늘의 산책 / 2.4 km · 38분") */}
       <RecentWalkCard
@@ -190,5 +201,44 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     flex: 1,
+  },
+  walkNavButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  walkNavContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  walkNavIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walkNavTextWrap: {
+    flex: 1,
+  },
+  walkNavTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  walkNavSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  walkNavArrow: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

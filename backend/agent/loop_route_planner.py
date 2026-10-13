@@ -289,16 +289,16 @@ def _plan_variant(
     variant: int,
     deadline: float,
 ) -> LoopPlan:
-    """실시간 → 파일럿 거점 정밀 보행로 → 정적 서울 도로망 → 오프라인 도로망 그래프 → 비상 폴백 순으로 후보 1개를 생성한다."""
+    """파일럿 거점 정밀 공원 보행로(1순위) → 실시간 OSRM → 정적 서울 도로망 → 오프라인 도로망 그래프 → 비상 폴백 순으로 후보 1개를 생성한다."""
+    # 🌟 1순위: 대전 3대 공원 & 세종호수공원 실제 OSM 보행로 (공원 내 산책 90% 이상 보장)
+    pilot_plan = _plan_static_pilot_park(origin_lat, origin_lon, variant)
+    if pilot_plan is not None:
+        return pilot_plan
+
     plan = _plan_live(origin_lat, origin_lon, target_distance_m, variant, deadline)
     if plan is not None:
         return plan
     logger.warning("OSRM 순환 코스 생성 실패(variant=%d): 오프라인 도로망 폴백을 사용합니다.", variant)
-
-    # 🌟 1순위: 대전 3대 공원 & 세종호수공원 실제 OSM 보행로 폴백 (건물/호수 관통 원천 배제)
-    pilot_plan = _plan_static_pilot_park(origin_lat, origin_lon, variant)
-    if pilot_plan is not None:
-        return pilot_plan
 
     offline_target = target_distance_m * {1: 1.0, 2: 1.2, 3: 1.1}[variant]
     plan = _plan_static_seoul(origin_lat, origin_lon, variant, target_distance_m=offline_target)
