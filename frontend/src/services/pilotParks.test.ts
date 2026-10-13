@@ -19,7 +19,7 @@ describe('US-A1 & US-G1 대전 3대 공원 & 세종호수공원 플래너 연동
   };
 
   it('4대 파일럿 거점 공원과 서울숲 메타데이터가 정상 정의되어 있어야 한다', () => {
-    expect(PILOT_PARKS.length).toBe(5);
+    expect(PILOT_PARKS).toHaveLength(5);
 
     const yurim = getPilotParkById('yurim');
     expect(yurim.name).toBe('대전 유림공원');
@@ -45,7 +45,7 @@ describe('US-A1 & US-G1 대전 3대 공원 & 세종호수공원 플래너 연동
       pilotParkId: 'yurim',
     });
 
-    expect(courses.length).toBe(3);
+    expect(courses).toHaveLength(3);
     expect(courses[0].id).toBe('course_yurim');
     expect(courses[0].name).toContain('유림공원');
     expect(courses[0].reason).toContain('유림공원 부설 공영주차장');

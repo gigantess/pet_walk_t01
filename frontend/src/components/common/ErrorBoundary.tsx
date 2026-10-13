@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[ErrorBoundary] Uncaught component error:', error, errorInfo);
   }
 
-  private handleReset = () => {
+  private readonly handleReset = () => {
     this.setState({ hasError: false, error: null });
   };
 
