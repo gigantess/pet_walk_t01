@@ -42,6 +42,7 @@ import { WalkReportScreen } from './src/screens/WalkReportScreen';
 import { DogSelectionView } from './src/components/profile/DogSelectionView';
 import { WalkSettingsView } from './src/components/walk/WalkSettingsView';
 import { CourseRecommendationView } from './src/components/walk/CourseRecommendationView';
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 
 export type AppSubScreen = 'main' | 'dog_selection' | 'walk_settings' | 'course_recommend' | 'pocket' | 'report' | 'onboarding';
 
@@ -312,33 +313,35 @@ export default function App() {
               </View>
             </View>
             <View style={styles.tabContentContainer}>
-              {activeTab === '홈' && (
-                <HomeScreen
-                  dog={activeDog} feedbackSummary={feedbackSummary}
-                  onPressProfile={() => setSubScreen('dog_selection')} onStartWalk={() => setSubScreen('course_recommend')}
-                  onOpenPlanner={() => setSubScreen('walk_settings')}
-                />
-              )}
-              {activeTab === '산책' && (
-                <WalkTabScreen
-                  dog={activeDog} preferences={preferences} feedbackSummary={feedbackSummary} onBack={() => setActiveTab('홈')}
-                  onStartWalk={handleStartWalk} onPinSelect={TTSNavigationService.speak}
-                />
-              )}
-              {activeTab === '커뮤니티' && (
-                <CommunityTabScreen
-                  onStartCommunityWalk={handleStartCommunityWalk}
-                  dogSpeedKmH={activeDog.speedKmH}
-                />
-              )}
-              {activeTab === '마이' && (
-                <MyProfileTabScreen
-                  dog={activeDog} feedbackSummary={feedbackSummary} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
-                  onResetFeedback={handleResetFeedback} onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
-                  onOpenOnboarding={() => setSubScreen('onboarding')}
-                  onOpenAuthModal={() => setAuthModalVisible(true)}
-                />
-              )}
+              <ErrorBoundary>
+                {activeTab === '홈' && (
+                  <HomeScreen
+                    dog={activeDog} feedbackSummary={feedbackSummary}
+                    onPressProfile={() => setSubScreen('dog_selection')} onStartWalk={() => setSubScreen('course_recommend')}
+                    onOpenPlanner={() => setSubScreen('walk_settings')}
+                  />
+                )}
+                {activeTab === '산책' && (
+                  <WalkTabScreen
+                    dog={activeDog} preferences={preferences} feedbackSummary={feedbackSummary} onBack={() => setActiveTab('홈')}
+                    onStartWalk={handleStartWalk} onPinSelect={TTSNavigationService.speak}
+                  />
+                )}
+                {activeTab === '커뮤니티' && (
+                  <CommunityTabScreen
+                    onStartCommunityWalk={handleStartCommunityWalk}
+                    dogSpeedKmH={activeDog.speedKmH}
+                  />
+                )}
+                {activeTab === '마이' && (
+                  <MyProfileTabScreen
+                    dog={activeDog} feedbackSummary={feedbackSummary} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
+                    onResetFeedback={handleResetFeedback} onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
+                    onOpenOnboarding={() => setSubScreen('onboarding')}
+                    onOpenAuthModal={() => setAuthModalVisible(true)}
+                  />
+                )}
+              </ErrorBoundary>
             </View>
             <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} onActionPress={() => setSubScreen('walk_settings')} />
           </View>

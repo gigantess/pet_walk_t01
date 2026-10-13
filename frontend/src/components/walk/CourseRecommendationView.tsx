@@ -1,15 +1,19 @@
 /**
  * [편안하개 - PetWalk]
- * 모바일 추천 산책 코스 화면 (Screen-04, UX_COMPACT_RULES Rule 11 스크롤 배제 준수)
+ * 모바일 추천 산책 코스 화면 (Screen-04, docs/screenshots/04_course_recommendation.png 원형 복원 및 스크롤 방지 최적화)
  *
- * 상단 45% 고정 지도 + 하단 55% 코스 선택/사유/한 손 조작 버튼(Thumb Zone)
+ * 1. 상단: 뒤로가기 & '추천 산책 코스' 헤더 + 실시간 AI 맞춤 코스 뱃지
+ * 2. 상단 브리핑: "✨ {dog.name}에게 맞는 산책 코스를 찾았어요." & 안내문 & 조건 태그 칩들
+ * 3. 중앙: 실시간 보행로 지도 (flex: 1로 뷰포트에 유연 적응하여 스크롤 배제)
+ * 4. 하단 카드: 대체 코스 칩(추천 1/2/3) + 즐겨찾기 + 거리/시간/3대 안심 지표 + 추천 사유
+ * 5. 하단 Thumb Zone: [이 코스로 산책 시작하기] 버튼
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { requestWalkPlan, RoutePlanResult } from '../../services/api';
 import { createBookmark } from '../../services/bookmarkService';
-import { generateAdaptiveCourses } from '../../services/courseAdaptivePlanner';
+import { generateAdaptiveCourses, buildAdaptiveConditionLabels } from '../../services/courseAdaptivePlanner';
 import { getCoursePlanById, getCoursePlanByParkId } from '../../services/sampleRoute';
 import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
@@ -78,18 +82,50 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
     [currentCourse, plan, dog.name],
   );
 
+  const conditionLabels = useMemo(() => {
+    const base = buildAdaptiveConditionLabels(dog, preferences);
+    if (feedback && feedback.recommended_max_slope_offset < 0) {
+      base.push(`경사 완화 ${Math.abs(feedback.recommended_max_slope_offset)}%`);
+    }
+    return base;
+  }, [dog, preferences, feedback]);
+
+  const briefingText = planResult?.briefingMessage ??
+    `반려견 ${dog.name}와의 소중한 산책을 위해 계단 걱정 없이 경사가 완만한 폭신한 길 위주로 구성된 안심 코스를 준비했어요.`;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* 컴팩트 헤더 */}
+      {/* 1. 상단 컴팩트 헤더 */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity activeOpacity={0.7} onPress={onBack} style={styles.backButton}>
           <AppIcon name="back" size={22} color={colors.textMain} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textMain }]}>추천 안심 코스</Text>
+        <Text style={[styles.headerTitle, { color: colors.textMain }]}>추천 산책 코스</Text>
         <PlanSourceBadge isLive={Boolean(planResult?.isLiveServer)} />
       </View>
 
-      {/* 상단 42%: 실시간 경로 지도 프리뷰 (스크롤 배제 핵심) */}
+      {/* 2. 상단 AI 맞춤 브리핑 & 조건 태그 (04_course_recommendation.png 원형 복원) */}
+      <View style={[styles.briefingSection, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <AppIcon name="sparkle" size={16} color={colors.primaryDark} />
+          <Text style={[styles.briefingTitle, { color: colors.textMain }]}>
+            {dog.name}에게 맞는 산책 코스를 찾았어요.
+          </Text>
+        </View>
+        <Text style={[styles.briefingDesc, { color: colors.textMuted }]} numberOfLines={2}>
+          {briefingText}
+        </Text>
+        {/* 가로 태그 칩 */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScrollRow}>
+          {conditionLabels.map((lbl) => (
+            <View key={lbl} style={[styles.tagChip, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.tagText, { color: colors.primaryDark }]}>{lbl}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* 3. 중앙 실시간 지도 (flex: 1로 남은 공간 전체 활용하여 스크롤 완전 배제) */}
       <View style={styles.mapSection}>
         <RouteMapView
           key={currentCourse.id}
@@ -101,86 +137,77 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
         />
       </View>
 
-      {/* 하단 58%: 대체 코스 퀵 칩 + 핵심 수치 + 추천 사유 + Thumb Zone 액션 */}
+      {/* 4. 하단 코스 요약 & 대체 코스 & Thumb Zone 시작 버튼 */}
       <View style={[styles.bottomCard, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        {/* 가로 대체 코스 선택 칩 (스크롤 없는 3구 버튼) */}
-        <View style={styles.courseChipRow}>
-          {courses.slice(0, 3).map((c, idx) => {
-            const isSelected = idx === selectedCourseIndex;
-            return (
-              <TouchableOpacity
-                key={c.id}
-                activeOpacity={0.8}
-                onPress={() => setSelectedCourseIndex(idx)}
-                style={[
-                  styles.courseChip,
-                  {
-                    backgroundColor: isSelected ? colors.primaryLight : colors.surface,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                  },
-                ]}
-              >
-                <Text
+        {/* 상단 핸들 바 & 대체 코스 퀵 칩 & 북마크 */}
+        <View style={styles.sheetHeaderRow}>
+          <View style={styles.courseChipRow}>
+            {courses.slice(0, 3).map((c, idx) => {
+              const isSelected = idx === selectedCourseIndex;
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedCourseIndex(idx)}
                   style={[
-                    styles.courseChipText,
-                    { color: isSelected ? colors.primaryDark : colors.textMuted },
-                    isSelected && styles.courseChipTextActive,
+                    styles.courseChip,
+                    {
+                      backgroundColor: isSelected ? colors.primaryLight : colors.surface,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
                   ]}
-                  numberOfLines={1}
                 >
-                  {idx === 0 ? '👑 추천 1' : `코스 ${idx + 1}`}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* 선택 코스 요약 & 즐겨찾기 */}
-        <View style={styles.courseSummaryRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.courseTitle, { color: colors.textMain }]}>{currentCourse.name}</Text>
-            <Text style={[styles.courseMeta, { color: colors.textMuted }]}>
-              {activeSummary.totalDistanceKm.toFixed(1)}km · 약 {activeSummary.estimatedMinutes}분 · 권장 {dog.speedKmH}km/h
-            </Text>
+                  <Text
+                    style={[
+                      styles.courseChipText,
+                      { color: isSelected ? colors.primaryDark : colors.textMuted },
+                      isSelected && styles.courseChipTextActive,
+                    ]}
+                  >
+                    {idx === 0 ? '👑 추천 1' : `코스 ${idx + 1}`}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
           <BookmarkToggleButton bookmark={bookmarkCandidate} />
         </View>
 
-        {/* 3대 안심 지표 바 (노면/경사/그늘) */}
-        <View style={[styles.metricsBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          <View style={styles.metricItem}>
-            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>폭신 노면</Text>
-            <Text style={[styles.metricValue, { color: colors.primary }]}>{currentCourse.softRatio}</Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricItem}>
-            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>최대 경사</Text>
-            <Text style={[styles.metricValue, { color: colors.textMain }]}>{currentCourse.maxSlopePercent}%</Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricItem}>
-            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>그늘 비율</Text>
-            <Text style={[styles.metricValue, { color: colors.textMain }]}>{currentCourse.shadePercent}%</Text>
-          </View>
-        </View>
-
-        {/* 추천 사유 투명 공개 (Rule 1 & Rule 10 준수) */}
-        <View style={styles.reasonBox}>
-          <Text style={[styles.reasonText, { color: colors.primaryDark }]} numberOfLines={2}>
-            💡 {currentCourse.reason}
+        {/* 코스 명칭 및 핵심 보행 수치 (거리 / 시간 / 속도) */}
+        <View style={styles.courseMetricsRow}>
+          <Text style={[styles.courseName, { color: colors.textMain }]} numberOfLines={1}>
+            {currentCourse.name}
+          </Text>
+          <Text style={[styles.courseMetaText, { color: colors.primaryDark }]}>
+            {activeSummary.totalDistanceKm.toFixed(1)}km · 약 {activeSummary.estimatedMinutes}분
           </Text>
         </View>
 
-        {/* Thumb Zone 산책 시작 버튼 (Rule 3 준수: 높이 52px 이상) */}
+        {/* 3대 안심 지표 바 (노면 / 경사 / 그늘) */}
+        <View style={[styles.metricsBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <Text style={[styles.metricText, { color: colors.textMuted }]}>
+            폭신 노면 <Text style={{ color: colors.primary, fontWeight: '700' }}>{currentCourse.softRatio}</Text>
+          </Text>
+          <Text style={styles.metricDot}>·</Text>
+          <Text style={[styles.metricText, { color: colors.textMuted }]}>
+            최대 경사 <Text style={{ color: colors.textMain, fontWeight: '700' }}>{currentCourse.maxSlopePercent}%</Text>
+          </Text>
+          <Text style={styles.metricDot}>·</Text>
+          <Text style={[styles.metricText, { color: colors.textMuted }]}>
+            그늘 <Text style={{ color: colors.textMain, fontWeight: '700' }}>{currentCourse.shadePercent}%</Text>
+          </Text>
+        </View>
+
+        {/* Thumb Zone 산책 시작 버튼 (04_course_recommendation.png 원형 복원) */}
         <TouchableOpacity
           activeOpacity={0.88}
           onPress={() => onStartWalk(currentCourse, plan)}
-          style={[styles.startButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+          style={[styles.startButton, { backgroundColor: colors.primary }]}
         >
           <View style={styles.btnContent}>
-            <AppIcon name="paw" size={20} color={colors.textWhite} />
+            <AppIcon name="paw" size={18} color={colors.textWhite} />
             <Text style={[styles.startButtonText, { color: colors.textWhite }]}>
-              이 코스로 안심 산책 시작
+              이 코스로 산책 시작하기
             </Text>
           </View>
         </TouchableOpacity>
@@ -191,26 +218,71 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, borderBottomWidth: 1 },
+  header: {
+    height: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+  },
   backButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3 },
-  mapSection: { flex: 4, minHeight: 180 },
-  bottomCard: { flex: 6, borderTopWidth: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, justifyContent: 'space-between' },
-  courseChipRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
-  courseChip: { flex: 1, paddingVertical: 6, borderRadius: 10, borderWidth: 1.5, alignItems: 'center' },
+  briefingSection: {
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
+  briefingTitle: { fontSize: 14, fontWeight: '800', letterSpacing: -0.3 },
+  briefingDesc: { fontSize: 11, lineHeight: 15, marginBottom: 6 },
+  tagScrollRow: { flexDirection: 'row' },
+  tagChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, marginRight: 6 },
+  tagText: { fontSize: 10, fontWeight: '700' },
+  mapSection: { flex: 1, minHeight: 180 },
+  bottomCard: {
+    borderTopWidth: 1,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 10,
+    gap: 6,
+  },
+  sheetHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  courseChipRow: { flexDirection: 'row', gap: 6, flex: 1, marginRight: 8 },
+  courseChip: { flex: 1, paddingVertical: 5, borderRadius: 8, borderWidth: 1, alignItems: 'center' },
   courseChipText: { fontSize: 11, fontWeight: '600' },
   courseChipTextActive: { fontWeight: '800' },
-  courseSummaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  courseTitle: { fontSize: 16, fontWeight: '800', letterSpacing: -0.3 },
-  courseMeta: { fontSize: 12, marginTop: 2 },
-  metricsBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 8, borderRadius: 12, borderWidth: 1, marginBottom: 6 },
-  metricItem: { alignItems: 'center' },
-  metricLabel: { fontSize: 10, marginBottom: 2 },
-  metricValue: { fontSize: 13, fontWeight: '700' },
-  metricDivider: { width: 1, height: 20, backgroundColor: 'rgba(0,0,0,0.08)' },
-  reasonBox: { paddingHorizontal: 4, marginBottom: 8 },
-  reasonText: { fontSize: 11, lineHeight: 16, fontStyle: 'italic' },
-  startButton: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 4 },
-  btnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  courseMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  courseName: { fontSize: 14, fontWeight: '800', flex: 1, marginRight: 8 },
+  courseMetaText: { fontSize: 12, fontWeight: '700' },
+  metricsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  metricText: { fontSize: 11 },
+  metricDot: { color: 'rgba(0,0,0,0.2)', fontSize: 10 },
+  startButton: {
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnContent: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   startButtonText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
 });
+
