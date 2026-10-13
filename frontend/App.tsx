@@ -161,6 +161,8 @@ export default function App() {
       totalDistanceKm: distKm > 0 ? distKm : 1.2,
       averageSpeedKmH: walk.stats.speedKmH > 0 ? walk.stats.speedKmH : activeDog.speedKmH,
       safeSurfaceRatio: 0.88, gpsTrack,
+      poopCount: walk.poopCount,
+      poopEvents: walk.poopEvents,
     };
     await LocalStorageService.appendWalkRecord(newRecord);
     void SupabaseService.createWalkRecord({
@@ -262,6 +264,8 @@ export default function App() {
             targetMinutes={preferences.durationMinutes}
             isFreeWalk={preferences.isFreeWalk}
             onUnlock={handlePocketUnlock}
+            onMarkPoop={walk.markPoop}
+            poopCount={walk.poopCount}
           />
         )}
         {subScreen === 'report' && completedRecord && (

@@ -25,6 +25,14 @@ export interface WalkFeedback {
   comment?: string;
 }
 
+export interface PoopEvent {
+  id: string;
+  timestamp: number;
+  type: 'poop' | 'pee';
+  lat?: number;
+  lon?: number;
+}
+
 export interface WalkRecord {
   id: string;
   dogId: string;
@@ -36,4 +44,6 @@ export interface WalkRecord {
   safeSurfaceRatio: number;
   gpsTrack: Array<{ lat: number; lon: number; timestamp: number }>;
   feedback?: WalkFeedback;
+  poopCount?: number;
+  poopEvents?: PoopEvent[];
 }

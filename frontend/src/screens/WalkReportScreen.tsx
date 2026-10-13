@@ -118,6 +118,15 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
         </View>
       </View>
 
+      {/* 배변 마킹 결과 뱃지 (US-18) */}
+      {typeof record.poopCount === 'number' && record.poopCount > 0 && (
+        <View style={[styles.poopBadgeBar, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
+          <Text style={[styles.poopBadgeText, { color: colors.primaryDark }]}>
+            💩 산책 중 배변 {record.poopCount}회 마킹 완료
+          </Text>
+        </View>
+      )}
+
       {/* 3. 피드백 및 공유 원터치 카드 */}
       <View style={[styles.actionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TouchableOpacity
@@ -204,6 +213,8 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '600', marginBottom: 2 },
   statValue: { fontSize: 20, fontWeight: '800' },
   statUnit: { fontSize: 12, fontWeight: '500' },
+  poopBadgeBar: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, alignItems: 'center', marginBottom: 10 },
+  poopBadgeText: { fontSize: 12, fontWeight: '700' },
   actionCard: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 4, marginBottom: 10 },
   feedbackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },

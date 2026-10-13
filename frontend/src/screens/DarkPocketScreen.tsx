@@ -1,12 +1,14 @@
 /**
  * [편안하개 - PetWalk]
- * 초절전 다크 포켓 모드 화면 (US-C2, Phase 4)
+ * 초절전 다크 포켓 모드 화면 (US-C2, US-18, Phase 4)
  *
- * True Black(#000000) OLED 배경 + 고대비 네온 그린 HUD(시간·거리·속도)
+ * 1. True Black(#000000) OLED 배경 + 고대비 네온 그린 HUD(시간·거리·속도)
+ * 2. 한 손 원터치 배변/소변 마킹 FAB 및 햅틱 로깅 (US-18)
+ * 3. 슬라이드 언락 산책 종료 제스처
  */
 
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { TOKENS } from '../theme/tokens';
 import { WalkStats } from '../hooks/useWalkGuidance';
 import { SlideToUnlock } from '../components/common/SlideToUnlock';
@@ -20,6 +22,8 @@ export interface DarkPocketScreenProps {
   readonly onUnlock: () => void;
   readonly targetMinutes?: number | null;
   readonly isFreeWalk?: boolean;
+  readonly onMarkPoop?: (type: 'poop' | 'pee') => void;
+  readonly poopCount?: number;
 }
 
 const HudItem: React.FC<{ value: string; unit: string; label: string }> = ({ value, unit, label }) => (
@@ -38,9 +42,19 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
   onUnlock,
   targetMinutes,
   isFreeWalk,
+  onMarkPoop,
+  poopCount = 0,
 }) => {
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const isOvertime = !isFreeWalk && !!targetMinutes && stats.elapsedSec >= targetMinutes * 60;
   const overtimeMinutes = isOvertime ? Math.floor((stats.elapsedSec - targetMinutes! * 60) / 60) : 0;
+
+  const handlePressMark = (type: 'poop' | 'pee') => {
+    if (onMarkPoop) onMarkPoop(type);
+    const label = type === 'poop' ? '💩 대변' : '💧 소변';
+    setToastMsg(`${label} 마킹 완료 (총 ${poopCount + 1}회)`);
+    setTimeout(() => setToastMsg(null), 2500);
+  };
 
   const getSubtitle = () => {
     if (isFreeWalk) return '자유 산책 모드 · 시간 제한 없이 안심 기록 중';
@@ -61,10 +75,46 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
 
       <VoiceQuickControlBar compact />
 
+      {/* 중앙 HUD 수치 */}
       <View style={styles.hud}>
         <HudItem label="경과 시간" value={formatElapsed(stats.elapsedSec)} unit="" />
         <HudItem label="이동 거리" value={stats.distanceKm.toFixed(2)} unit="km" />
         <HudItem label="현재 속도" value={stats.speedKmH.toFixed(1)} unit="km/h" />
+      </View>
+
+      {/* US-18: 한 손 원터치 배변 마킹 FAB 영역 (Thumb Zone) */}
+      <View style={styles.poopMarkingZone}>
+        {toastMsg ? (
+          <View style={styles.toastBadge}>
+            <Text style={styles.toastText}>{toastMsg}</Text>
+          </View>
+        ) : (
+          <View style={styles.poopStatusRow}>
+            <Text style={styles.poopStatusText}>
+              {poopCount > 0 ? `🐾 배변 ${poopCount}회 마킹됨` : '🐾 배변 시 아래 버튼을 탭하세요'}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.fabRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => handlePressMark('poop')}
+            style={styles.poopFab}
+          >
+            <Text style={styles.poopFabIcon}>💩</Text>
+            <Text style={styles.poopFabText}>대변 마킹</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => handlePressMark('pee')}
+            style={styles.peeFab}
+          >
+            <Text style={styles.poopFabIcon}>💧</Text>
+            <Text style={styles.poopFabText}>소변 마킹</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.unlockArea}>
@@ -75,57 +125,46 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: TOKENS.colors.pocketBg,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 40,
-  },
-  title: {
-    color: TOKENS.colors.pocketHud,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: TOKENS.colors.pocketBg, paddingHorizontal: 24, paddingTop: 40, paddingBottom: 28, justifyContent: 'space-between' },
+  title: { color: TOKENS.colors.pocketHud, fontSize: 18, fontWeight: '700', textAlign: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  subtitle: {
-    color: TOKENS.colors.pocketHudSubtle,
-    opacity: 0.7,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  subtitleOvertime: {
-    color: '#FBBF24',
-    opacity: 0.95,
-    fontWeight: '700',
-  },
-  hud: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 28,
-  },
-  hudItem: {
+  subtitle: { color: TOKENS.colors.pocketHudSubtle, opacity: 0.7, fontSize: 12, textAlign: 'center', marginTop: 4 },
+  subtitleOvertime: { color: '#FBBF24', opacity: 0.95, fontWeight: '700' },
+  hud: { flex: 1, justifyContent: 'center', gap: 20 },
+  hudItem: { alignItems: 'center' },
+  hudLabel: { color: TOKENS.colors.pocketHudSubtle, opacity: 0.7, fontSize: 12, marginBottom: 2 },
+  hudValue: { color: TOKENS.colors.pocketHud, fontSize: 50, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  hudUnit: { fontSize: 18, fontWeight: '600' },
+
+  poopMarkingZone: { alignItems: 'center', marginBottom: 12 },
+  toastBadge: { backgroundColor: 'rgba(16, 185, 129, 0.25)', borderWidth: 1, borderColor: TOKENS.colors.pocketHud, paddingHorizontal: 14, paddingVertical: 4, borderRadius: 14, marginBottom: 8 },
+  toastText: { color: TOKENS.colors.pocketHud, fontSize: 11, fontWeight: '700' },
+  poopStatusRow: { marginBottom: 6 },
+  poopStatusText: { color: TOKENS.colors.pocketHudSubtle, fontSize: 11, opacity: 0.8 },
+  fabRow: { flexDirection: 'row', gap: 12, width: '100%', justifyContent: 'center' },
+  poopFab: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(245, 158, 11, 0.6)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
-  hudLabel: {
-    color: TOKENS.colors.pocketHudSubtle,
-    opacity: 0.7,
-    fontSize: 13,
-    marginBottom: 4,
+  peeFab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(59, 130, 246, 0.6)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
-  hudValue: {
-    color: TOKENS.colors.pocketHud,
-    fontSize: 56,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  hudUnit: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  unlockArea: {
-    paddingBottom: 8,
-  },
+  poopFabIcon: { fontSize: 16 },
+  poopFabText: { color: '#F8FAFC', fontSize: 12, fontWeight: '700' },
+  unlockArea: { paddingBottom: 4 },
 });
