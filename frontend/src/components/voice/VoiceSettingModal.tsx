@@ -145,6 +145,37 @@ export const VoiceSettingModal: React.FC<VoiceSettingModalProps> = ({ visible, o
                 );
               })}
             </View>
+
+            {/* 🐾 스마트 짖음 감지 자동 음소거 (US-C2, #37) */}
+            <Text style={styles.sectionLabel}>스마트 소음 감지</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                const next = !(settings.smartBarkMuteEnabled ?? true);
+                void TTSNavigationService.updateSettings({ smartBarkMuteEnabled: next });
+              }}
+              style={styles.smartBarkCard}
+            >
+              <View style={styles.smartBarkLeft}>
+                <Text style={styles.smartBarkTitle}>
+                  🐾 돌발 짖음 감지 시 자동 음소거
+                </Text>
+                <Text style={styles.smartBarkDesc}>
+                  주변에서 73dB 이상 개 짖는 소리가 나면 안내를 즉시 멈추고, 조용해지면 3초 후 자동으로 다시 켭니다.
+                </Text>
+              </View>
+              <View style={[
+                styles.smartBarkBadge,
+                (settings.smartBarkMuteEnabled ?? true) ? styles.smartBarkBadgeActive : null,
+              ]}>
+                <Text style={[
+                  styles.smartBarkBadgeText,
+                  (settings.smartBarkMuteEnabled ?? true) ? styles.smartBarkBadgeTextActive : null,
+                ]}>
+                  {(settings.smartBarkMuteEnabled ?? true) ? '켜짐' : '꺼짐'}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </ScrollView>
 
           <TouchableOpacity activeOpacity={0.85} onPress={onClose} style={styles.confirmButton}>
@@ -229,4 +260,29 @@ const styles = StyleSheet.create({
   profileDesc: { fontSize: 12, color: TOKENS.colors.textMuted, lineHeight: 16 },
   confirmButton: { backgroundColor: TOKENS.colors.primaryDark, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   confirmButtonText: { color: TOKENS.colors.textWhite, fontSize: 15, fontWeight: '700' },
+  smartBarkCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: TOKENS.colors.background,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: TOKENS.colors.border,
+    marginBottom: 16,
+  },
+  smartBarkLeft: { flex: 1, marginRight: 10 },
+  smartBarkTitle: { fontSize: 13, fontWeight: '700', color: TOKENS.colors.textMain, marginBottom: 2 },
+  smartBarkDesc: { fontSize: 11, color: TOKENS.colors.textMuted, lineHeight: 15 },
+  smartBarkBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: '#E5E7EB',
+  },
+  smartBarkBadgeActive: {
+    backgroundColor: TOKENS.colors.primaryDark,
+  },
+  smartBarkBadgeText: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
+  smartBarkBadgeTextActive: { color: TOKENS.colors.textWhite },
 });

@@ -23,7 +23,16 @@ export interface VoiceProfile {
 export interface SoundSettings {
   profileId: VoiceProfileId;
   volume: number; // 0.0 ~ 1.0 (기본 0.8)
-  isMuted: boolean; // 돌발 상황 퀵 음소거 여부
+  isMuted: boolean; // 돌발 상황 수동 퀵 음소거 여부
+  smartBarkMuteEnabled?: boolean; // 짖음/돌발소음 감지 자동 음소거 활성화 여부 (기본 true)
+  barkNoiseThresholdDb?: number;  // 짖음 감지 임계치 (기본 73 dB)
+  noiseCooldownSec?: number;      // 소음 잦아든 후 복구 대기 시간 (기본 3초)
+}
+
+export interface BarkMuteState {
+  isAutoMuted: boolean;           // 현재 소음으로 인해 자동 일시 차단 중인지 여부
+  currentNoiseDb: number;         // 현재 측정 데시벨
+  cooldownRemainingSec: number;   // 자동 복구까지 남은 시간 (초)
 }
 
 export const VOICE_PROFILES: readonly VoiceProfile[] = [
@@ -73,4 +82,7 @@ export const DEFAULT_SOUND_SETTINGS: SoundSettings = {
   profileId: 'calm_female',
   volume: 0.8,
   isMuted: false,
+  smartBarkMuteEnabled: true,
+  barkNoiseThresholdDb: 73,
+  noiseCooldownSec: 3,
 };

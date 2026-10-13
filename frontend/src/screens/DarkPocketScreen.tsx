@@ -7,7 +7,7 @@
  * 3. 슬라이드 언락 산책 종료 제스처
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { TOKENS } from '../theme/tokens';
 import { WalkStats } from '../hooks/useWalkGuidance';
@@ -15,6 +15,9 @@ import { SlideToUnlock } from '../components/common/SlideToUnlock';
 import { formatElapsed } from '../services/walkFormat';
 import { AppIcon } from '../components/common/AppIcon';
 import { VoiceQuickControlBar } from '../components/voice/VoiceQuickControlBar';
+import { AmbientNoiseMonitorService } from '../services/ambientNoiseMonitor';
+import { BarkMuteState, SoundSettings } from '../types/voiceSettings';
+import { TTSNavigationService } from '../services/ttsNavigation';
 
 export interface DarkPocketScreenProps {
   readonly dogName: string;
@@ -46,6 +49,23 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
   poopCount = 0,
 }) => {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [barkState, setBarkState] = useState<BarkMuteState>(() => AmbientNoiseMonitorService.getState());
+  const [soundSettings, setSoundSettings] = useState<SoundSettings>(() => TTSNavigationService.getSettings());
+
+  useEffect(() => {
+    void AmbientNoiseMonitorService.startMonitoring();
+    const unsubNoise = AmbientNoiseMonitorService.subscribe((next) => {
+      setBarkState(next);
+    });
+    const unsubTTS = TTSNavigationService.subscribe((next) => {
+      setSoundSettings(next);
+    });
+    return () => {
+      unsubNoise();
+      unsubTTS();
+      AmbientNoiseMonitorService.stopMonitoring();
+    };
+  }, []);
   const isOvertime = !isFreeWalk && !!targetMinutes && stats.elapsedSec >= targetMinutes * 60;
   const overtimeMinutes = isOvertime ? Math.floor((stats.elapsedSec - targetMinutes! * 60) / 60) : 0;
 
@@ -75,6 +95,50 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
 
       {/* US-C2, #37: 비상 상황 원터치 대형 퀵 음소거 제어 바 */}
       <VoiceQuickControlBar variant="emergency" />
+
+      {/* 스마트 돌발 짖음 감지 상태 배너 & 토글 컨트롤 */}
+      {barkState.isAutoMuted ? (
+        <View style={styles.barkAlertBanner}>
+          <AppIcon name="volumeMute" size={16} color="#EF4444" />
+          <Text style={styles.barkAlertText}>
+            🚨 돌발 짖음 감지({barkState.currentNoiseDb}dB) · 안내 일시 차단 중 ({barkState.cooldownRemainingSec.toFixed(1)}s 후 자동 복구)
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.smartMuteRow}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              const next = !(soundSettings.smartBarkMuteEnabled ?? true);
+              void TTSNavigationService.updateSettings({ smartBarkMuteEnabled: next });
+            }}
+            style={[
+              styles.smartMuteToggleBtn,
+              (soundSettings.smartBarkMuteEnabled ?? true) ? styles.smartMuteToggleActive : null,
+            ]}
+          >
+            <Text style={styles.smartMuteToggleIcon}>
+              {(soundSettings.smartBarkMuteEnabled ?? true) ? '🟢' : '⚪'}
+            </Text>
+            <Text
+              style={[
+                styles.smartMuteToggleText,
+                (soundSettings.smartBarkMuteEnabled ?? true) ? styles.smartMuteToggleTextActive : null,
+              ]}
+            >
+              스마트 짖음 감지 자동 음소거 {(soundSettings.smartBarkMuteEnabled ?? true) ? '켜짐 (73dB↑)' : '꺼짐'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => AmbientNoiseMonitorService.simulateNoise(82)}
+            style={styles.testBarkChip}
+          >
+            <Text style={styles.testBarkChipText}>📢 짖음 테스트</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* 중앙 HUD 수치 */}
       <View style={styles.hud}>
@@ -168,4 +232,69 @@ const styles = StyleSheet.create({
   poopFabIcon: { fontSize: 16 },
   poopFabText: { color: '#F8FAFC', fontSize: 12, fontWeight: '700' },
   unlockArea: { paddingBottom: 4 },
+  barkAlertBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginVertical: 4,
+  },
+  barkAlertText: {
+    color: '#FCA5A5',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  smartMuteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginVertical: 4,
+  },
+  smartMuteToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  smartMuteToggleActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.5)',
+  },
+  smartMuteToggleIcon: { fontSize: 10 },
+  smartMuteToggleText: {
+    color: TOKENS.colors.pocketHudSubtle,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  smartMuteToggleTextActive: {
+    color: TOKENS.colors.pocketHud,
+    fontWeight: '700',
+  },
+  testBarkChip: {
+    backgroundColor: 'rgba(245, 158, 11, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  testBarkChipText: {
+    color: '#FBBF24',
+    fontSize: 10,
+    fontWeight: '700',
+  },
 });

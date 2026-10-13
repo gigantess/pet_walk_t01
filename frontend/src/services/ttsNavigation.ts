@@ -20,6 +20,7 @@ export class TTSNavigationService {
   private static isSpeaking = false;
   private static settings: SoundSettings = { ...DEFAULT_SOUND_SETTINGS };
   private static isInitialized = false;
+  private static isBarkMuted = false;
   private static listeners: Array<(settings: SoundSettings) => void> = [];
 
   /** 저장된 사운드 설정을 불러와 초기화한다. */
@@ -39,6 +40,18 @@ export class TTSNavigationService {
 
   static getSettings(): SoundSettings {
     return { ...this.settings };
+  }
+
+  /** 돌발 짖음/소음 감지에 따른 스마트 자동 음소거 플래그 설정 */
+  static setBarkMuted(muted: boolean): void {
+    this.isBarkMuted = muted;
+    if (muted) {
+      void this.stop();
+    }
+  }
+
+  static getIsBarkMuted(): boolean {
+    return this.isBarkMuted;
   }
 
   /** 사운드 설정을 변경하고 영속 저장 및 구독자에게 알린다. */
@@ -97,7 +110,7 @@ export class TTSNavigationService {
    * @param isPreview 미리듣기 여부 (음소거 상태여도 미리듣기는 허용할 수 있음)
    */
   static speak(message: string, overrideProfileId?: VoiceProfileId, isPreview = false): void {
-    if (!isPreview && (this.settings.isMuted || this.settings.volume <= 0)) {
+    if (!isPreview && (this.settings.isMuted || this.settings.volume <= 0 || this.isBarkMuted)) {
       return;
     }
 
