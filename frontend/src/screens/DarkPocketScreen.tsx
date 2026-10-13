@@ -73,7 +73,8 @@ export const DarkPocketScreen: React.FC<DarkPocketScreenProps> = ({
         {getSubtitle()}
       </Text>
 
-      <VoiceQuickControlBar compact />
+      {/* US-C2, #37: 비상 상황 원터치 대형 퀵 음소거 제어 바 */}
+      <VoiceQuickControlBar variant="emergency" />
 
       {/* 중앙 HUD 수치 */}
       <View style={styles.hud}>

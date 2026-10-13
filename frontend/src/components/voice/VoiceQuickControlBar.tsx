@@ -13,6 +13,7 @@ import { VoiceSettingModal } from './VoiceSettingModal';
 
 export interface VoiceQuickControlBarProps {
   compact?: boolean;
+  variant?: 'standard' | 'compact' | 'emergency';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -57,6 +58,54 @@ const CompactVoiceBar: React.FC<VoiceBarControlProps> = ({
         style={styles.compactSettingsBtn}
       >
         <AppIcon name="sparkle" size={16} color={TOKENS.colors.pocketHud} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const EmergencyVoiceBar: React.FC<VoiceBarControlProps> = ({
+  isMuted,
+  volume,
+  onToggleMute,
+  onOpenSettings,
+  style,
+}) => {
+  const percentText = `${Math.round(volume * 100)}%`;
+  const mainTitle = isMuted ? '음소거 켜짐 (발화 즉시 중단됨)' : `긴급 원터치 음소거 (${percentText})`;
+  const subHint = isMuted ? '터치 시 음성 안내 다시 켜기' : '돌발 상황/개 짖음 시 터치하여 즉시 음소거';
+  const iconColor = isMuted ? '#F59E0B' : TOKENS.colors.pocketHud;
+
+  return (
+    <View style={[styles.emergencyContainer, style]}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onToggleMute}
+        style={[styles.emergencyMuteBtn, isMuted ? styles.emergencyMuteBtnActive : null]}
+      >
+        <View style={[styles.emergencyIconCircle, isMuted ? styles.emergencyIconCircleActive : null]}>
+          <AppIcon
+            name={isMuted ? 'volumeMute' : 'volume'}
+            size={24}
+            color={iconColor}
+          />
+        </View>
+        <View style={styles.emergencyTextCol}>
+          <Text style={[styles.emergencyMainText, isMuted ? styles.emergencyMainTextActive : null]}>
+            {mainTitle}
+          </Text>
+          <Text style={[styles.emergencySubHint, isMuted ? styles.emergencySubHintActive : null]}>
+            {subHint}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onOpenSettings}
+        style={styles.emergencySettingBtn}
+      >
+        <AppIcon name="sparkle" size={20} color={TOKENS.colors.pocketHud} />
+        <Text style={styles.emergencySettingLabel}>보이스</Text>
       </TouchableOpacity>
     </View>
   );
@@ -117,7 +166,11 @@ const StandardVoiceBar: React.FC<VoiceBarControlProps> = ({
   );
 };
 
-export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ compact = false, style }) => {
+export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({
+  compact = false,
+  variant,
+  style,
+}) => {
   const [settings, setSettings] = useState<SoundSettings>(() => TTSNavigationService.getSettings());
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -132,10 +185,20 @@ export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ comp
   };
 
   const isMuted = settings.isMuted || settings.volume <= 0;
+  const activeVariant = variant ?? (compact ? 'compact' : 'standard');
 
   return (
     <>
-      {compact ? (
+      {activeVariant === 'emergency' && (
+        <EmergencyVoiceBar
+          isMuted={isMuted}
+          volume={settings.volume}
+          onToggleMute={handleToggleMute}
+          onOpenSettings={() => setModalVisible(true)}
+          style={style}
+        />
+      )}
+      {activeVariant === 'compact' && (
         <CompactVoiceBar
           isMuted={isMuted}
           volume={settings.volume}
@@ -143,7 +206,8 @@ export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ comp
           onOpenSettings={() => setModalVisible(true)}
           style={style}
         />
-      ) : (
+      )}
+      {activeVariant === 'standard' && (
         <StandardVoiceBar
           isMuted={isMuted}
           volume={settings.volume}
@@ -230,5 +294,77 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 16,
+  },
+  emergencyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    marginVertical: 12,
+  },
+  emergencyMuteBtn: {
+    flex: 1,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    borderWidth: 2,
+    borderColor: TOKENS.colors.pocketHud,
+    borderRadius: 28,
+    paddingHorizontal: 14,
+    gap: 12,
+  },
+  emergencyMuteBtnActive: {
+    backgroundColor: 'rgba(245, 158, 11, 0.22)',
+    borderColor: '#F59E0B',
+  },
+  emergencyIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(16, 185, 129, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emergencyIconCircleActive: {
+    backgroundColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  emergencyTextCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  emergencyMainText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: TOKENS.colors.pocketHud,
+    letterSpacing: -0.3,
+  },
+  emergencyMainTextActive: {
+    color: '#F59E0B',
+  },
+  emergencySubHint: {
+    fontSize: 10,
+    color: TOKENS.colors.pocketHudSubtle,
+    marginTop: 1,
+    opacity: 0.85,
+  },
+  emergencySubHintActive: {
+    color: '#FCD34D',
+  },
+  emergencySettingBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  emergencySettingLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: TOKENS.colors.pocketHud,
   },
 });
