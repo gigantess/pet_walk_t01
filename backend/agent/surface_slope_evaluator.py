@@ -73,6 +73,97 @@ def calculate_segment_slope_percent(p1: Sequence[float], p2: Sequence[float]) ->
 
 
 # ==============================================================================
+# 1-2. 무장애길 하드 제약 (US-B1): 계단 및 15도 이상 급경사 링크 배제
+# ==============================================================================
+
+MAX_WALKABLE_SLOPE_DEGREE = 15.0
+# 15도 = tan(15°) x 100 = 약 26.8%. 이 값 이상의 링크는 후보에서 완전히 제외한다.
+MAX_WALKABLE_SLOPE_PERCENT = math.tan(math.radians(MAX_WALKABLE_SLOPE_DEGREE)) * 100.0
+
+
+def filter_links_avoiding_stairs(
+    links: Sequence[Dict[str, Any]],
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """[US-B1] OSM 링크에서 계단(highway=steps)을 후보 네트워크에서 완전히 배제한다.
+
+    반환 메타데이터의 has_stairs 는 '결과 네트워크에 계단이 남아 있는지'를 뜻하므로
+    배제가 적용되면 항상 False 이다. 배제된 계단의 수와 위치는 removed_stairs_* 로
+    전달하여, 우회가 불가능한 경우 사용자에게 사전 고지할 수 있게 한다.
+    """
+    filtered = [l for l in links if l.get("highway") != "steps"]
+    removed = [l for l in links if l.get("highway") == "steps"]
+    metadata = {
+        "has_stairs": any(l.get("highway") == "steps" for l in filtered),
+        "stairs_data_source": "osm",
+        "confidence": 0.90,
+        "stairs_avoidance_applied": True,
+        "removed_stairs_count": len(removed),
+        "removed_stairs_link_ids": [l.get("id") for l in removed],
+    }
+    return filtered, metadata
+
+
+def _slope_magnitude(link: Dict[str, Any]) -> Optional[float]:
+    """링크의 경사 크기(%, 절댓값)를 반환한다. 확인할 수 없는 값은 None 이다.
+
+    None, 숫자가 아닌 값(문자열 등), NaN, 무한대는 '경사 미확인'으로 본다.
+    내리막(음수)도 오르막과 같은 크기의 위험이므로 절댓값으로 비교한다.
+    """
+    value = link.get("slope_percent")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if math.isnan(value) or math.isinf(value):
+        return None
+    return abs(float(value))
+
+
+def exclude_steep_links(
+    links: Sequence[Dict[str, Any]],
+    max_slope_percent: float = MAX_WALKABLE_SLOPE_PERCENT,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """[US-B1] 경사도가 한계(기본 15도 = 약 26.8%) 이상인 링크를 후보에서 배제한다.
+
+    경사를 확인할 수 없는 링크는 배제하지 않고 유지하되, slope_unknown_* 메타데이터로
+    보고한다. 호출 측은 이 링크를 '검증된 무장애길'로 안내하면 안 된다.
+    """
+    kept: List[Dict[str, Any]] = []
+    excluded: List[Dict[str, Any]] = []
+    unknown: List[Dict[str, Any]] = []
+    for link in links:
+        slope = _slope_magnitude(link)
+        if slope is None:
+            unknown.append(link)
+            kept.append(link)
+        elif slope >= max_slope_percent:
+            excluded.append(link)
+        else:
+            kept.append(link)
+    metadata = {
+        "max_slope_limit_percent": round(max_slope_percent, 1),
+        "excluded_steep_count": len(excluded),
+        "excluded_steep_link_ids": [l.get("id") for l in excluded],
+        "slope_unknown_count": len(unknown),
+        "slope_unknown_link_ids": [l.get("id") for l in unknown],
+    }
+    return kept, metadata
+
+
+def apply_barrier_free_constraints(
+    links: Sequence[Dict[str, Any]],
+    max_slope_percent: float = MAX_WALKABLE_SLOPE_PERCENT,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """[US-B1] 계단 배제와 급경사 배제를 순서대로 적용하고 메타데이터를 합쳐 반환한다.
+
+    is_barrier_free 는 남은 링크가 있고 모든 링크의 경사가 확인된 경우에만 True 이다.
+    경사 미확인 링크가 하나라도 있거나 남은 링크가 없으면 False 이다.
+    """
+    no_stairs, stairs_meta = filter_links_avoiding_stairs(links)
+    barrier_free, slope_meta = exclude_steep_links(no_stairs, max_slope_percent)
+    verified = bool(barrier_free) and slope_meta["slope_unknown_count"] == 0
+    return barrier_free, {**stairs_meta, **slope_meta, "is_barrier_free": verified}
+
+
+# ==============================================================================
 # 2. 노면 및 보행 환경 지표 평가
 # ==============================================================================
 
