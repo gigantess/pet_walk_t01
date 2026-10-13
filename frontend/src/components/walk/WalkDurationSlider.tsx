@@ -45,8 +45,8 @@ export const WalkDurationSlider: React.FC<WalkDurationSliderProps> = ({
   };
 
   const handleApplyCustomMinutes = () => {
-    const parsed = parseInt(customMinutesText, 10);
-    if (!isNaN(parsed) && parsed >= 10 && parsed <= 300) {
+    const parsed = Number.parseInt(customMinutesText, 10);
+    if (!Number.isNaN(parsed) && parsed >= 10 && parsed <= 300) {
       onChangeFreeWalk(false);
       onChangeDuration(parsed);
       setShowCustomInput(false);
@@ -111,7 +111,7 @@ export const WalkDurationSlider: React.FC<WalkDurationSliderProps> = ({
           <View style={styles.durationGrid}>
             {DURATION_OPTIONS_15MIN.map((mins) => {
               const isSelected = duration === mins;
-              const label = mins >= 60 ? (mins % 60 === 0 ? `${mins / 60}시간` : `${Math.floor(mins / 60)}시간 ${mins % 60}분`) : `${mins}분`;
+              const label = formatDurationLabel(mins);
               return (
                 <TouchableOpacity
                   key={mins}
