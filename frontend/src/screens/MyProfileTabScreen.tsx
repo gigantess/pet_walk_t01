@@ -1,13 +1,12 @@
 /**
  * [편안하개 - PetWalk]
- * 모바일 마이 프로필 탭 화면 (US-A2, US-E3, US-G2)
+ * 모바일 마이 프로필 탭 화면 (US-A2, US-E3, US-G2, US-THEME)
  *
- * 반려견 프로필 편집, 산책 기록 목록(후기 공개 토글), 즐겨찾기, 로컬 백업
+ * 3대 테마 선택(숲길/비비드 바이올렛/다크), 컴팩트 세그먼트 탭(스크롤 배제), 산책 기록 및 프로필 관리
  */
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { TOKENS } from '../theme/tokens';
 import { DogProfile } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
 import { BackupService } from '../services/backupService';
@@ -17,7 +16,9 @@ import { DataResetCard } from '../components/privacy/DataResetCard';
 import { FeedbackSummaryPayload } from '../services/feedbackContext';
 import { DogProfileEditCard } from '../components/profile/DogProfileEditCard';
 import { MyWalkHistoryView } from '../components/profile/MyWalkHistoryView';
+import { ThemeSelectorCard } from '../components/profile/ThemeSelectorCard';
 import { SupabaseService } from '../services/supabaseService';
+import { useAppTheme } from '../theme/themeManager';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
@@ -31,11 +32,15 @@ export interface MyProfileTabScreenProps {
   onOpenAuthModal?: () => void;
 }
 
+type SubTabKey = 'profile_theme' | 'walk_records' | 'settings';
+
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog, feedbackSummary, onSaveDog, onInjectFeedback, onResetFeedback, onStartBookmark, onResetData, onOpenOnboarding, onOpenAuthModal,
 }) => {
+  const [subTab, setSubTab] = useState<SubTabKey>('profile_theme');
   const [resetCount, setResetCount] = useState(0);
   const currentUser = SupabaseService.getCurrentUser();
+  const { colors } = useAppTheme();
 
   const handleBackupDownload = () => {
     const ok = BackupService.downloadProfileJsonFile(dog);
@@ -49,109 +54,142 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* 상단 헤더 */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionSubtitle}>반려견 안심 케어 프로필</Text>
-        <Text style={styles.sectionTitle}>우리 아이 정보 관리 🐾</Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>반려견 안심 케어 프로필</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textMain }]}>우리 아이 정보 & 테마 설정 🐾</Text>
       </View>
 
-      {/* Supabase 클라우드 계정 연동 상태 (US-G2) */}
-      <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
-        <View style={styles.accountRow}>
-          <View>
-            <Text style={styles.accountTitle}>☁️ Supabase 클라우드 계정</Text>
-            <Text style={styles.accountSubtitle}>
-              {currentUser ? `${currentUser.email} (로그인됨)` : '로컬 게스트 모드 (비로그인)'}
-            </Text>
-          </View>
-          {onOpenAuthModal && (
-            <TouchableOpacity onPress={onOpenAuthModal} style={styles.accountBtn}>
-              <Text style={styles.accountBtnText}>{currentUser ? '계정 전환' : '클라우드 로그인'}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </CardWrapper>
-
-      {/* 반려견 프로필 편집 카드 */}
-      <DogProfileEditCard dog={dog} onSaveDog={onSaveDog} />
-
-      {/* 🐾 마이페이지 산책 기록 목록 및 커뮤니티 공개 토글 (US-G2, PR #42) */}
-      <MyWalkHistoryView dogName={dog.name} />
-
-      {/* 내 보관함 (즐겨찾기 안심 코스) */}
-      <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} dogSpeedKmH={dog.speedKmH} />
-
-      {/* 반려견 프로필 파일 보관 및 복원 */}
-      <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
-        <Text style={styles.cardHeaderTitle}>💾 반려견 프로필 백업 및 복원</Text>
-        <Text style={styles.backupDesc}>
-          소중한 반려견 프로필을 내 스마트폰 파일로 안전하게 보관하고 필요할 때 불러옵니다.
-        </Text>
+      {/* 🚀 Rule 11 컴팩트 세그먼트 네비게이션 (스크롤 방지) */}
+      <View style={[styles.segmentContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={handleBackupDownload}
-          style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', marginTop: 10 }]}
+          onPress={() => setSubTab('profile_theme')}
+          style={[styles.segmentBtn, subTab === 'profile_theme' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
-          <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '700' }}>
-            📥 내 프로필 파일로 저장하기
+          <Text style={[styles.segmentText, subTab === 'profile_theme' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            🐾 프로필·테마
           </Text>
         </TouchableOpacity>
-      </CardWrapper>
+        <TouchableOpacity
+          onPress={() => setSubTab('walk_records')}
+          style={[styles.segmentBtn, subTab === 'walk_records' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+        >
+          <Text style={[styles.segmentText, subTab === 'walk_records' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            📜 산책 기록
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSubTab('settings')}
+          style={[styles.segmentBtn, subTab === 'settings' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+        >
+          <Text style={[styles.segmentText, subTab === 'settings' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            ⚙️ 설정·보관함
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* AI 경로 보정 시뮬레이터 (개발/시연용 가상 피드백) */}
-      <CardWrapper variant="flat">
-        <Text style={styles.cardHeaderTitle}>🧪 [시연/테스트] AI 산책로 보정 시뮬레이터</Text>
-        <Text style={styles.backupDesc}>
-          실제 산책을 돌지 않고도 가상의 보행 피드백을 주입하여 AI 맞춤 경로 보정을 테스트합니다.
-        </Text>
-        {feedbackSummary && (
-          <View style={styles.simStatusBadge}>
-            <Text style={styles.simStatusText}>
-              📊 최근 {feedbackSummary.recent_walk_count}회 · 경사 불만족 {feedbackSummary.slope_dissatisfaction_count}회 (보정치: {feedbackSummary.recommended_max_slope_offset}%)
-            </Text>
-          </View>
-        )}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-          <TouchableOpacity
-            onPress={() => onInjectFeedback(true)}
-            style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', flex: 1, minWidth: 140 }]}
-          >
-            <Text style={{ color: '#991B1B', fontSize: 12, fontWeight: '600' }}>+ "경사 부담" 주입</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onInjectFeedback(false)}
-            style={[styles.simButton, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', flex: 1, minWidth: 140 }]}
-          >
-            <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '600' }}>+ "완만한 길" 주입</Text>
-          </TouchableOpacity>
-          {onResetFeedback && (
-            <TouchableOpacity
-              onPress={onResetFeedback}
-              style={[styles.simButton, { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB', width: '100%', flex: undefined }]}
-            >
-              <Text style={{ color: '#4B5563', fontSize: 12, fontWeight: '600' }}>↺ 피드백 초기화 (0회)</Text>
-            </TouchableOpacity>
-          )}
+      {/* 서브탭 1: 프로필 & 3대 테마 선택 & 계정 상태 (한 화면 컴팩트 뷰) */}
+      {subTab === 'profile_theme' && (
+        <View>
+          <CardWrapper variant="flat" style={styles.accountCard}>
+            <View style={styles.accountRow}>
+              <View>
+                <Text style={[styles.accountTitle, { color: colors.textMain }]}>☁️ Supabase 클라우드 계정</Text>
+                <Text style={[styles.accountSubtitle, { color: colors.textMuted }]}>
+                  {currentUser ? `${currentUser.email} (로그인됨)` : '로컬 게스트 모드 (비로그인)'}
+                </Text>
+              </View>
+              {onOpenAuthModal && (
+                <TouchableOpacity onPress={onOpenAuthModal} style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}>
+                  <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>{currentUser ? '계정 전환' : '로그인'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </CardWrapper>
+
+          {/* 🎨 3대 컬러 테마 선택기 */}
+          <ThemeSelectorCard />
+
+          {/* 반려견 프로필 편집 카드 */}
+          <DogProfileEditCard dog={dog} onSaveDog={onSaveDog} />
         </View>
-      </CardWrapper>
-
-      {/* 이용 안내 가이드 투어 다시 보기 */}
-      {onOpenOnboarding && (
-        <CardWrapper variant="flat" style={{ marginBottom: 12, marginTop: 16 }}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onOpenOnboarding}
-            style={[styles.simButton, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
-          >
-            <Text style={{ color: '#166534', fontSize: 13, fontWeight: '700' }}>
-              📖 첫 산책 가이드 투어 다시 보기
-            </Text>
-          </TouchableOpacity>
-        </CardWrapper>
       )}
 
-      {/* 로컬 데이터 완전 초기화 */}
-      {onResetData && (
-        <DataResetCard onReset={onResetData} onCompleted={() => setResetCount((c) => c + 1)} />
+      {/* 서브탭 2: 산책 기록 목록 및 커뮤니티 공개(is_public) 토글 (US-G2) */}
+      {subTab === 'walk_records' && (
+        <View>
+          <MyWalkHistoryView dogName={dog.name} />
+        </View>
+      )}
+
+      {/* 서브탭 3: 즐겨찾기, 파일 백업, AI 시뮬레이터 및 데이터 초기화 */}
+      {subTab === 'settings' && (
+        <View>
+          <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} dogSpeedKmH={dog.speedKmH} />
+
+          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>💾 반려견 프로필 백업 및 복원</Text>
+            <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
+              소중한 반려견 프로필을 내 스마트폰 파일로 안전하게 보관합니다.
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleBackupDownload}
+              style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint, marginTop: 8 }]}
+            >
+              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>📥 프로필 파일로 저장</Text>
+            </TouchableOpacity>
+          </CardWrapper>
+
+          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>🧪 [테스트] AI 산책로 보정 시뮬레이터</Text>
+            {feedbackSummary && (
+              <View style={styles.simStatusBadge}>
+                <Text style={styles.simStatusText}>
+                  최근 {feedbackSummary.recent_walk_count}회 · 경사 불만족 {feedbackSummary.slope_dissatisfaction_count}회 (보정: {feedbackSummary.recommended_max_slope_offset}%)
+                </Text>
+              </View>
+            )}
+            <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+              <TouchableOpacity
+                onPress={() => onInjectFeedback(true)}
+                style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', flex: 1 }]}
+              >
+                <Text style={{ color: '#991B1B', fontSize: 11, fontWeight: '600' }}>+ "경사 부담"</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onInjectFeedback(false)}
+                style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint, flex: 1 }]}
+              >
+                <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: '600' }}>+ "완만한 길"</Text>
+              </TouchableOpacity>
+              {onResetFeedback && (
+                <TouchableOpacity
+                  onPress={onResetFeedback}
+                  style={[styles.simButton, { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB', flex: 1 }]}
+                >
+                  <Text style={{ color: '#4B5563', fontSize: 11, fontWeight: '600' }}>↺ 리셋</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </CardWrapper>
+
+          {onOpenOnboarding && (
+            <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onOpenOnboarding}
+                style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint }]}
+              >
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>📖 가이드 투어 다시 보기</Text>
+              </TouchableOpacity>
+            </CardWrapper>
+          )}
+
+          {onResetData && (
+            <DataResetCard onReset={onResetData} onCompleted={() => setResetCount((c) => c + 1)} />
+          )}
+        </View>
       )}
     </View>
   );
@@ -159,17 +197,36 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  sectionHeader: { marginBottom: 14 },
-  sectionSubtitle: { fontSize: 13, color: TOKENS.colors.textMuted },
-  sectionTitle: { fontSize: 20, fontWeight: '800', color: TOKENS.colors.textMain, letterSpacing: -0.5 },
+  sectionHeader: { marginBottom: 10 },
+  sectionSubtitle: { fontSize: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
+  segmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 3,
+    marginBottom: 12,
+    gap: 4,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  segmentText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  accountCard: { marginBottom: 10, paddingVertical: 10 },
   accountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  accountTitle: { fontSize: 13, fontWeight: '700', color: TOKENS.colors.textMain },
-  accountSubtitle: { fontSize: 11, color: TOKENS.colors.textMuted, marginTop: 2 },
-  accountBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: TOKENS.colors.primaryLight },
-  accountBtnText: { fontSize: 11, fontWeight: '700', color: TOKENS.colors.primaryDark },
-  cardHeaderTitle: { fontSize: 14, fontWeight: '700', color: TOKENS.colors.textMain },
-  backupDesc: { fontSize: 12, color: TOKENS.colors.textMuted, marginTop: 4, lineHeight: 18 },
-  simButton: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
-  simStatusBadge: { backgroundColor: '#F3F4F6', padding: 8, borderRadius: 8, marginTop: 8 },
-  simStatusText: { fontSize: 11, color: TOKENS.colors.textMuted, fontWeight: '600' },
+  accountTitle: { fontSize: 12, fontWeight: '700' },
+  accountSubtitle: { fontSize: 10, marginTop: 2 },
+  accountBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
+  accountBtnText: { fontSize: 10, fontWeight: '700' },
+  cardHeaderTitle: { fontSize: 13, fontWeight: '700' },
+  backupDesc: { fontSize: 11, marginTop: 2, lineHeight: 16 },
+  simButton: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, alignItems: 'center' },
+  simStatusBadge: { backgroundColor: '#F3F4F6', padding: 6, borderRadius: 6, marginTop: 6 },
+  simStatusText: { fontSize: 10, color: '#6B7280', fontWeight: '600' },
 });

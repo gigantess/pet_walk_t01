@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   LOCATION_CONSENT: '@편안하개:location_consent',
   HAS_SEEN_ONBOARDING: '@편안하개:has_seen_onboarding',
   SOUND_SETTINGS: '@편안하개:sound_settings',
+  APP_THEME: '@편안하개:app_theme',
 } as const;
 
 export type SlopeFeedbackLevel = 'gentle' | 'moderate' | 'steep';

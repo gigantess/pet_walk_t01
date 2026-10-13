@@ -12,6 +12,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { TOKENS } from './src/theme/tokens';
+import { themeManager, useAppTheme } from './src/theme/themeManager';
 import { BottomTabBar, TabKey } from './src/components/common/BottomTabBar';
 import { DogProfile, DEFAULT_DOGS, calculateRecommendedSpeedKmH } from './src/types/dogProfile';
 import { WalkPreferences, RecommendedCourse } from './src/types/walkSettings';
@@ -45,6 +46,7 @@ import { CourseRecommendationView } from './src/components/walk/CourseRecommenda
 export type AppSubScreen = 'main' | 'dog_selection' | 'walk_settings' | 'course_recommend' | 'pocket' | 'report' | 'onboarding';
 
 export default function App() {
+  const { theme, colors } = useAppTheme();
   const [activeTab, setActiveTab] = useState<TabKey>('홈');
   const [subScreen, setSubScreen] = useState<AppSubScreen>('main');
   const [dogs, setDogs] = useState<DogProfile[]>([...DEFAULT_DOGS]);
@@ -64,6 +66,7 @@ export default function App() {
 
   useEffect(() => {
     async function loadData() {
+      void themeManager.init();
       void SupabaseService.initSession();
       const saved = await LocalStorageService.getItem<DogProfile>(STORAGE_KEYS.DOG_PROFILE);
       if (saved) {
@@ -240,8 +243,17 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={[styles.safeArea, subScreen === 'pocket' && styles.safeAreaPocket]}>
-        <StatusBar barStyle={subScreen === 'pocket' ? 'light-content' : 'dark-content'} backgroundColor={subScreen === 'pocket' ? TOKENS.colors.pocketBg : TOKENS.colors.background} />
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          { backgroundColor: colors.background },
+          subScreen === 'pocket' && styles.safeAreaPocket,
+        ]}
+      >
+        <StatusBar
+          barStyle={subScreen === 'pocket' || theme === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={subScreen === 'pocket' ? colors.pocketBg : colors.background}
+        />
         {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
         {subScreen === 'pocket' && (
           <DarkPocketScreen
@@ -279,11 +291,20 @@ export default function App() {
         )}
         {subScreen === 'main' && (
           <View style={styles.mainContainer}>
-            <View style={styles.header}>
-              <View style={styles.logoGroup}><View style={styles.logoBadge}><Text style={styles.logoIcon}>🐾</Text></View><Text style={styles.appTitle}>편안하개</Text></View>
+            <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+              <View style={styles.logoGroup}>
+                <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.logoIcon}>🐾</Text>
+                </View>
+                <Text style={[styles.appTitle, { color: colors.textMain }]}>편안하개</Text>
+              </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity onPress={() => Alert.alert('알림', '새로운 소식이 없습니다.')} style={styles.iconBtn}><Text style={styles.iconText}>🔔</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => setSubScreen('dog_selection')} style={styles.iconBtn}><Text style={styles.iconText}>⋯</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => Alert.alert('알림', '새로운 소식이 없습니다.')} style={styles.iconBtn}>
+                  <Text style={[styles.iconText, { color: colors.textMain }]}>🔔</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSubScreen('dog_selection')} style={styles.iconBtn}>
+                  <Text style={[styles.iconText, { color: colors.textMain }]}>⋯</Text>
+                </TouchableOpacity>
               </View>
             </View>
             <ScrollView contentContainerStyle={styles.scrollContent}>
