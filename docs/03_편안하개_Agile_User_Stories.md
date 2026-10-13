@@ -14,12 +14,13 @@
 * **총 개발 규모 (MVP)**: **15개 핵심 스토리, 총 62 Story Points, 총 298 Hours** (5인 팀 완수)
 
 * **기술 스택 & 아키텍처 원칙**:
-  - **Client**: React Native (Expo SDK 51+), `expo-location` + Android Foreground Service (백그라운드 위치 추적), `expo-speech` (TTS 음성 안내).
+  - **Client**: React Native (Expo SDK 57), `expo-location` + Android Foreground Service (백그라운드 위치 추적), `expo-speech` (TTS 음성 안내), 4대 보이스 프로필 및 스마트 돌발 짖음 감지 자동 음소거.
   - **Deploy**: EAS Build (단 1회 APK 배포) + EAS Update (`expo-updates` 무선 무점검 OTA 실시간 핫픽스).
-  - **Backend & AI**: FastAPI, Python 3.11, LangGraph ReAct Agent, Pydantic V2 Strict Schema (Vision AI Gemini 파이프라인은 Phase 2 고도화 연계).
-  - **GIS & Routing**: OpenRouteService (ORS) / OSRM Routing Adapter, OpenStreetMap(OSM), DEM(Digital Elevation Model) 경사도, 지면온도 추정 모델.
+  - **Backend & AI**: FastAPI, Python 3.11+, LangGraph ReAct Agent, Pydantic V2 Strict Schema, KMA 기상청 단기예보 실시간 클라이언트 및 격자 변환기.
+  - **GIS & Routing**: OpenRouteService (ORS) / OSRM Routing Adapter, OpenStreetMap(OSM) 보행망, 대전·세종 5대 파일럿 실증 거점 정밀 도로망, DEM 경사도, 지면온도 추정 모델 (차기: OpenFreeMap + MapLibre 벡터 지도 연계).
   - **Persistence (Local-First)**: 민감정보(자택 좌표, 보행 GPS 궤적, 반려견 프로필)는 모바일 `AsyncStorage` 로컬 보관, 커뮤니티 공개 코스(출발지 200m 마스킹) 및 제보만 `Supabase Cloud` 관리.
   - **Wellness Copywriting**: 앱 UI 전역에서 '슬개골 탈구' 등 질병 용어를 배제하고 '관절 안심 케어', '폭신한 길'로 순화.
+  - **TDD 품질 가드레일**: 백엔드 Pytest 255개 전수 통과, 프론트엔드 Vitest 141개(28개 파일) 전수 통과, TypeScript 0 오류 엄수.
 
 ---
 
@@ -177,6 +178,7 @@
   - [x] 화면 꺼짐(Lock Screen) 상태에서 백그라운드 GPS 로깅 및 TTS 음성 송출 실기기 테스트 통과 (`guidanceEngine.test.ts` 8건 통과).
   - [x] 30m 전 사전 음성 알림 타이밍 검증 완료.
   - [x] AI 목소리 프로필 4종 선택, 독립 볼륨 슬라이더 및 원터치 퀵 음소거(Mute) 모듈 구축 완료 (`voiceSettings.test.ts` 8건 통과, `VoiceQuickControlBar.tsx`).
+  - [x] 스마트 돌발 짖음 감지 자동 음소거 및 복구(Smart Bark Ducking & Auto-Resume) 단위 테스트 통과 (73dB 감지 / 3초 복구, `ambientNoiseMonitor.test.ts` 5건 통과).
 
 ---
 
@@ -425,6 +427,7 @@
   3. 재열람을 위해 설정 메뉴에 "앱 가이드 다시 보기" 링크를 상시 제공한다.
 * **완료 정의 (DoD)**:
   - [x] 온보딩 슬라이드 렌더링 및 완료 이벤트 단위 테스트 통과 (`onboardingService.test.ts` 4건 통과, `OnboardingWizard.tsx`).
+  - [x] 팀장 컨펌 4단계 온보딩 플로우(가입/약관 -> 반려견 등록 -> 산책 시작 위치동의 -> 주변 탐색 지도) 및 회원가입 약관/개인정보 처리방침 단위 테스트 통과 (`onboardingFlow.test.ts` 2건, `legalTerms.test.ts` 2건 통과).
 
 #### US-22: 산책 중 긴급 산책 중단 및 귀환 경로 안내 (Return to Start)
 * **사용자 스토리**:  

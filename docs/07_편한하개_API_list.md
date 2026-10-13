@@ -1,18 +1,20 @@
 # 🐾 [편안하개 - PetWalk] 전체 API 정의 및 구현 현황 목록 (API Specification & Status)
 
 > **문서 번호**: docs/07_편한하개_API_list.md  
-> **최종 갱신 일자**: 2026년 10월 13일  
-> **문서 버전**: v1.2 (FastAPI Core, Supabase Cloud v2, 기상청/공영주차장 실데이터 연동 반영판)  
+> **최종 갱신 일자**: 2026년 10월 14일  
+> **문서 버전**: v1.3 (대전·세종 5대 공원 실증 보행망, origin_mode 이원화, KMA 실시간 예보 연동 및 255/141 테스트 통과 반영판)  
 > **기준 코드베이스**:
 > - 백엔드 엔트리포인트: [`backend/main.py`](file:///d:/코디세이/pet_walk_t01/backend/main.py)
+> - 백엔드 서비스: [`backend/services/kma_weather_client.py`](file:///d:/코디세이/pet_walk_t01/backend/services/kma_weather_client.py), [`backend/services/kma_grid_converter.py`](file:///d:/코디세이/pet_walk_t01/backend/services/kma_grid_converter.py)
+> - 백엔드 에이전트: [`backend/agent/pilot_park_routes.py`](file:///d:/코디세이/pet_walk_t01/backend/agent/pilot_park_routes.py), [`backend/agent/walk_planning_agent.py`](file:///d:/코디세이/pet_walk_t01/backend/agent/walk_planning_agent.py)
 > - Supabase 스키마: [`backend/sql/supabase_schema.sql`](file:///d:/코디세이/pet_walk_t01/backend/sql/supabase_schema.sql), [`backend/sql/supabase_auth_schema.sql`](file:///d:/코디세이/pet_walk_t01/backend/sql/supabase_auth_schema.sql)
-> - 프론트엔드 서비스: [`frontend/src/services/`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/) (`api.ts`, `weatherApi.ts`, `parkingApi.ts`, `communityApi.ts`, `supabaseService.ts`)
+> - 프론트엔드 서비스: [`frontend/src/services/`](file:///d:/코디세이/pet_walk_t01/frontend/src/services/) (`api.ts`, `weatherApi.ts`, `parkingApi.ts`, `communityApi.ts`, `supabaseService.ts`, `ambientNoiseMonitor.ts`, `pilotParks.ts`)
 
 ---
 
 ## 📌 1. 서비스 아키텍처 및 통신 개요
 
-편안하개(PetWalk)는 **Local-First 모바일 클라이언트(React Native / Expo)**, **FastAPI 기반 AI 산책로 오케스트레이션 코어 백엔드**, **Supabase 클라우드 PostgreSQL/Auth/Storage**, 그리고 **공공데이터포털(기상청 지면열, 전국 공영주차장, OpenStreetMap 타일, OSRM 도로망)**이 유기적으로 연동되는 하이브리드 아키텍처를 채택하고 있습니다.
+편안하개(PetWalk)는 **Local-First 모바일 클라이언트(React Native / Expo SDK 57)**, **FastAPI 기반 AI 산책로 오케스트레이션 코어 백엔드**, **Supabase 클라우드 PostgreSQL/Auth/Storage**, 그리고 **공공데이터포털(기상청 지면열, 전국 공영주차장, OpenStreetMap 타일, OSRM 도로망)**이 유기적으로 연동되는 하이브리드 아키텍처를 채택하고 있습니다.
 
 ```mermaid
 flowchart TB
@@ -29,7 +31,7 @@ flowchart TB
         B2[POST /api/v1/walk/reroute<br/>3초 이내 안전 우회]
         B3[POST /api/v1/surface/inspect<br/>비전 위험물/안내판 판독]
         B4[GET /api/v1/weather/heat-risk<br/>기상청 지면열 골든타임]
-        B5[GET /api/v1/parking/nearby<br/>대전/세종 4대 거점 공영주차장]
+        B5[GET /api/v1/parking/nearby<br/>대전/세종 5대 거점 공영주차장]
         B6[POST/GET /api/v1/community/*<br/>200m 마스킹 코스 공유/피드]
         B7[POST/GET /api/v1/hazards<br/>현장 위험 제보 적재/조회]
     end
@@ -46,7 +48,7 @@ flowchart TB
         E1[기상청 단기예보 격자 API]
         E2[공공데이터 전국 공영주차장 표준]
         E3[OSRM / ORS 실제 보행 도로망]
-        E4[OpenStreetMap 타일 서버]
+        E4[OpenStreetMap / OpenFreeMap 타일]
     end
 
     C1 --> C3
@@ -64,7 +66,7 @@ flowchart TB
 |---|---|---|
 | **FastAPI Core 서버** | `http://127.0.0.1:8000` (환경변수: `EXPO_PUBLIC_API_URL`) | Windows 환경 IPv6 지연 방지를 위해 `localhost` 대신 `127.0.0.1` 기본값 적용 (PR #28) |
 | **Supabase 클라우드** | `https://<project-id>.supabase.co` (환경변수: `EXPO_PUBLIC_SUPABASE_URL`) | 팀 공용 Supabase `petwalk-backend`, 앱은 Publishable Anon 키만 사용 (PR #24, #42) |
-| **OSM 지도 타일** | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | 실제 OpenStreetMap 글로벌 래스터 지도 타일 |
+| **OSM / OpenFreeMap 타일** | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | 실제 OpenStreetMap 래스터 타일 (차기: OpenFreeMap 벡터 타일 확장) |
 
 ---
 
@@ -74,7 +76,7 @@ flowchart TB
 |:---:|:---:|---|---|:---:|:---:|:---:|:---:|
 | **1** | `GET` | `/` | 시스템 상태 | 공통 | ✅ 구현 완료 | 3번 노희선 | 4번 김승현 |
 | **2** | `GET` | `/health` | 헬스체크 & DB 상태 | PR #24 | ✅ 구현 완료 | 3번 노희선 | 4번 김승현 |
-| **3** | `POST` | `/api/v1/walk/plan` | AI 산책로 생성 | US-A1, US-A3, US-B1~B3, US-E3 | ✅ 구현 완료 | 3번 노희선, 2번 전황진 | 4번 김승현 |
+| **3** | `POST` | `/api/v1/walk/plan` | AI 산책로 생성 (이원화 모드 지원) | US-A1, US-A3, US-B1~B3, US-E3 | ✅ 구현 완료 | 3번 노희선, 2번 전황진 | 4번 김승현 |
 | **4** | `POST` | `/api/v1/walk/reroute` | 실시간 장애 우회 재탐색 | US-D2 | ✅ 구현 완료 | 3번 노희선, 2번 전황진 | 4번 김승현 |
 | **5** | `POST` | `/api/v1/surface/inspect` | 비전 위험물/안내판 판독 | US-D1 | 🟡 연동 완료 (Mock 폴백) | 2번 전황진, 3번 노희선 | 4번 김승현 |
 | **6** | `POST` | `/api/v1/hazards` | 공공 위험 제보 등록 | US-D2 AC3 | ✅ 구현 완료 | 3번 노희선 | 4번 김승현 |
@@ -114,7 +116,7 @@ flowchart TB
 
 #### 2) `POST /api/v1/walk/plan` - AI 반려견 맞춤 안심 산책 경로 생성
 - **관련 스토리**: [US-A1] 자연어 파싱, [US-A3] 산책 시간, [US-B1~B3] 경사/노면/그늘, [US-E3] 누적 피드백 보정
-- **담당자**: 3번 노희선 (OSRM 병렬/캐시), 2번 전황진 (DEM 경사도), 4번 김승현 (클라이언트/폴백)
+- **담당자**: 3번 노희선 (OSRM 병렬/캐시), 2번 전황진 (DEM 경사도/5대 공원 보행망), 4번 김승현 (클라이언트/폴백)
 - **요청 Body (JSON)**:
 ```json
 {
@@ -127,8 +129,10 @@ flowchart TB
   "prefer_shade": true,
   "prefer_cushion": true,
   "request_text": "30분 동안 폭신한 길 위주로 걷고 싶어요",
-  "origin_lat": 37.5665,
-  "origin_lon": 126.9780,
+  "origin_lat": 36.3628,
+  "origin_lon": 127.3592,
+  "origin_mode": "pilot_park",
+  "park_id": "yurim",
   "recent_feedback": {
     "recent_walk_count": 3,
     "slope_dissatisfaction_count": 1,
@@ -137,6 +141,7 @@ flowchart TB
   }
 }
 ```
+> **참고**: `origin_mode`는 `current_location`(사용자 현위치 기준 순환)과 `pilot_park`(지정 공원 중심 산책, 공원 내부 90% 이상 가중치 반영)를 지원합니다.
 - **응답 DTO (200 OK)**:
 ```json
 {
@@ -366,8 +371,8 @@ flowchart TB
 }
 ```
 
-#### 10) `GET /api/v1/parking/nearby` - 대전/세종 4대 거점 공영주차장 P&R 검색
-- **관련 스토리**: [US-G1] 자차 이동 견주 출발 거점 공영주차장 연계
+#### 10) `GET /api/v1/parking/nearby` - 대전/세종 파일럿 거점 공영주차장 P&R 검색
+- **관련 스토리**: [US-G1] 자차 이동 견주 출발 거점 공영주차장 연계 (유림공원, 송강근린공원, 도안호수공원, 세종호수공원 11개소)
 - **담당자**: 3번 노희선 (백엔드 서비스), 4번 김승현 (`parkingApi.ts` 및 정밀 좌표 스냅)
 - **요청 쿼리**: `lat` (위도), `lon` (경도), `radius_m` (기본값: 1500m)
 - **응답 DTO (200 OK)**:
