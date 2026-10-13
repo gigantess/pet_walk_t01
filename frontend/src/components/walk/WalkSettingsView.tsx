@@ -1,14 +1,15 @@
 /**
  * [편안하개 - PetWalk]
- * 모바일 산책 설정 화면 (Screen-03, US-A1, US-A3, #38)
+ * 모바일 산책 설정 화면 (Screen-03, UX_COMPACT_RULES Rule 11 스크롤 배제 준수)
  *
- * 15분 단위 세분화 슬라이더/자유 산책, 6대 선호 환경 다중 선택, 자연어/음성 입력, 산책 코스 탐색
- * SonarLint 유지보수성을 위해 하위 컴포넌트로 분리된 컨테이너 구조를 취한다.
+ * 1. 상단: 컴팩트 타이틀 & 브리핑
+ * 2. 중단: [시간·노면 설정] vs [상세 요청·요약] 2구 세그먼트
+ * 3. 하단: Thumb Zone 원터치 AI 탐색 버튼 (Rule 3)
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { TOKENS } from '../../theme/tokens';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 import { DogProfile } from '../../types/dogProfile';
 import {
@@ -29,12 +30,16 @@ export interface WalkSettingsViewProps {
   onFindRoute: (preferences: WalkPreferences) => void;
 }
 
+type PlannerSubTab = 'basic' | 'custom';
+
 export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
   dog,
   initialPreferences,
   onBack,
   onFindRoute,
 }) => {
+  const { colors } = useAppTheme();
+  const [subTab, setSubTab] = useState<PlannerSubTab>('basic');
   const [duration, setDuration] = useState<number | null>(
     initialPreferences?.durationMinutes ?? 30
   );
@@ -63,87 +68,105 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
     });
   };
 
-  // 선택된 조건 레이블 배열
   const selectedLabels: string[] = [
     dog.name,
     formatDurationLabel(duration, isFreeWalk),
-    ...WALK_ENVIRONMENTS.filter((opt) => environments.includes(opt.id)).map(
-      (opt) => opt.label
-    ),
-    ...(requestText.trim() ? ['직접 입력한 요청'] : []),
+    ...WALK_ENVIRONMENTS.filter((opt) => environments.includes(opt.id)).map((opt) => opt.label),
+    ...(requestText.trim() ? ['직접 입력'] : []),
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={onBack}
-          style={styles.backButton}
-        >
-          <AppIcon name="back" size={24} color={TOKENS.colors.textMain} />
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity activeOpacity={0.7} onPress={onBack} style={styles.backButton}>
+          <AppIcon name="back" size={22} color={colors.textMain} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>산책 설정</Text>
+        <Text style={[styles.headerTitle, { color: colors.textMain }]}>AI 산책 플래너</Text>
         <View style={styles.headerPlaceholder} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* 타이틀 안내 */}
-        <View style={styles.titleSection}>
-          <Text style={styles.mainTitle}>{dog.name}와 어떤 산책을 할까요?</Text>
-          <Text style={styles.subTitle}>
-            원하는 산책 조건을 알려주면 AI가 {dog.name}에게{'\n'}맞는 안심 길을 찾아볼게요.
+      <View style={styles.contentWrap}>
+        {/* 상단 컴팩트 타이틀 & 브리핑 */}
+        <View style={[styles.briefingBar, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
+          <AppIcon name="sparkle" size={16} color={colors.primaryDark} />
+          <Text style={[styles.briefingText, { color: colors.primaryDark }]} numberOfLines={1}>
+            {dog.name}의 관절 안심 케어에 맞춘 맞춤 길을 찾아요.
           </Text>
         </View>
 
-        {/* AI 안내 배너 */}
-        <View style={styles.aiBanner}>
-          <View style={styles.aiBannerHeader}>
-            <AppIcon name="sparkle" size={18} color={TOKENS.colors.primaryDark} />
-            <Text style={styles.aiBannerTitle}>오늘의 산책, AI에게 맡겨보세요</Text>
-          </View>
-          <Text style={styles.aiBannerBody}>
-            {dog.name}의 산책 시간과 원하는 환경을 알려주면{'\n'}
-            관절 안심 지수와 온도를 분석해 코스를 찾아드릴게요.
-          </Text>
+        {/* 2구 컴팩트 세그먼트 (스크롤 배제) */}
+        <View style={[styles.segmentContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setSubTab('basic')}
+            style={[
+              styles.segmentBtn,
+              subTab === 'basic' && { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+            ]}
+          >
+            <Text style={[styles.segmentText, { color: subTab === 'basic' ? colors.primaryDark : colors.textMuted }, subTab === 'basic' && styles.segmentTextActive]}>
+              ⏱️ 시간 & 노면 환경
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setSubTab('custom')}
+            style={[
+              styles.segmentBtn,
+              subTab === 'custom' && { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+            ]}
+          >
+            <Text style={[styles.segmentText, { color: subTab === 'custom' ? colors.primaryDark : colors.textMuted }, subTab === 'custom' && styles.segmentTextActive]}>
+              🎙️ 상세 요청 & 요약
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* 섹션 1: 얼마나 걸을까요? (15분 단위 세분화 슬라이더 & 자유 산책) */}
-        <WalkDurationSlider
-          duration={duration}
-          isFreeWalk={isFreeWalk}
-          onChangeDuration={setDuration}
-          onChangeFreeWalk={setIsFreeWalk}
-        />
+        {/* 탭 콘텐츠 영역 (단일 뷰포트) */}
+        <View style={styles.tabBody}>
+          {subTab === 'basic' && (
+            <View style={styles.sectionWrap}>
+              <WalkDurationSlider
+                duration={duration}
+                isFreeWalk={isFreeWalk}
+                onChangeDuration={setDuration}
+                onChangeFreeWalk={setIsFreeWalk}
+              />
+              <View style={{ height: 8 }} />
+              <WalkPreferenceChips
+                environments={environments}
+                onToggleEnvironment={handleToggleEnvironment}
+              />
+            </View>
+          )}
 
-        {/* 섹션 2: 어떤 길이 좋을까요? (6대 환경 선호 그리드) */}
-        <WalkPreferenceChips
-          environments={environments}
-          onToggleEnvironment={handleToggleEnvironment}
-        />
+          {subTab === 'custom' && (
+            <View style={styles.sectionWrap}>
+              <WalkVoiceInputSection
+                dogName={dog.name}
+                requestText={requestText}
+                onChangeText={setRequestText}
+              />
+              <View style={{ height: 8 }} />
+              <WalkConditionsSummary labels={selectedLabels} />
+            </View>
+          )}
+        </View>
+      </View>
 
-        {/* 섹션 3: 직접 말해도 좋아요 (자연어 및 음성 입력) */}
-        <WalkVoiceInputSection
-          dogName={dog.name}
-          requestText={requestText}
-          onChangeText={setRequestText}
-        />
-
-        {/* 섹션 4: 현재 산책 조건 태그 요약 */}
-        <WalkConditionsSummary labels={selectedLabels} />
-      </ScrollView>
-
-      {/* 하단 고정 버튼 */}
-      <View style={styles.bottomBar}>
+      {/* 하단 고정 Thumb Zone 탐색 버튼 */}
+      <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity
           activeOpacity={0.88}
           onPress={handleSubmit}
-          style={styles.submitButton}
+          style={[styles.submitButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
         >
           <View style={styles.submitButtonContent}>
-            <AppIcon name="sparkle" size={18} color={TOKENS.colors.textWhite} />
-            <Text style={styles.submitButtonText}>AI 산책 코스 찾아보기</Text>
+            <AppIcon name="sparkle" size={18} color={colors.textWhite} />
+            <Text style={[styles.submitButtonText, { color: colors.textWhite }]}>
+              AI 안심 코스 찾아보기
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -152,66 +175,66 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: TOKENS.colors.background,
-  },
+  container: { flex: 1 },
   header: {
-    height: 52,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: TOKENS.colors.border,
-    backgroundColor: TOKENS.colors.surface,
   },
-  backButton: {
-    width: 36,
-    height: 36,
+  backButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  headerPlaceholder: { width: 32 },
+  contentWrap: { flex: 1, padding: 16, justifyContent: 'space-between' },
+  briefingBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+    marginBottom: 10,
+  },
+  briefingText: { fontSize: 12, fontWeight: '600', flex: 1 },
+  segmentContainer: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 6,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: TOKENS.colors.textMain,
-    letterSpacing: -0.3,
-  },
-  headerPlaceholder: { width: 36 },
-  scrollContent: { padding: 20, paddingBottom: 110 },
-  titleSection: { marginBottom: 20, marginTop: 6 },
-  mainTitle: { fontSize: 22, fontWeight: '800', color: TOKENS.colors.textMain, letterSpacing: -0.6, marginBottom: 6 },
-  subTitle: { fontSize: 13, color: TOKENS.colors.textMuted, lineHeight: 18 },
-  aiBanner: {
-    backgroundColor: TOKENS.colors.primaryLight,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 24,
     borderWidth: 1,
-    borderColor: TOKENS.colors.primary,
+    borderColor: 'transparent',
   },
-  aiBannerHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  aiBannerTitle: { fontSize: 13, fontWeight: '700', color: TOKENS.colors.primaryDark },
-  aiBannerBody: { fontSize: 12, color: TOKENS.colors.textMuted, lineHeight: 17 },
+  segmentText: { fontSize: 12, fontWeight: '600' },
+  segmentTextActive: { fontWeight: '800' },
+  tabBody: { flex: 1, justifyContent: 'center' },
+  sectionWrap: { width: '100%' },
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: TOKENS.colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: TOKENS.colors.border,
   },
   submitButton: {
-    backgroundColor: TOKENS.colors.primaryDark,
-    borderRadius: 14,
-    paddingVertical: 16,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 3,
   },
   submitButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  submitButtonText: { color: TOKENS.colors.textWhite, fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  submitButtonText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
 });

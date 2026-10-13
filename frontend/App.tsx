@@ -307,7 +307,7 @@ export default function App() {
                 </TouchableOpacity>
               </View>
             </View>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.tabContentContainer}>
               {activeTab === '홈' && (
                 <HomeScreen
                   dog={activeDog} feedbackSummary={feedbackSummary}
@@ -335,7 +335,7 @@ export default function App() {
                   onOpenAuthModal={() => setAuthModalVisible(true)}
                 />
               )}
-            </ScrollView>
+            </View>
             <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} onActionPress={() => setSubScreen('walk_settings')} />
           </View>
         )}
@@ -359,5 +359,6 @@ const styles = StyleSheet.create({
   logoBadge: { width: 32, height: 32, borderRadius: 10, backgroundColor: TOKENS.colors.primary, alignItems: 'center', justifyContent: 'center' },
   logoIcon: { fontSize: 16 }, appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 }, iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 18, color: TOKENS.colors.textMain }, scrollContent: { padding: 20, paddingBottom: 24 },
+  iconText: { fontSize: 18, color: TOKENS.colors.textMain },
+  tabContentContainer: { flex: 1, padding: 16, paddingBottom: 8 },
 });
