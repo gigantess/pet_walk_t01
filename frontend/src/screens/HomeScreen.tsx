@@ -7,7 +7,7 @@
  * 3. 하단: 한 손 조작 Thumb Zone (산책 시작 Primary + AI 플래너 Secondary)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAppTheme } from '../theme/themeManager';
 import { DogProfile } from '../types/dogProfile';
@@ -15,6 +15,8 @@ import { GoldenTimeWidget } from '../components/home/GoldenTimeWidget';
 import { RecentWalkCard } from '../components/home/RecentWalkCard';
 import { FeedbackContextService, FeedbackSummaryPayload } from '../services/feedbackContext';
 import { AppIcon } from '../components/common/AppIcon';
+import { fetchHeatRiskForecast } from '../services/weatherApi';
+import { HeatRiskResponse } from '../types/weather';
 
 export interface HomeScreenProps {
   dog: DogProfile;
@@ -35,6 +37,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const { colors } = useAppTheme();
   const [activeSubTab, setActiveSubTab] = useState<HomeSubTab>('golden_time');
+  const [weather, setWeather] = useState<HeatRiskResponse | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    void fetchHeatRiskForecast(37.544, 127.038).then((res) => {
+      if (isMounted) setWeather(res);
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -114,13 +125,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <View style={styles.tabContentArea}>
         {activeSubTab === 'golden_time' && (
           <View style={styles.widgetWrapper}>
-            <GoldenTimeWidget
-              currentTimeLabel="15:30"
-              startTimeLabel="14:00"
-              endTimeLabel="17:00"
-              progressPercent={52}
-              statusNotice="현재 15:30 · 산책 추천 시간대 (지면온도 24℃ 안전)"
-            />
+            <GoldenTimeWidget weather={weather} />
           </View>
         )}
 
