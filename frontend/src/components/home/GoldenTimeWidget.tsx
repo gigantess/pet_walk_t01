@@ -55,8 +55,8 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
       end = parts[1] || '17:00';
     }
 
-    const startH = parseInt(start.split(':')[0], 10) || 14;
-    const endH = parseInt(end.split(':')[0], 10) || 17;
+    const startH = Number.parseInt(start.split(':')[0], 10) || 14;
+    const endH = Number.parseInt(end.split(':')[0], 10) || 17;
     const duration = Math.max(1, endH - startH);
     const elapsed = Math.max(0, Math.min(duration, currentHour + now.getMinutes() / 60 - startH));
     progress = Math.round((elapsed / duration) * 100);
