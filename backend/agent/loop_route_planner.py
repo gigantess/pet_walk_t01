@@ -288,12 +288,14 @@ def _plan_variant(
     target_distance_m: float,
     variant: int,
     deadline: float,
+    origin_mode: str = "park",
 ) -> LoopPlan:
-    """파일럿 거점 정밀 공원 보행로(1순위) → 실시간 OSRM → 정적 서울 도로망 → 오프라인 도로망 그래프 → 비상 폴백 순으로 후보 1개를 생성한다."""
-    # 🌟 1순위: 대전 3대 공원 & 세종호수공원 실제 OSM 보행로 (공원 내 산책 90% 이상 보장)
-    pilot_plan = _plan_static_pilot_park(origin_lat, origin_lon, variant)
-    if pilot_plan is not None:
-        return pilot_plan
+    """공원 모드 시 정밀 공원 보행로(1순위) → 실시간 OSRM → 정적 서울 도로망 → 오프라인 도로망 그래프 → 비상 폴백 순으로 후보 1개를 생성한다."""
+    # 🌟 공원 모드일 때만 대전 3대 공원 & 세종호수공원 실제 OSM 보행로 적용 (공원 내 산책 90% 이상 보장)
+    if origin_mode == "park":
+        pilot_plan = _plan_static_pilot_park(origin_lat, origin_lon, variant)
+        if pilot_plan is not None:
+            return pilot_plan
 
     plan = _plan_live(origin_lat, origin_lon, target_distance_m, variant, deadline)
     if plan is not None:
@@ -315,6 +317,7 @@ def plan_loop_candidates(
     origin_lon: float,
     target_distance_m: float,
     time_budget_s: float = PLAN_TIME_BUDGET_S,
+    origin_mode: str = "park",
 ) -> Dict[int, LoopPlan]:
     """방향이 다른 순환 후보 3종을 병렬로 생성한다. 키는 후보 번호(1~3)."""
     deadline = time.monotonic() + time_budget_s
@@ -327,6 +330,7 @@ def plan_loop_candidates(
                 target_distance_m,
                 variant,
                 deadline,
+                origin_mode,
             )
             for variant in VARIANT_BEARINGS
         }

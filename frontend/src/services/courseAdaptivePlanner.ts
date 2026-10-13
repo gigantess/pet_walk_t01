@@ -200,8 +200,13 @@ export function generateAdaptiveBriefing(
   const timeDesc = isFree ? '자유 산책' : `${formatDurationLabel(targetMinutes)}`;
   const envs = preferences?.environments ?? [];
   const envSummary = buildEnvironmentSummaryText(envs);
+  const isCurrent = preferences?.originMode === 'current_location';
   const park = getPilotParkById(preferences?.pilotParkId);
-  const parkNote = preferences?.pilotParkId ? `[${park.shortName}] ` : '';
+  const parkNote = isCurrent
+    ? '[현재 위치 기반] '
+    : preferences?.pilotParkId
+      ? `[${park.shortName}] `
+      : '[현재 위치 기반] ';
   const feedbackNote = feedback && feedback.recommended_max_slope_offset < 0
     ? ` (최근 피드백: 경사도 ${Math.abs(feedback.recommended_max_slope_offset)}% 완화)`
     : '';
@@ -221,7 +226,12 @@ export function buildAdaptiveConditionLabels(
   const labelMap = new Map(WALK_ENVIRONMENTS.map((e) => [e.id, e.label]));
   const envLabels = envs.map((id) => labelMap.get(id)).filter(Boolean) as string[];
 
-  const parkLabel = preferences?.pilotParkId ? [getPilotParkById(preferences.pilotParkId).badgeLabel] : [];
+  const isCurrent = preferences?.originMode === 'current_location';
+  const parkLabel = isCurrent
+    ? ['📍 현위치 기반']
+    : preferences?.pilotParkId
+      ? [getPilotParkById(preferences.pilotParkId).badgeLabel]
+      : ['📍 현위치 기반'];
   const customTextLabel = preferences?.requestText?.trim() ? ['직접 요청 반영'] : [];
 
   return [dog.name, ...parkLabel, durationLabel, ...envLabels, ...customTextLabel];

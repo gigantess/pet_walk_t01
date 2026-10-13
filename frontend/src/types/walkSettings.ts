@@ -22,7 +22,10 @@ export const WALK_ENVIRONMENTS: readonly WalkEnvironmentOption[] = [
   { id: 'rest', label: '쉬어가기 좋은 길', detail: '휴식 공간이 있는 경로', icon: 'rest' },
 ];
 
+export type WalkOriginMode = 'current_location' | 'park';
+
 export interface WalkPreferences {
+  originMode?: WalkOriginMode; // 1. 현재 위치 기반 ('current_location') | 2. 지정한 공원 주변 ('park')
   durationMinutes: number | null;
   environments: EnvironmentId[];
   requestText: string;

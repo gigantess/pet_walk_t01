@@ -39,7 +39,15 @@ export async function requestWalkPlan(
 ): Promise<RoutePlanResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  const originMode = preferences?.originMode ?? 'park';
+  const isCurrentLocation = originMode === 'current_location';
   const park = getPilotParkById(preferences?.pilotParkId);
+
+  // 1. 현재 위치 기반 vs 2. 지정한 공원 주변 좌표 및 구역 설정
+  const originLat = isCurrentLocation ? 36.3628 : park.center.lat;
+  const originLon = isCurrentLocation ? 127.3592 : park.center.lon;
+  const parkZone = isCurrentLocation ? '현재 위치 주변' : park.name;
 
   try {
     const envs = preferences?.environments ?? [];
@@ -54,9 +62,10 @@ export async function requestWalkPlan(
       prefer_cushion: envs.includes('soft'),
       request_text: preferences?.requestText ?? '',
       recent_feedback: feedback ?? null,
-      origin_lat: park.center.lat,
-      origin_lon: park.center.lon,
-      park_zone: park.name,
+      origin_mode: originMode,
+      origin_lat: originLat,
+      origin_lon: originLon,
+      park_zone: parkZone,
     };
 
     const response = await fetch(`${API_BASE_URL}/api/v1/walk/plan`, {
@@ -70,12 +79,14 @@ export async function requestWalkPlan(
 
     if (response.ok) {
       const data = await response.json();
-      const parkPlan = getCoursePlanByParkId(preferences?.pilotParkId);
+      const defaultPlan = isCurrentLocation
+        ? { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS }
+        : getCoursePlanByParkId(preferences?.pilotParkId);
       return {
         isLiveServer: true,
         courses: data.courses ?? DEFAULT_RECOMMENDED_COURSES,
-        route: data.geojson ?? parkPlan.route,
-        stepPins: data.step_pins ?? parkPlan.stepPins,
+        route: data.geojson ?? defaultPlan.route,
+        stepPins: data.step_pins ?? defaultPlan.stepPins,
         coursePlans: data.course_plans,
         briefingMessage: data.briefing ?? `${dog.name}를 위한 맞춤형 안심 코스가 생성되었습니다.`,
       };
@@ -89,12 +100,15 @@ export async function requestWalkPlan(
   // 🛡️ 오프라인 / 데모용 무중단 자동 폴백
   const fallbackCourses = generateAdaptiveCourses(dog, preferences, feedback);
   const fallbackBriefing = generateAdaptiveBriefing(dog, preferences, feedback);
-  const parkPlan = getCoursePlanByParkId(preferences?.pilotParkId);
+  const defaultPlan = isCurrentLocation
+    ? { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS }
+    : getCoursePlanByParkId(preferences?.pilotParkId);
+
   return {
     isLiveServer: false,
     courses: fallbackCourses,
-    route: parkPlan.route,
-    stepPins: parkPlan.stepPins,
+    route: defaultPlan.route,
+    stepPins: defaultPlan.stepPins,
     briefingMessage: fallbackBriefing,
   };
 }
