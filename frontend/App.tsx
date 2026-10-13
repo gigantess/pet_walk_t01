@@ -159,8 +159,8 @@ export default function App() {
         ?? (planRes.isLiveServer ? { route: planRes.route, stepPins: planRes.stepPins } : undefined)
         ?? getCoursePlanById(topCourse?.id, getCoursePlanByParkId(preferences?.pilotParkId));
 
-      handleStartWalk(topCourse, plan);
     } catch (_err) {
+      // AI 실시간 추천 API 오류 또는 타임아웃 시 안전하게 로컬 적응형 코스로 폴백하여 산책 시작
       const fallbackCourses = generateAdaptiveCourses(activeDog, preferences, feedbackSummary);
       const topCourse = fallbackCourses[0];
       const plan = getCoursePlanById(topCourse?.id, getCoursePlanByParkId(preferences?.pilotParkId));

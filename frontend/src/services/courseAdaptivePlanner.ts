@@ -59,7 +59,6 @@ function buildForestCourse(ctx: CourseBuilderContext): RecommendedCourse {
     : '';
 
   const park = getPilotParkById(pilotParkId);
-  const parkName = park.shortName;
 
   let courseId = 'course_1';
   let courseName = hasSoft ? '편안한 숲길 코스' : '맞춤 안심 순환 코스';
@@ -82,7 +81,6 @@ function buildForestCourse(ctx: CourseBuilderContext): RecommendedCourse {
     courseName = '도안호수공원 갑천 생태데크길';
     reason = `${park.defaultParkingName} 출발, 갑천 생태습지 수변 데크를 잇는 경사 1.1% 평탄길이에요.${feedbackReason}`;
   } else if (pilotParkId === 'seoul_forest') {
-    courseId = 'course_1';
     courseName = '서울숲 숲길 & 호수 둘레길';
     reason = `서울숲 공영주차장 출발, 중앙호수와 숲길을 감싸는 성동구 대표 안심 힐링 코스예요.${feedbackReason}`;
   }
@@ -149,7 +147,10 @@ function buildResidentialCourse(ctx: CourseBuilderContext): RecommendedCourse {
     : 3.2;
 
   const park = getPilotParkById(pilotParkId);
-  const residentialName = pilotParkId ? `${park.shortName} 외곽 안심길` : (hasQuiet ? '조용한 주택가 코스' : '한적한 골목길 코스');
+  let residentialName = hasQuiet ? '조용한 주택가 코스' : '한적한 골목길 코스';
+  if (pilotParkId) {
+    residentialName = `${park.shortName} 외곽 안심길`;
+  }
 
   return {
     id: 'course_3',
@@ -202,11 +203,10 @@ export function generateAdaptiveBriefing(
   const envSummary = buildEnvironmentSummaryText(envs);
   const isCurrent = preferences?.originMode === 'current_location';
   const park = getPilotParkById(preferences?.pilotParkId);
-  const parkNote = isCurrent
-    ? '[현재 위치 기반] '
-    : preferences?.pilotParkId
-      ? `[${park.shortName}] `
-      : '[현재 위치 기반] ';
+  let parkNote = '[현재 위치 기반] ';
+  if (!isCurrent && preferences?.pilotParkId) {
+    parkNote = `[${park.shortName}] `;
+  }
   const feedbackNote = feedback && feedback.recommended_max_slope_offset < 0
     ? ` (최근 피드백: 경사도 ${Math.abs(feedback.recommended_max_slope_offset)}% 완화)`
     : '';
@@ -227,11 +227,10 @@ export function buildAdaptiveConditionLabels(
   const envLabels = envs.map((id) => labelMap.get(id)).filter(Boolean) as string[];
 
   const isCurrent = preferences?.originMode === 'current_location';
-  const parkLabel = isCurrent
-    ? ['📍 현위치 기반']
-    : preferences?.pilotParkId
-      ? [getPilotParkById(preferences.pilotParkId).badgeLabel]
-      : ['📍 현위치 기반'];
+  let parkLabel = ['📍 현위치 기반'];
+  if (!isCurrent && preferences?.pilotParkId) {
+    parkLabel = [getPilotParkById(preferences.pilotParkId).badgeLabel];
+  }
   const customTextLabel = preferences?.requestText?.trim() ? ['직접 요청 반영'] : [];
 
   return [dog.name, ...parkLabel, durationLabel, ...envLabels, ...customTextLabel];
