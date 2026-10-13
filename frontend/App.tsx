@@ -20,7 +20,9 @@ import { LocalStorageService } from './src/services/storage';
 import { FeedbackContextService, FeedbackSummaryPayload } from './src/services/feedbackContext';
 import { STORAGE_KEYS, WalkRecord, WalkFeedback } from './src/types/storage';
 import { TTSNavigationService } from './src/services/ttsNavigation';
-import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './src/services/sampleRoute';
+import { SAMPLE_ROUTE, SAMPLE_STEP_PINS, getCoursePlanById, getCoursePlanByParkId } from './src/services/sampleRoute';
+import { requestWalkPlan } from './src/services/api';
+import { generateAdaptiveCourses } from './src/services/courseAdaptivePlanner';
 import { useWalkGuidance } from './src/hooks/useWalkGuidance';
 import { BookmarkedRoute, CoursePlan } from './src/types/bookmark';
 import { RouteFeatureCollection, RouteStepPin } from './src/types/route';
@@ -137,6 +139,31 @@ export default function App() {
 
   const handleStartWalk = (course?: RecommendedCourse, plan?: CoursePlan) =>
     void beginWalk(course?.name ?? '편안한 숲길 코스', plan, course && plan ? createBookmark(course, plan, activeDog.name) : null);
+
+  /**
+   * 1. 홈 화면 "산책 시작" 버튼 클릭 시:
+   * AI가 생성한 추천 경로 1에 따라 즉시 산책을 시작 (Screen-04 거치지 않고 직행)
+   */
+  const handleStartTopCourse = async () => {
+    try {
+      const planRes = await requestWalkPlan(activeDog, preferences, feedbackSummary);
+      const courses = planRes.courses.length > 0
+        ? planRes.courses
+        : generateAdaptiveCourses(activeDog, preferences, feedbackSummary);
+      const topCourse = courses[0];
+      const candidatePlan = topCourse?.id ? planRes.coursePlans?.[topCourse.id] : undefined;
+      const plan: CoursePlan = candidatePlan
+        ?? (planRes.isLiveServer ? { route: planRes.route, stepPins: planRes.stepPins } : undefined)
+        ?? getCoursePlanById(topCourse?.id, getCoursePlanByParkId(preferences?.pilotParkId));
+
+      handleStartWalk(topCourse, plan);
+    } catch (_err) {
+      const fallbackCourses = generateAdaptiveCourses(activeDog, preferences, feedbackSummary);
+      const topCourse = fallbackCourses[0];
+      const plan = getCoursePlanById(topCourse?.id, getCoursePlanByParkId(preferences?.pilotParkId));
+      handleStartWalk(topCourse, plan);
+    }
+  };
 
   /** US-29: 즐겨찾기 코스를 서버 재탐색 없이 저장된 경로로 즉시 산책 시작 */
   const handleStartBookmark = (bm: BookmarkedRoute) =>
@@ -317,7 +344,8 @@ export default function App() {
                 {activeTab === '홈' && (
                   <HomeScreen
                     dog={activeDog} feedbackSummary={feedbackSummary}
-                    onPressProfile={() => setSubScreen('dog_selection')} onStartWalk={() => setSubScreen('course_recommend')}
+                    onPressProfile={() => setSubScreen('dog_selection')}
+                    onStartWalk={handleStartTopCourse}
                     onOpenPlanner={() => setSubScreen('walk_settings')}
                   />
                 )}
@@ -343,7 +371,17 @@ export default function App() {
                 )}
               </ErrorBoundary>
             </View>
-            <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} onActionPress={() => setSubScreen('walk_settings')} />
+            <BottomTabBar
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                if (tab === '산책') {
+                  setSubScreen('walk_settings');
+                } else {
+                  setActiveTab(tab);
+                }
+              }}
+              onActionPress={() => setSubScreen('walk_settings')}
+            />
           </View>
         )}
         <LocationConsentModal controller={consent} />
