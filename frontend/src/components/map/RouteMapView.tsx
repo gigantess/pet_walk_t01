@@ -133,13 +133,13 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
 
             {stepPins.map((pin) => {
               const pt = project(pin.position);
-              const color = pin.kind === 'caution' ? TOKENS.colors.routeCaution : TOKENS.colors.routeNormal;
+              const color = pin.kind === 'caution' ? TOKENS.colors.routeCaution : pin.kind === 'safe' ? TOKENS.colors.routeSafe : TOKENS.colors.routeNormal;
               const isSelected = pin.id === selectedPinId;
               return (
                 <G key={pin.id}>
                   <Circle cx={pt.x} cy={pt.y} r={isSelected ? 14 : 11} fill={color} stroke="#FFFFFF" strokeWidth="2.5" />
                   <SvgText x={pt.x} y={pt.y + 4} textAnchor="middle" fontSize={isSelected ? '13' : '11'} fontWeight="bold" fill="#FFFFFF">
-                    {pin.kind === 'caution' ? '!' : '↱'}
+                    {pin.kind === 'caution' ? '!' : pin.kind === 'safe' ? '🌿' : '↱'}
                   </SvgText>
                 </G>
               );

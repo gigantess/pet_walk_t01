@@ -14,6 +14,8 @@ describe('US-A1 & US-G1 대전 3대 공원 & 세종호수공원 플래너 연동
     weightKg: 4.5,
     speedKmH: 2.8,
     jointCareLevel: 1,
+    createdAt: '2026-10-13T00:00:00.000Z',
+    updatedAt: '2026-10-13T00:00:00.000Z',
   };
 
   it('4대 파일럿 거점 공원과 서울숲 메타데이터가 정상 정의되어 있어야 한다', () => {
