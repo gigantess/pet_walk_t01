@@ -29,6 +29,9 @@ const API_TIMEOUT_MS = 3500;
  * 반려견 조건과 피드백을 기반으로 안심 산책 코스를 요청한다.
  * 백엔드 서버가 활성화되어 있지 않아도 오프라인 안전 데이터로 즉시 폴백한다.
  */
+import { getPilotParkById } from '../types/pilotParks';
+import { getCoursePlanByParkId } from './sampleRoute';
+
 export async function requestWalkPlan(
   dog: DogProfile,
   preferences?: WalkPreferences,
@@ -36,6 +39,7 @@ export async function requestWalkPlan(
 ): Promise<RoutePlanResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const park = getPilotParkById(preferences?.pilotParkId);
 
   try {
     const envs = preferences?.environments ?? [];
@@ -50,6 +54,9 @@ export async function requestWalkPlan(
       prefer_cushion: envs.includes('soft'),
       request_text: preferences?.requestText ?? '',
       recent_feedback: feedback ?? null,
+      origin_lat: park.center.lat,
+      origin_lon: park.center.lon,
+      park_zone: park.name,
     };
 
     const response = await fetch(`${API_BASE_URL}/api/v1/walk/plan`, {
@@ -63,11 +70,12 @@ export async function requestWalkPlan(
 
     if (response.ok) {
       const data = await response.json();
+      const parkPlan = getCoursePlanByParkId(preferences?.pilotParkId);
       return {
         isLiveServer: true,
         courses: data.courses ?? DEFAULT_RECOMMENDED_COURSES,
-        route: data.geojson ?? SAMPLE_ROUTE,
-        stepPins: data.step_pins ?? SAMPLE_STEP_PINS,
+        route: data.geojson ?? parkPlan.route,
+        stepPins: data.step_pins ?? parkPlan.stepPins,
         coursePlans: data.course_plans,
         briefingMessage: data.briefing ?? `${dog.name}를 위한 맞춤형 안심 코스가 생성되었습니다.`,
       };
@@ -81,11 +89,12 @@ export async function requestWalkPlan(
   // 🛡️ 오프라인 / 데모용 무중단 자동 폴백
   const fallbackCourses = generateAdaptiveCourses(dog, preferences, feedback);
   const fallbackBriefing = generateAdaptiveBriefing(dog, preferences, feedback);
+  const parkPlan = getCoursePlanByParkId(preferences?.pilotParkId);
   return {
     isLiveServer: false,
     courses: fallbackCourses,
-    route: SAMPLE_ROUTE,
-    stepPins: SAMPLE_STEP_PINS,
+    route: parkPlan.route,
+    stepPins: parkPlan.stepPins,
     briefingMessage: fallbackBriefing,
   };
 }
