@@ -59,11 +59,11 @@ export const themeManager = new ThemeManager();
  * 컴포넌트에서 실시간 테마 상태와 색상을 구독하는 React Hook
  */
 export function useAppTheme() {
-  const [theme, setLocalTheme] = useState<ThemeId>(() => themeManager.getTheme());
+  const [theme, setTheme] = useState<ThemeId>(() => themeManager.getTheme());
 
   useEffect(() => {
     return themeManager.subscribe((next) => {
-      setLocalTheme(next);
+      setTheme(next);
     });
   }, []);
 

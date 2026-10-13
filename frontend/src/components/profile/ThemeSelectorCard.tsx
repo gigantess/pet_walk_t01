@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { THEME_LIST, ThemeId } from '../../types/theme';
+import { THEME_LIST } from '../../types/theme';
 import { useAppTheme } from '../../theme/themeManager';
 import { CardWrapper } from '../common/CardWrapper';
 import { AppIcon } from '../common/AppIcon';
