@@ -17,6 +17,7 @@ import { FeedbackContextService, FeedbackSummaryPayload } from '../services/feed
 import { AppIcon } from '../components/common/AppIcon';
 import { fetchHeatRiskForecast } from '../services/weatherApi';
 import { HeatRiskResponse } from '../types/weather';
+import { LocalStorageService } from '../services/storage';
 
 export interface HomeScreenProps {
   dog: DogProfile;
@@ -38,11 +39,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const { colors } = useAppTheme();
   const [activeSubTab, setActiveSubTab] = useState<HomeSubTab>('golden_time');
   const [weather, setWeather] = useState<HeatRiskResponse | null>(null);
+  const [recentStats, setRecentStats] = useState({
+    title: '오늘의 안심 산책',
+    distanceKm: 0,
+    durationMinutes: 0,
+    safeRatioPercent: 100,
+  });
 
   useEffect(() => {
     let isMounted = true;
     void fetchHeatRiskForecast(37.544, 127.038).then((res) => {
       if (isMounted) setWeather(res);
+    });
+    void LocalStorageService.getWalkHistory().then((history) => {
+      if (!isMounted || history.length === 0) return;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayList = history.filter((r) => r.completedAt.slice(0, 10) === todayStr);
+
+      if (todayList.length > 0) {
+        const totalDist = todayList.reduce((acc, r) => acc + r.totalDistanceKm, 0);
+        const totalDur = todayList.reduce((acc, r) => acc + r.durationMinutes, 0);
+        const avgSafe = Math.round((todayList.reduce((acc, r) => acc + r.safeSurfaceRatio, 0) / todayList.length) * 100);
+        setRecentStats({ title: `오늘의 완주 (${todayList.length}회)`, distanceKm: Math.round(totalDist * 10) / 10, durationMinutes: totalDur, safeRatioPercent: avgSafe });
+      } else {
+        const latest = history[0];
+        const dateStr = new Date(latest.completedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+        setRecentStats({ title: `직전 완주 (${dateStr})`, distanceKm: Math.round(latest.totalDistanceKm * 10) / 10, durationMinutes: latest.durationMinutes, safeRatioPercent: Math.round(latest.safeSurfaceRatio * 100) });
+      }
     });
     return () => { isMounted = false; };
   }, []);
@@ -132,10 +155,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {activeSubTab === 'recent_walk' && (
           <View style={styles.widgetWrapper}>
             <RecentWalkCard
-              title="오늘의 안심 산책"
-              distanceKm={2.4}
-              durationMinutes={38}
-              safeRatioPercent={72}
+              title={recentStats.title}
+              distanceKm={recentStats.distanceKm}
+              durationMinutes={recentStats.durationMinutes}
+              safeRatioPercent={recentStats.safeRatioPercent}
               onPress={onStartWalk}
             />
             {feedbackSummary && (
