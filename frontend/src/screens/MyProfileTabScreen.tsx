@@ -20,6 +20,7 @@ import { ThemeSelectorCard } from '../components/profile/ThemeSelectorCard';
 import { SupabaseService } from '../services/supabaseService';
 import { useAppTheme } from '../theme/themeManager';
 import { LegalTermsModal, LegalTabType } from '../components/common/LegalTermsModal';
+import { VoiceQuickControlBar } from '../components/voice/VoiceQuickControlBar';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
@@ -129,6 +130,15 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
       {subTab === 'settings' && (
         <View>
           <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} dogSpeedKmH={dog.speedKmH} />
+
+          {/* 🎙️ AI 음성 가이드 보이스 프로필 & 돌발 상황 사운드 제어 (US-C2, #37) */}
+          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>🎙️ AI 음성 가이드 및 사운드 설정</Text>
+            <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
+              산책 중 실시간 안내 보이스(4종) 선택, 미리듣기 및 긴급 상황 원터치 음소거를 제어합니다.
+            </Text>
+            <VoiceQuickControlBar style={{ marginTop: 6 }} />
+          </CardWrapper>
 
           <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>💾 반려견 프로필 백업 및 복원</Text>

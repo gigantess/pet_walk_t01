@@ -25,6 +25,7 @@ import { RouteMapView } from '../map/RouteMapView';
 import { FeedbackSummaryPayload } from '../../services/feedbackContext';
 import { PlanSourceBadge } from './PlanSourceBadge';
 import { BookmarkToggleButton } from '../bookmark/BookmarkToggleButton';
+import { VoiceQuickControlBar } from '../voice/VoiceQuickControlBar';
 
 export interface CourseRecommendationViewProps {
   dog: DogProfile;
@@ -101,7 +102,10 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
           <AppIcon name="back" size={22} color={colors.textMain} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textMain }]}>추천 산책 코스</Text>
-        <PlanSourceBadge isLive={Boolean(planResult?.isLiveServer)} />
+        <View style={styles.headerRightGroup}>
+          <VoiceQuickControlBar compact style={styles.headerVoiceBar} />
+          <PlanSourceBadge isLive={Boolean(planResult?.isLiveServer)} />
+        </View>
       </View>
 
       {/* 2. 상단 AI 맞춤 브리핑 & 조건 태그 (04_course_recommendation.png 원형 복원) */}
@@ -228,6 +232,8 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3 },
+  headerRightGroup: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headerVoiceBar: { marginTop: 0, alignSelf: 'auto' },
   briefingSection: {
     paddingHorizontal: 14,
     paddingTop: 8,

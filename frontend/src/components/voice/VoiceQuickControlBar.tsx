@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { AppIcon } from '../common/AppIcon';
 import { SoundSettings } from '../../types/voiceSettings';
@@ -13,6 +13,7 @@ import { VoiceSettingModal } from './VoiceSettingModal';
 
 export interface VoiceQuickControlBarProps {
   compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 interface VoiceBarControlProps {
@@ -20,6 +21,7 @@ interface VoiceBarControlProps {
   readonly volume: number;
   readonly onToggleMute: () => void;
   readonly onOpenSettings: () => void;
+  readonly style?: StyleProp<ViewStyle>;
 }
 
 const CompactVoiceBar: React.FC<VoiceBarControlProps> = ({
@@ -27,12 +29,13 @@ const CompactVoiceBar: React.FC<VoiceBarControlProps> = ({
   volume,
   onToggleMute,
   onOpenSettings,
+  style,
 }) => {
   const muteText = isMuted ? '음소거' : `${Math.round(volume * 100)}%`;
   const iconColor = isMuted ? '#F59E0B' : TOKENS.colors.pocketHud;
 
   return (
-    <View style={styles.compactContainer}>
+    <View style={[styles.compactContainer, style]}>
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={onToggleMute}
@@ -64,6 +67,7 @@ const StandardVoiceBar: React.FC<VoiceBarControlProps> = ({
   volume,
   onToggleMute,
   onOpenSettings,
+  style,
 }) => {
   const percentText = `${Math.round(volume * 100)}%`;
   const title = isMuted ? '음소거 중 (발화 중단)' : `음성 안내 켜짐 (${percentText})`;
@@ -72,7 +76,7 @@ const StandardVoiceBar: React.FC<VoiceBarControlProps> = ({
   const iconColor = isMuted ? '#B45309' : TOKENS.colors.primaryDark;
 
   return (
-    <View style={styles.barContainer}>
+    <View style={[styles.barContainer, style]}>
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onToggleMute}
@@ -113,7 +117,7 @@ const StandardVoiceBar: React.FC<VoiceBarControlProps> = ({
   );
 };
 
-export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ compact = false }) => {
+export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ compact = false, style }) => {
   const [settings, setSettings] = useState<SoundSettings>(() => TTSNavigationService.getSettings());
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -137,6 +141,7 @@ export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ comp
           volume={settings.volume}
           onToggleMute={handleToggleMute}
           onOpenSettings={() => setModalVisible(true)}
+          style={style}
         />
       ) : (
         <StandardVoiceBar
@@ -144,6 +149,7 @@ export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ comp
           volume={settings.volume}
           onToggleMute={handleToggleMute}
           onOpenSettings={() => setModalVisible(true)}
+          style={style}
         />
       )}
       <VoiceSettingModal visible={modalVisible} onClose={() => setModalVisible(false)} />
