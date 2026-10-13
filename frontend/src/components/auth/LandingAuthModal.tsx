@@ -10,6 +10,7 @@ import { GradientButton } from '../common/GradientButton';
 import { AppIcon } from '../common/AppIcon';
 import { SupabaseService } from '../../services/supabaseService';
 import { DogProfile } from '../../types/dogProfile';
+import { LegalTermsModal, LegalTabType } from '../common/LegalTermsModal';
 
 export interface LandingAuthModalProps {
   readonly visible: boolean;
@@ -23,6 +24,8 @@ export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onC
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userId, setUserId] = useState<string>('');
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<LegalTabType>('terms');
 
   // 반려견 정보
   const [dogName, setDogName] = useState('');
@@ -139,6 +142,20 @@ export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onC
                 </TouchableOpacity>
               </View>
 
+              {isSignUp && (
+                <View style={styles.legalNoticeRow}>
+                  <Text style={styles.legalNoticeText}>가입 시 </Text>
+                  <TouchableOpacity onPress={() => { setLegalModalTab('terms'); setLegalModalVisible(true); }}>
+                    <Text style={styles.legalLink}>[서비스이용약관]</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.legalNoticeText}> 및 </Text>
+                  <TouchableOpacity onPress={() => { setLegalModalTab('privacy'); setLegalModalVisible(true); }}>
+                    <Text style={styles.legalLink}>[개인정보처리방침]</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.legalNoticeText}>에 동의하게 됩니다.</Text>
+                </View>
+              )}
+
               <TouchableOpacity onPress={handleGuest} style={styles.guestBtn}>
                 <Text style={styles.guestBtnText}>게스트 모드로 바로 둘러보기</Text>
               </TouchableOpacity>
@@ -192,6 +209,12 @@ export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onC
           )}
         </View>
       </View>
+
+      <LegalTermsModal
+        visible={legalModalVisible}
+        initialTab={legalModalTab}
+        onClose={() => setLegalModalVisible(false)}
+      />
     </Modal>
   );
 };
@@ -215,7 +238,17 @@ const styles = StyleSheet.create({
   },
   switchRow: { alignItems: 'center', marginTop: 12 },
   switchText: { fontSize: 12, color: TOKENS.colors.primaryDark, fontWeight: '600' },
-  guestBtn: { alignItems: 'center', marginTop: 12, paddingVertical: 6 },
+  legalNoticeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  legalNoticeText: { fontSize: 11, color: TOKENS.colors.textMuted },
+  legalLink: { fontSize: 11, color: TOKENS.colors.primaryDark, fontWeight: '700' },
+  guestBtn: { alignItems: 'center', marginTop: 10, paddingVertical: 6 },
   guestBtnText: { fontSize: 12, color: TOKENS.colors.textMuted, textDecorationLine: 'underline' },
   photoCard: {
     flexDirection: 'row',

@@ -19,6 +19,7 @@ import { MyWalkHistoryView } from '../components/profile/MyWalkHistoryView';
 import { ThemeSelectorCard } from '../components/profile/ThemeSelectorCard';
 import { SupabaseService } from '../services/supabaseService';
 import { useAppTheme } from '../theme/themeManager';
+import { LegalTermsModal, LegalTabType } from '../components/common/LegalTermsModal';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
@@ -39,6 +40,8 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 }) => {
   const [subTab, setSubTab] = useState<SubTabKey>('profile_theme');
   const [resetCount, setResetCount] = useState(0);
+  const [legalVisible, setLegalVisible] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTabType>('terms');
   const currentUser = SupabaseService.getCurrentUser();
   const { colors } = useAppTheme();
 
@@ -174,6 +177,30 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             </View>
           </CardWrapper>
 
+          {/* 📜 약관 및 개인정보 정책 카드 */}
+          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>📜 약관 및 개인정보 정책</Text>
+            <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
+              편안하개의 Local-First 프라이버시 원칙과 서비스 이용약관을 확인할 수 있습니다.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => { setLegalTab('terms'); setLegalVisible(true); }}
+                style={[styles.simButton, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1 }]}
+              >
+                <Text style={{ color: colors.textMain, fontSize: 12, fontWeight: '700' }}>📄 회원가입 약관</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => { setLegalTab('privacy'); setLegalVisible(true); }}
+                style={[styles.simButton, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1 }]}
+              >
+                <Text style={{ color: colors.textMain, fontSize: 12, fontWeight: '700' }}>🔒 개인정보보호정책</Text>
+              </TouchableOpacity>
+            </View>
+          </CardWrapper>
+
           {onOpenOnboarding && (
             <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
               <TouchableOpacity
@@ -181,7 +208,9 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
                 onPress={onOpenOnboarding}
                 style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint }]}
               >
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>📖 가이드 투어 다시 보기</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>
+                  📖 4단계 온보딩 플로우 다시 보기 (가입·등록·위치·지도)
+                </Text>
               </TouchableOpacity>
             </CardWrapper>
           )}
@@ -191,6 +220,13 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           )}
         </View>
       )}
+
+      {/* 약관 및 개인정보보호정책 열람 모달 */}
+      <LegalTermsModal
+        visible={legalVisible}
+        initialTab={legalTab}
+        onClose={() => setLegalVisible(false)}
+      />
     </View>
   );
 };

@@ -43,7 +43,7 @@
       "package": "com.petwalk.app",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyClCiRq_b9jU0bZTGkztKb11BR5FrtWoH8"
+          "apiKey": "xxx"
         }
       },
       "adaptiveIcon": {

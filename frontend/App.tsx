@@ -97,7 +97,10 @@ export default function App() {
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, newDog);
   };
 
-  const handleCompleteOnboarding = async () => {
+  const handleCompleteOnboarding = async (registeredDog?: DogProfile) => {
+    if (registeredDog) {
+      await handleAddDog(registeredDog);
+    }
     await OnboardingService.markOnboardingCompleted();
     setSubScreen('main');
   };

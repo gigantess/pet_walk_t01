@@ -20,6 +20,7 @@ import {
   EnvironmentId,
   WALK_ENVIRONMENTS,
   WalkPreferences,
+  WalkOriginMode,
 } from '../../types/walkSettings';
 
 export interface WalkSettingsViewProps {
@@ -38,6 +39,9 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
   onFindRoute,
 }) => {
   const { colors } = useAppTheme();
+  const [originMode, setOriginMode] = useState<WalkOriginMode>(
+    initialPreferences?.originMode ?? 'park'
+  );
   const [pilotParkId, setPilotParkId] = useState<string>(
     initialPreferences?.pilotParkId ?? 'yurim'
   );
@@ -59,11 +63,12 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
 
   const handleSubmit = () => {
     onFindRoute({
+      originMode,
       durationMinutes: duration,
       environments,
       requestText,
       isFreeWalk: false,
-      pilotParkId,
+      pilotParkId: originMode === 'park' ? pilotParkId : undefined,
     });
   };
 
@@ -89,49 +94,103 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
           </Text>
         </View>
 
-        {/* 3. AI 안내 배너 & 대전·세종 실증 거점 */}
+        {/* 3. 산책 경로 생성 진입 방식 (1. 현재 위치 기반 / 2. 지정한 공원 주변) */}
+        <View style={styles.originModeRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setOriginMode('current_location')}
+            style={[
+              styles.originModeBtn,
+              {
+                backgroundColor: originMode === 'current_location' ? colors.primary : colors.surface,
+                borderColor: originMode === 'current_location' ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.originModeText,
+                { color: originMode === 'current_location' ? colors.textWhite : colors.textMain },
+                originMode === 'current_location' && styles.originModeTextActive,
+              ]}
+            >
+              📍 현재 위치 기반
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setOriginMode('park')}
+            style={[
+              styles.originModeBtn,
+              {
+                backgroundColor: originMode === 'park' ? colors.primary : colors.surface,
+                borderColor: originMode === 'park' ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.originModeText,
+                { color: originMode === 'park' ? colors.textWhite : colors.textMain },
+                originMode === 'park' && styles.originModeTextActive,
+              ]}
+            >
+              🏞️ 지정 공원 둘레길
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 4. AI 안내 배너 (모드별 분기) */}
         <View style={[styles.aiBanner, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
           <View style={styles.aiBannerHeader}>
             <AppIcon name="sparkle" size={15} color={colors.primaryDark} />
             <Text style={[styles.aiBannerTitle, { color: colors.primaryDark }]}>
-              오늘의 산책, AI에게 맡겨보세요
+              {originMode === 'current_location'
+                ? '현재 위치 기준 실시간 안심 경로'
+                : `${currentPark.shortName} (공원 보행률 90% 이상)`}
             </Text>
           </View>
           <Text style={[styles.aiBannerBody, { color: colors.textMuted }]}>
-            {currentPark.shortName} 산책로에 맞춰 관절 안심 지수와 지면온도를 분석해 추천해요.
+            {originMode === 'current_location'
+              ? '단말기 현위치를 출발점으로 하여 계단 없는 완만 보행로를 AI가 탐색해요. (200m 안심 가림 보호)'
+              : `${currentPark.name}의 실제 OSM 보행로를 100% 추종하여 쾌적한 공원 순환 코스를 생성해요.`}
           </Text>
-          {/* 거점 공원 퀵 전환 칩 행 */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.parkScrollRow}>
-            {PILOT_PARKS.map((park) => {
-              const isSelected = park.id === pilotParkId;
-              return (
-                <TouchableOpacity
-                  key={park.id}
-                  activeOpacity={0.8}
-                  onPress={() => setPilotParkId(park.id)}
-                  style={[
-                    styles.parkChip,
-                    {
-                      backgroundColor: isSelected ? colors.primary : colors.surface,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
+
+          {/* 거점 공원 모드일 때만 공원 칩 행 표출 */}
+          {originMode === 'park' && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.parkScrollRow}>
+              {PILOT_PARKS.map((park) => {
+                const isSelected = park.id === pilotParkId;
+                return (
+                  <TouchableOpacity
+                    key={park.id}
+                    activeOpacity={0.8}
+                    onPress={() => setPilotParkId(park.id)}
                     style={[
-                      styles.parkChipText,
-                      { color: isSelected ? colors.textWhite : colors.textMain, fontWeight: isSelected ? '700' : '500' },
+                      styles.parkChip,
+                      {
+                        backgroundColor: isSelected ? colors.primary : colors.surface,
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
                     ]}
                   >
-                    {park.badgeLabel}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                    <Text
+                      style={[
+                        styles.parkChipText,
+                        { color: isSelected ? colors.textWhite : colors.textMain, fontWeight: isSelected ? '700' : '500' },
+                      ]}
+                    >
+                      {park.badgeLabel}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
-        {/* 4. 섹션 1: 얼마나 걸을까요? (4개 원터치 칩 20분 / 30분 / 40분 / 1시간) */}
+        {/* 5. 섹션 1: 얼마나 걸을까요? (4개 원터치 칩 20분 / 30분 / 40분 / 1시간) */}
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionTitle, { color: colors.textMain }]}>얼마나 걸을까요?</Text>
           <View style={styles.durationChipRow}>
@@ -255,6 +314,26 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     marginBottom: 4,
+  },
+  originModeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
+  originModeBtn: {
+    flex: 1,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  originModeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  originModeTextActive: {
+    fontWeight: '800',
   },
   mainTitle: {
     fontSize: 19,
