@@ -178,29 +178,11 @@ const styles = StyleSheet.create({
     color: TOKENS.colors.textMain,
     letterSpacing: -0.3,
   },
-  headerPlaceholder: {
-    width: 36,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 110,
-  },
-  titleSection: {
-    marginBottom: 20,
-    marginTop: 6,
-  },
-  mainTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: TOKENS.colors.textMain,
-    letterSpacing: -0.6,
-    marginBottom: 6,
-  },
-  subTitle: {
-    fontSize: 13,
-    color: TOKENS.colors.textMuted,
-    lineHeight: 18,
-  },
+  headerPlaceholder: { width: 36 },
+  scrollContent: { padding: 20, paddingBottom: 110 },
+  titleSection: { marginBottom: 20, marginTop: 6 },
+  mainTitle: { fontSize: 22, fontWeight: '800', color: TOKENS.colors.textMain, letterSpacing: -0.6, marginBottom: 6 },
+  subTitle: { fontSize: 13, color: TOKENS.colors.textMuted, lineHeight: 18 },
   aiBanner: {
     backgroundColor: TOKENS.colors.primaryLight,
     borderRadius: 14,
@@ -209,22 +191,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TOKENS.colors.primary,
   },
-  aiBannerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  aiBannerTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: TOKENS.colors.primaryDark,
-  },
-  aiBannerBody: {
-    fontSize: 12,
-    color: TOKENS.colors.textMuted,
-    lineHeight: 17,
-  },
+  aiBannerHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  aiBannerTitle: { fontSize: 13, fontWeight: '700', color: TOKENS.colors.primaryDark },
+  aiBannerBody: { fontSize: 12, color: TOKENS.colors.textMuted, lineHeight: 17 },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -243,15 +212,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  submitButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  submitButtonText: {
-    color: TOKENS.colors.textWhite,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+  submitButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  submitButtonText: { color: TOKENS.colors.textWhite, fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
 });

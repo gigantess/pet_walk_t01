@@ -29,6 +29,8 @@ import { ConsentService } from './src/services/consentService';
 import { LocationConsentModal } from './src/components/common/LocationConsentModal';
 import { OnboardingService } from './src/services/onboardingService';
 import { OnboardingWizard } from './src/components/onboarding/OnboardingWizard';
+import { SupabaseService } from './src/services/supabaseService';
+import { LandingAuthModal } from './src/components/auth/LandingAuthModal';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WalkTabScreen } from './src/screens/WalkTabScreen';
@@ -55,12 +57,14 @@ export default function App() {
 
   const [feedbackSummary, setFeedbackSummary] = useState<FeedbackSummaryPayload | null>(null);
   const [completedRecord, setCompletedRecord] = useState<WalkRecord | null>(null);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   const walk = useWalkGuidance(SAMPLE_ROUTE, SAMPLE_STEP_PINS);
   const [walkBookmark, setWalkBookmark] = useState<BookmarkedRoute | null>(null);
   const consent = useLocationConsent();
 
   useEffect(() => {
     async function loadData() {
+      void SupabaseService.initSession();
       const saved = await LocalStorageService.getItem<DogProfile>(STORAGE_KEYS.DOG_PROFILE);
       if (saved) {
         setDogs((prev) => (prev.some((d) => d.id === saved.id) ? prev.map((d) => (d.id === saved.id ? saved : d)) : [saved, ...prev]));
@@ -156,6 +160,15 @@ export default function App() {
       safeSurfaceRatio: 0.88, gpsTrack,
     };
     await LocalStorageService.appendWalkRecord(newRecord);
+    void SupabaseService.createWalkRecord({
+      id: newRecord.id,
+      dog_id: activeDog.id,
+      started_at: newRecord.startedAt,
+      ended_at: newRecord.completedAt,
+      distance_m: newRecord.totalDistanceKm * 1000,
+      duration_min: newRecord.durationMinutes,
+      is_public: false,
+    });
     await walk.stop();
     setCompletedRecord(newRecord);
     setSubScreen('report');
@@ -298,6 +311,7 @@ export default function App() {
                   dog={activeDog} feedbackSummary={feedbackSummary} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
                   onResetFeedback={handleResetFeedback} onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
                   onOpenOnboarding={() => setSubScreen('onboarding')}
+                  onOpenAuthModal={() => setAuthModalVisible(true)}
                 />
               )}
             </ScrollView>
@@ -305,6 +319,11 @@ export default function App() {
           </View>
         )}
         <LocationConsentModal controller={consent} />
+        <LandingAuthModal
+          visible={authModalVisible}
+          onClose={() => setAuthModalVisible(false)}
+          onFinish={handleAddDog}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
