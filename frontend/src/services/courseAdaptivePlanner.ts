@@ -207,9 +207,10 @@ export function generateAdaptiveBriefing(
   if (!isCurrent && preferences?.pilotParkId) {
     parkNote = `[${park.shortName}] `;
   }
-  const feedbackNote = feedback && feedback.recommended_max_slope_offset < 0
-    ? ` (최근 피드백: 경사도 ${Math.abs(feedback.recommended_max_slope_offset)}% 완화)`
-    : '';
+  let feedbackNote = '';
+  if (feedback && feedback.recommended_max_slope_offset < 0) {
+    feedbackNote = ` (최근 피드백: 경사도 ${Math.abs(feedback.recommended_max_slope_offset)}% 완화)`;
+  }
   return `${parkNote}${dog.name}를 위한 ${timeDesc} 맞춤 코스예요. (${envSummary} 반영${feedbackNote})`;
 }
 
