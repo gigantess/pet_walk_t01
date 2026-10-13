@@ -58,7 +58,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     setCurrentStep(2);
   };
 
-  const handleStep2Next = async () => {
+  const handleStep2Next = () => {
     if (!dogName.trim()) {
       Alert.alert('반려견 정보', '우리 아이의 이름을 입력해 주세요.');
       return;

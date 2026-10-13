@@ -9,7 +9,7 @@
 import { DogProfile } from '../types/dogProfile';
 import { RouteFeatureCollection, RouteStepPin } from '../types/route';
 import { RecommendedCourse, WalkPreferences, DEFAULT_RECOMMENDED_COURSES } from '../types/walkSettings';
-import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './sampleRoute';
+import { SAMPLE_ROUTE, SAMPLE_STEP_PINS, getCoursePlanByParkId } from './sampleRoute';
 import { FeedbackSummaryPayload } from './feedbackContext';
 import { generateAdaptiveCourses, generateAdaptiveBriefing } from './courseAdaptivePlanner';
 
@@ -30,7 +30,6 @@ const API_TIMEOUT_MS = 3500;
  * 백엔드 서버가 활성화되어 있지 않아도 오프라인 안전 데이터로 즉시 폴백한다.
  */
 import { getPilotParkById } from '../types/pilotParks';
-import { getCoursePlanByParkId } from './sampleRoute';
 
 export async function requestWalkPlan(
   dog: DogProfile,
