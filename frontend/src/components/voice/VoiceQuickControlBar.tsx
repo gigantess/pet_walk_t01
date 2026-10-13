@@ -15,6 +15,104 @@ export interface VoiceQuickControlBarProps {
   compact?: boolean;
 }
 
+interface VoiceBarControlProps {
+  readonly isMuted: boolean;
+  readonly volume: number;
+  readonly onToggleMute: () => void;
+  readonly onOpenSettings: () => void;
+}
+
+const CompactVoiceBar: React.FC<VoiceBarControlProps> = ({
+  isMuted,
+  volume,
+  onToggleMute,
+  onOpenSettings,
+}) => {
+  const muteText = isMuted ? '음소거' : `${Math.round(volume * 100)}%`;
+  const iconColor = isMuted ? '#F59E0B' : TOKENS.colors.pocketHud;
+
+  return (
+    <View style={styles.compactContainer}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onToggleMute}
+        style={[styles.compactMuteBtn, isMuted ? styles.compactMuteBtnActive : null]}
+      >
+        <AppIcon
+          name={isMuted ? 'volumeMute' : 'volume'}
+          size={18}
+          color={iconColor}
+        />
+        <Text style={[styles.compactMuteText, isMuted ? styles.compactMuteTextActive : null]}>
+          {muteText}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={onOpenSettings}
+        style={styles.compactSettingsBtn}
+      >
+        <AppIcon name="sparkle" size={16} color={TOKENS.colors.pocketHud} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const StandardVoiceBar: React.FC<VoiceBarControlProps> = ({
+  isMuted,
+  volume,
+  onToggleMute,
+  onOpenSettings,
+}) => {
+  const percentText = `${Math.round(volume * 100)}%`;
+  const title = isMuted ? '음소거 중 (발화 중단)' : `음성 안내 켜짐 (${percentText})`;
+  const desc = isMuted ? '돌발 상황 대비 음소거됨 · 터치 시 즉시 해제' : '개 짖음/소음 시 터치하여 즉시 음소거';
+  const tagText = isMuted ? '해제' : '음소거';
+  const iconColor = isMuted ? '#B45309' : TOKENS.colors.primaryDark;
+
+  return (
+    <View style={styles.barContainer}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onToggleMute}
+        style={[styles.mainMuteCard, isMuted ? styles.mainMuteCardActive : null]}
+      >
+        <View style={styles.leftRow}>
+          <View style={[styles.iconBox, isMuted ? styles.iconBoxActive : null]}>
+            <AppIcon
+              name={isMuted ? 'volumeMute' : 'volume'}
+              size={18}
+              color={iconColor}
+            />
+          </View>
+          <View>
+            <Text style={[styles.statusTitle, isMuted ? styles.statusTitleActive : null]}>
+              {title}
+            </Text>
+            <Text style={styles.statusDesc}>{desc}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.actionTag, isMuted ? styles.actionTagActive : null]}>
+          <Text style={[styles.actionTagText, isMuted ? styles.actionTagTextActive : null]}>
+            {tagText}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onOpenSettings}
+        style={styles.settingTriggerBtn}
+      >
+        <AppIcon name="sparkle" size={18} color={TOKENS.colors.primaryDark} />
+        <Text style={styles.settingTriggerText}>보이스 설정</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ compact = false }) => {
   const [settings, setSettings] = useState<SoundSettings>(() => TTSNavigationService.getSettings());
   const [modalVisible, setModalVisible] = useState(false);
@@ -31,90 +129,30 @@ export const VoiceQuickControlBar: React.FC<VoiceQuickControlBarProps> = ({ comp
 
   const isMuted = settings.isMuted || settings.volume <= 0;
 
-  if (compact) {
-    return (
-      <View style={styles.compactContainer}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={handleToggleMute}
-          style={[styles.compactMuteBtn, isMuted && styles.compactMuteBtnActive]}
-        >
-          <AppIcon
-            name={isMuted ? 'volumeMute' : 'volume'}
-            size={18}
-            color={isMuted ? '#F59E0B' : TOKENS.colors.pocketHud}
-          />
-          <Text style={[styles.compactMuteText, isMuted && styles.compactMuteTextActive]}>
-            {isMuted ? '음소거' : `${Math.round(settings.volume * 100)}%`}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => setModalVisible(true)}
-          style={styles.compactSettingsBtn}
-        >
-          <AppIcon name="sparkle" size={16} color={TOKENS.colors.pocketHud} />
-        </TouchableOpacity>
-
-        <VoiceSettingModal visible={modalVisible} onClose={() => setModalVisible(false)} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.barContainer}>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={handleToggleMute}
-        style={[styles.mainMuteCard, isMuted && styles.mainMuteCardActive]}
-      >
-        <View style={styles.leftRow}>
-          <View style={[styles.iconBox, isMuted && styles.iconBoxActive]}>
-            <AppIcon
-              name={isMuted ? 'volumeMute' : 'volume'}
-              size={18}
-              color={isMuted ? '#B45309' : TOKENS.colors.primaryDark}
-            />
-          </View>
-          <View>
-            <Text style={[styles.statusTitle, isMuted && styles.statusTitleActive]}>
-              {isMuted ? '음소거 중 (발화 중단)' : `음성 안내 켜짐 (${Math.round(settings.volume * 100)}%)`}
-            </Text>
-            <Text style={styles.statusDesc}>
-              {isMuted ? '돌발 상황 대비 음소거됨 · 터치 시 즉시 해제' : '개 짖음/소음 시 터치하여 즉시 음소거'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={[styles.actionTag, isMuted && styles.actionTagActive]}>
-          <Text style={[styles.actionTagText, isMuted && styles.actionTagTextActive]}>
-            {isMuted ? '해제' : '음소거'}
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => setModalVisible(true)}
-        style={styles.settingTriggerBtn}
-      >
-        <AppIcon name="sparkle" size={18} color={TOKENS.colors.primaryDark} />
-        <Text style={styles.settingTriggerText}>보이스 설정</Text>
-      </TouchableOpacity>
-
+    <>
+      {compact ? (
+        <CompactVoiceBar
+          isMuted={isMuted}
+          volume={settings.volume}
+          onToggleMute={handleToggleMute}
+          onOpenSettings={() => setModalVisible(true)}
+        />
+      ) : (
+        <StandardVoiceBar
+          isMuted={isMuted}
+          volume={settings.volume}
+          onToggleMute={handleToggleMute}
+          onOpenSettings={() => setModalVisible(true)}
+        />
+      )}
       <VoiceSettingModal visible={modalVisible} onClose={() => setModalVisible(false)} />
-    </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  barContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 8,
-  },
+  barContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 },
   mainMuteCard: {
     flex: 1,
     flexDirection: 'row',
@@ -127,10 +165,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: TOKENS.colors.border,
   },
-  mainMuteCardActive: {
-    backgroundColor: '#FEF3C7',
-    borderColor: TOKENS.colors.warning,
-  },
+  mainMuteCardActive: { backgroundColor: '#FEF3C7', borderColor: TOKENS.colors.warning },
   leftRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 6 },
   iconBox: {
     width: 32,
@@ -167,15 +202,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   settingTriggerText: { fontSize: 10, fontWeight: '700', color: TOKENS.colors.primaryDark },
-
-  // 다크 포켓 컴팩트 모드 스타일
-  compactContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: 'center',
-    marginTop: 10,
-  },
+  compactContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'center', marginTop: 10 },
   compactMuteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -187,10 +214,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
   },
-  compactMuteBtnActive: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    borderColor: '#F59E0B',
-  },
+  compactMuteBtnActive: { backgroundColor: 'rgba(245, 158, 11, 0.2)', borderColor: '#F59E0B' },
   compactMuteText: { fontSize: 12, fontWeight: '700', color: TOKENS.colors.pocketHud },
   compactMuteTextActive: { color: '#F59E0B' },
   compactSettingsBtn: {
