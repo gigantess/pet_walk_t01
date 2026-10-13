@@ -46,7 +46,6 @@ React Native 모바일 지도(`react-native-maps`)가 Android 실기기에서 �
 keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
 # 출력된 Certificate fingerprints: SHA1: 1A:2B:3C:... 복사
 ```
-
 ### 3.3 API 키 생성 및 애플리케이션 제한 설정
 1. API 및 서비스 ➔ **사용자 인증 정보(Credentials)** ➔ **[+ 사용자 인증 정보 만들기] ➔ [API 키]**.
 2. 키 이름: `PetWalk_Android_Maps_Key`

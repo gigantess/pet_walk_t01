@@ -41,6 +41,11 @@
     },
     "android": {
       "package": "com.petwalk.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyClCiRq_b9jU0bZTGkztKb11BR5FrtWoH8"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
