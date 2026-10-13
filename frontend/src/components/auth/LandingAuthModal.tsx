@@ -66,7 +66,7 @@ export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onC
       photoPath = uploadRes.photoPath;
     }
 
-    const weight = parseFloat(weightKg) || 10;
+    const weight = Number.parseFloat(weightKg) || 10;
     const newDog: DogProfile = {
       id: `dog_${Date.now()}`,
       name: dogName,

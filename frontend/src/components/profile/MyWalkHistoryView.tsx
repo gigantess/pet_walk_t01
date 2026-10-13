@@ -99,7 +99,7 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName })
                   <Text style={styles.feedbackComfort}>
                     만족도 {rec.feedback.comfortScore}점 · {rec.feedback.tags.join(', ')}
                   </Text>
-                  {rec.feedback.comment && (
+                  {Boolean(rec.feedback.comment) && (
                     <Text style={styles.feedbackComment}>"{rec.feedback.comment}"</Text>
                   )}
                 </View>

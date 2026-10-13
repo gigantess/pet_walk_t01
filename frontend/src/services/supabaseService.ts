@@ -17,7 +17,7 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 const SESSION_KEY = '@편안하개:auth_session';
 
 class SupabaseServiceManager {
-  private client: SupabaseClient | null = null;
+  private readonly client: SupabaseClient | null = null;
   private currentSession: AuthSession | null = null;
 
   constructor() {
