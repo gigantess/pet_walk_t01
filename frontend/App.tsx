@@ -34,6 +34,7 @@ import { OnboardingService } from './src/services/onboardingService';
 import { OnboardingWizard } from './src/components/onboarding/OnboardingWizard';
 import { SupabaseService } from './src/services/supabaseService';
 import { LandingAuthModal } from './src/components/auth/LandingAuthModal';
+import { useAppBackHandler } from './src/hooks/useAppBackHandler';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WalkTabScreen } from './src/screens/WalkTabScreen';
@@ -241,6 +242,19 @@ export default function App() {
       { text: '산책 종료', onPress: () => void handleStopWalkAndReport() },
     ]);
   };
+
+  // 안드로이드 물리 뒤로가기 4단계 우선순위 전략 적용
+  useAppBackHandler({
+    authModalVisible,
+    onCloseAuthModal: () => setAuthModalVisible(false),
+    consentVisible: consent.visible,
+    onDeclineConsent: consent.decline,
+    subScreen,
+    setSubScreen,
+    activeTab,
+    setActiveTab,
+    onPocketUnlock: handlePocketUnlock,
+  });
 
   const handleInjectSampleWalk = async (dissatisfied: boolean) => {
     const sampleWalk: WalkRecord = {
