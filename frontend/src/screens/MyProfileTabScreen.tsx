@@ -20,6 +20,7 @@ import { ThemeSelectorCard } from '../components/profile/ThemeSelectorCard';
 import { SupabaseService } from '../services/supabaseService';
 import { useAppTheme } from '../theme/themeManager';
 import { LegalTermsModal, LegalTabType } from '../components/common/LegalTermsModal';
+import { VoiceSettingCard } from '../components/voice/VoiceSettingCard';
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
@@ -223,6 +224,9 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled={true}
         >
+          {/* 🎙️ AI 음성 가이드 보이스 프로필 & 미리듣기 (US-C2, #37) */}
+          <VoiceSettingCard style={{ marginBottom: 10 }} />
+
           <CardWrapper variant="flat" style={{ marginBottom: 10 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>💾 반려견 프로필 백업 및 복원</Text>
             <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
