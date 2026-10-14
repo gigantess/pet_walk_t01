@@ -15,7 +15,6 @@ import { useAppTheme } from '../theme/themeManager';
 import { DogProfile } from '../types/dogProfile';
 import { HomeDogCard } from '../components/home/HomeDogCard';
 import { GoldenTimeWidget } from '../components/home/GoldenTimeWidget';
-import { RecentWalkCard } from '../components/home/RecentWalkCard';
 import { FeedbackContextService, FeedbackSummaryPayload } from '../services/feedbackContext';
 import { AppIcon } from '../components/common/AppIcon';
 import { fetchHeatRiskForecast } from '../services/weatherApi';
@@ -128,16 +127,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 3. 산책하기 좋은 시간 (지면온도 골든타임 위젯 실데이터 연동) */}
       <GoldenTimeWidget weather={weather} />
 
-      {/* 4. 이번 주 산책 달성도 & 관절 케어 통계 위젯 (터치 시 통계 화면으로 이동) */}
-      <WeeklyWalkReportCard stats={weeklyStats} onPress={onOpenStats || onOpenPlanner} />
-
-      {/* 5. 최근 산책 요약 카드 ("오늘의 산책 / 2.4 km · 38분", 기록 보기 터치 시 통계 화면) */}
-      <RecentWalkCard
-        title={recentStats.title}
-        distanceKm={recentStats.distanceKm}
-        durationMinutes={recentStats.durationMinutes}
-        safeRatioPercent={recentStats.safeRatioPercent}
-        onPress={onOpenStats || onStartWalk}
+      {/* 4. 이번 주 산책 달성도 & 직전 완주 통계 통합 위젯 (터치 시 통계 화면으로 이동) */}
+      <WeeklyWalkReportCard
+        stats={weeklyStats}
+        recentWalk={recentStats}
+        onPress={onOpenStats || onOpenPlanner}
+        onPressRecent={onOpenStats || onStartWalk}
       />
 
       {/* (선택) 최근 피드백 AI 보정 브리핑 (전체 메시지 가독성 확보) */}
@@ -158,27 +153,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 6,
+    paddingHorizontal: 0,
+    paddingTop: 2,
+    paddingBottom: 2,
     gap: 6,
     justifyContent: 'space-between', // 스크롤 없이 한 화면에 균형 배치
   },
   greetingSection: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   greetingSub: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   greetingMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   greetingMain: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '800',
     letterSpacing: -0.4,
   },

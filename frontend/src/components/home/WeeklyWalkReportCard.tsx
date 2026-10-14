@@ -14,14 +14,25 @@ import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 import { WeeklyWalkStats } from '../../services/walkStatisticsService';
 
+export interface RecentWalkInfo {
+  title?: string;
+  distanceKm?: number;
+  durationMinutes?: number;
+  safeRatioPercent?: number;
+}
+
 export interface WeeklyWalkReportCardProps {
   stats: WeeklyWalkStats;
   onPress?: () => void;
+  recentWalk?: RecentWalkInfo | null;
+  onPressRecent?: () => void;
 }
 
 export const WeeklyWalkReportCard: React.FC<WeeklyWalkReportCardProps> = ({
   stats,
   onPress,
+  recentWalk,
+  onPressRecent,
 }) => {
   const { colors } = useAppTheme();
 
@@ -200,7 +211,26 @@ export const WeeklyWalkReportCard: React.FC<WeeklyWalkReportCardProps> = ({
         </View>
       </View>
 
-      {/* 5. 관절 안심 케어 한줄 브리핑 */}
+      {/* 5. 직전 완주 산책 인라인 푸터 (Zero-Scroll 통합 규격) */}
+      {recentWalk && (
+        <View style={[styles.recentWalkRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <View style={styles.recentWalkLeft}>
+            <Text style={styles.recentPawIcon}>🐾</Text>
+            <Text style={[styles.recentWalkTitle, { color: colors.textMain }]} numberOfLines={1}>
+              {recentWalk.title}
+            </Text>
+            <Text style={[styles.recentWalkMeta, { color: colors.textMuted }]}>
+              {recentWalk.distanceKm}km · {recentWalk.durationMinutes}분 · 완만 {recentWalk.safeRatioPercent}%
+            </Text>
+          </View>
+          <View style={styles.recentWalkRight}>
+            <Text style={[styles.recentWalkLinkText, { color: colors.primaryDark }]}>상세</Text>
+            <AppIcon name="chevronRight" size={11} color={colors.primaryDark} />
+          </View>
+        </View>
+      )}
+
+      {/* 6. 관절 안심 케어 한줄 브리핑 */}
       <View style={[styles.jointNoticeBox, { backgroundColor: colors.primaryLight }]}>
         <Text style={[styles.jointNoticeText, { color: colors.primaryDark }]} numberOfLines={1}>
           💡 {stats.jointCareMessage}
@@ -394,7 +424,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   jointNoticeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  recentWalkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 9,
+    borderWidth: 1,
+    marginBottom: 5,
+  },
+  recentWalkLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
+  },
+  recentPawIcon: {
+    fontSize: 10.5,
+  },
+  recentWalkTitle: {
     fontSize: 11,
+    fontWeight: '700',
+  },
+  recentWalkMeta: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  recentWalkRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginLeft: 6,
+  },
+  recentWalkLinkText: {
+    fontSize: 10.5,
     fontWeight: '700',
   },
 });
