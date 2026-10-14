@@ -5,8 +5,8 @@
  * 3대 테마 선택(숲길/비비드 바이올렛/다크), 컴팩트 세그먼트 탭(스크롤 배제), 산책 기록 및 프로필 관리
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { DogProfile } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
 import { BookmarkListView } from '../components/bookmark/BookmarkListView';
@@ -44,32 +44,60 @@ interface AccountAuthActionsProps {
   currentUser: ReturnType<typeof SupabaseService.getCurrentUser>;
   colors: ReturnType<typeof useAppTheme>['colors'];
   onOpenAuthModal?: (mode?: 'signup' | 'signin') => void;
+  onSignOut?: () => void;
 }
 
-const AccountAuthActions: React.FC<AccountAuthActionsProps> = ({ currentUser, colors, onOpenAuthModal }) => {
-  if (!onOpenAuthModal) return null;
-
+const AccountAuthActions: React.FC<AccountAuthActionsProps> = ({
+  currentUser,
+  colors,
+  onOpenAuthModal,
+  onSignOut,
+}) => {
   if (currentUser) {
     return (
-      <TouchableOpacity
-        onPress={() => onOpenAuthModal('signin')}
-        style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}
-      >
-        <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>계정 전환</Text>
-      </TouchableOpacity>
+      <View style={styles.authBtnGroup}>
+        {onOpenAuthModal && (
+          <TouchableOpacity
+            onPress={() => onOpenAuthModal('signin')}
+            style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}
+            accessibilityRole="button"
+            accessibilityLabel="계정 전환"
+          >
+            <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>계정 전환</Text>
+          </TouchableOpacity>
+        )}
+        {onSignOut && (
+          <TouchableOpacity
+            onPress={onSignOut}
+            style={[styles.accountBtn, styles.logoutBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="로그아웃"
+          >
+            <Text style={[styles.accountBtnText, { color: colors.textMuted }]}>로그아웃</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     );
   }
+
+  if (!onOpenAuthModal) return null;
 
   return (
     <View style={styles.authBtnGroup}>
       <TouchableOpacity
         onPress={() => onOpenAuthModal('signup')}
-        style={[styles.accountBtn, { backgroundColor: colors.primary }]}>
+        style={[styles.accountBtn, { backgroundColor: colors.primary }]}
+        accessibilityRole="button"
+        accessibilityLabel="회원가입"
+      >
         <Text style={[styles.accountBtnText, { color: '#FFFFFF' }]}>회원가입</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => onOpenAuthModal('signin')}
-        style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}>
+        style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}
+        accessibilityRole="button"
+        accessibilityLabel="로그인"
+      >
         <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>로그인</Text>
       </TouchableOpacity>
     </View>
@@ -78,6 +106,7 @@ const AccountAuthActions: React.FC<AccountAuthActionsProps> = ({ currentUser, co
 
 interface SettingsSubTabSectionProps {
   colors: ReturnType<typeof useAppTheme>['colors'];
+  currentUser: ReturnType<typeof SupabaseService.getCurrentUser>;
   feedbackSummary?: FeedbackSummaryPayload | null;
   onInjectFeedback: (dissatisfied: boolean) => void;
   onResetFeedback?: () => void;
@@ -85,10 +114,12 @@ interface SettingsSubTabSectionProps {
   onResetData?: () => Promise<void>;
   onOpenLegal: (tab: LegalTabType) => void;
   onResetCompleted: () => void;
+  onSignOut?: () => void;
 }
 
 const SettingsSubTabSection: React.FC<SettingsSubTabSectionProps> = ({
   colors,
+  currentUser,
   feedbackSummary,
   onInjectFeedback,
   onResetFeedback,
@@ -96,6 +127,7 @@ const SettingsSubTabSection: React.FC<SettingsSubTabSectionProps> = ({
   onResetData,
   onOpenLegal,
   onResetCompleted,
+  onSignOut,
 }) => (
   <ScrollView
     style={styles.tabScrollContainer}
@@ -180,8 +212,67 @@ const SettingsSubTabSection: React.FC<SettingsSubTabSectionProps> = ({
     {onResetData && (
       <DataResetCard onReset={onResetData} onCompleted={onResetCompleted} />
     )}
+
+    {currentUser && onSignOut && (
+      <View style={styles.settingsLogoutContainer}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onSignOut}
+          style={styles.settingsLogoutBtn}
+          accessibilityRole="button"
+          accessibilityLabel="로그아웃"
+        >
+          <Text style={[styles.settingsLogoutText, { color: colors.textMuted }]}>
+            로그아웃 ({currentUser.email})
+          </Text>
+        </TouchableOpacity>
+      </View>
+    )}
   </ScrollView>
 );
+
+const confirmAndSignOut = (onSuccess: () => void) => {
+  const title = '로그아웃';
+  const message = '로그아웃하시겠습니까?\n\n💡 기기에 저장된 우리 아이 프로필과 최근 산책 기록은 로컬에 안전하게 유지됩니다.';
+
+  const performSignOut = async () => {
+    try {
+      await SupabaseService.signOut();
+      onSuccess();
+      const successMsg = '정상적으로 로그아웃되었습니다.\n오프라인 안심 게스트 모드로 계속 이용하실 수 있습니다.';
+      if (Platform.OS === 'web') {
+        window.alert(successMsg);
+      } else {
+        Alert.alert('로그아웃 완료', successMsg);
+      }
+    } catch {
+      const errMsg = '로그아웃 처리 중 오류가 발생했습니다.';
+      if (Platform.OS === 'web') {
+        window.alert(errMsg);
+      } else {
+        Alert.alert('오류', errMsg);
+      }
+    }
+  };
+
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n\n${message}`)) {
+      void performSignOut();
+    }
+    return;
+  }
+
+  Alert.alert(title, message, [
+    { text: '취소', style: 'cancel' },
+    {
+      text: '로그아웃',
+      style: 'destructive',
+      onPress: () => {
+        void performSignOut();
+      },
+    },
+  ]);
+};
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog,
@@ -211,8 +302,18 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   const [resetCount, setResetCount] = useState(0);
   const [legalVisible, setLegalVisible] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTabType>('terms');
-  const currentUser = SupabaseService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState(() => SupabaseService.getCurrentUser());
   const { colors } = useAppTheme();
+
+  useEffect(() => {
+    setCurrentUser(SupabaseService.getCurrentUser());
+  }, [subTab]);
+
+  const handleSignOut = () => {
+    confirmAndSignOut(() => {
+      setCurrentUser(null);
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -297,6 +398,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
                 currentUser={currentUser}
                 colors={colors}
                 onOpenAuthModal={onOpenAuthModal}
+                onSignOut={handleSignOut}
               />
             </View>
           </CardWrapper>
@@ -362,6 +464,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
       {subTab === 'settings' && (
         <SettingsSubTabSection
           colors={colors}
+          currentUser={currentUser}
           feedbackSummary={feedbackSummary}
           onInjectFeedback={onInjectFeedback}
           onResetFeedback={onResetFeedback}
@@ -372,6 +475,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             setLegalVisible(true);
           }}
           onResetCompleted={() => setResetCount((c) => c + 1)}
+          onSignOut={handleSignOut}
         />
       )}
 
@@ -436,6 +540,24 @@ const styles = StyleSheet.create({
   authBtnGroup: { flexDirection: 'row', gap: 6 },
   accountBtn: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10 },
   accountBtnText: { fontSize: 10, fontWeight: '700' },
+  logoutBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+  },
+  settingsLogoutContainer: {
+    alignItems: 'center',
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  settingsLogoutBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  settingsLogoutText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
   cardHeaderTitle: { fontSize: 13, fontWeight: '700' },
   backupDesc: { fontSize: 11, marginTop: 2, lineHeight: 16 },
   simButton: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, alignItems: 'center' },
