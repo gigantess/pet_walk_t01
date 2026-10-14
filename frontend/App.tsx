@@ -345,32 +345,33 @@ export default function App() {
             onOpenAuthModal={handleOpenAuthModal}
           />
         )}
-        {subScreen === 'dog_selection' && (
-          <DogSelectionView
-            dogs={dogs} selectedDogId={selectedDogId} onSelectDog={setSelectedDogId}
-            onAddDog={handleAddDog}
-            onContinue={() => {
-              setSubScreen('main');
-              setActiveTab('산책');
-            }}
-            onBack={() => setSubScreen('main')}
+        {/* 풀스크린 온보딩/절전/완주 리포트 */}
+        {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
+        {subScreen === 'pocket' && (
+          <DarkPocketScreen
+            dogName={activeDog.name}
+            stats={walk.stats}
+            targetMinutes={preferences.durationMinutes}
+            isFreeWalk={preferences.isFreeWalk}
+            onUnlock={handlePocketUnlock}
+            onMarkPoop={walk.markPoop}
+            poopCount={walk.poopCount}
           />
         )}
-        {subScreen === 'walk_settings' && (
-          <WalkSettingsView
-            dog={activeDog} initialPreferences={preferences} onBack={() => setSubScreen('main')}
-            onFindRoute={(next) => { setPreferences(next); setSubScreen('course_recommend'); }}
+        {subScreen === 'report' && completedRecord && (
+          <WalkReportScreen
+            record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
+            onSaveFeedback={handleSaveReportFeedback} onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
+            onGoToCommunity={() => { setSubScreen('main'); setActiveTab('커뮤니티'); }}
+            onOpenAuthModal={handleOpenAuthModal}
           />
         )}
-        {subScreen === 'course_recommend' && (
-          <CourseRecommendationView
-            dog={activeDog} preferences={preferences} feedback={feedbackSummary} onBack={() => setSubScreen('walk_settings')}
-            onStartWalk={handleStartWalk} onPinSelect={TTSNavigationService.speak}
-          />
-        )}
-        {subScreen === 'main' && (
+
+        {/* 하단 메인 메뉴(BottomTabBar)가 유지되는 기본 앱 컨테이너 */}
+        {subScreen !== 'onboarding' && subScreen !== 'pocket' && (subScreen !== 'report' || !completedRecord) && (
           <View style={styles.mainContainer}>
-            {activeTab !== '산책' && (
+            {/* 메인 상단 헤더: subScreen이 'main'이고 activeTab이 '산책'이 아닐 때만 렌더링 (각 서브스크린은 자체 헤더 보유) */}
+            {subScreen === 'main' && activeTab !== '산책' && (
               <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
                 <View style={styles.logoGroup}>
                   <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
@@ -388,9 +389,38 @@ export default function App() {
                 </View>
               </View>
             )}
+
             <View style={styles.tabContentContainer}>
               <ErrorBoundary>
-                {activeTab === '홈' && (
+                {/* 1. 강아지 선택 화면 (하단 메인 메뉴 유지) */}
+                {subScreen === 'dog_selection' && (
+                  <DogSelectionView
+                    dogs={dogs} selectedDogId={selectedDogId} onSelectDog={setSelectedDogId}
+                    onAddDog={handleAddDog}
+                    onContinue={() => {
+                      setSubScreen('main');
+                      setActiveTab('산책');
+                    }}
+                    onBack={() => setSubScreen('main')}
+                  />
+                )}
+
+                {/* 2. 산책 설정 / 코스 추천 화면 (하단 메인 메뉴 유지) */}
+                {subScreen === 'walk_settings' && (
+                  <WalkSettingsView
+                    dog={activeDog} initialPreferences={preferences} onBack={() => setSubScreen('main')}
+                    onFindRoute={(next) => { setPreferences(next); setSubScreen('course_recommend'); }}
+                  />
+                )}
+                {subScreen === 'course_recommend' && (
+                  <CourseRecommendationView
+                    dog={activeDog} preferences={preferences} feedback={feedbackSummary} onBack={() => setSubScreen('walk_settings')}
+                    onStartWalk={handleStartWalk} onPinSelect={TTSNavigationService.speak}
+                  />
+                )}
+
+                {/* 3. 메인 4대 탭 화면 */}
+                {subScreen === 'main' && activeTab === '홈' && (
                   <HomeScreen
                     dog={activeDog}
                     dogs={dogs}
@@ -403,7 +433,7 @@ export default function App() {
                     onOpenPlanner={() => setActiveTab('산책')}
                   />
                 )}
-                {activeTab === '산책' && (
+                {subScreen === 'main' && activeTab === '산책' && (
                   <WalkTabScreen
                     dog={activeDog}
                     preferences={preferences}
@@ -414,14 +444,14 @@ export default function App() {
                     onPinSelect={TTSNavigationService.speak}
                   />
                 )}
-                {activeTab === '커뮤니티' && (
+                {subScreen === 'main' && activeTab === '커뮤니티' && (
                   <CommunityTabScreen
                     onStartCommunityWalk={handleStartCommunityWalk}
                     dogSpeedKmH={activeDog.speedKmH}
                     onOpenAuthModal={handleOpenAuthModal}
                   />
                 )}
-                {activeTab === '마이' && (
+                {subScreen === 'main' && activeTab === '마이' && (
                   <MyProfileTabScreen
                     dog={activeDog}
                     dogs={dogs}
@@ -440,12 +470,21 @@ export default function App() {
                 )}
               </ErrorBoundary>
             </View>
+
             <BottomTabBar
               activeTab={activeTab}
               onTabChange={(tab) => {
+                if (subScreen !== 'main') {
+                  setSubScreen('main');
+                }
                 setActiveTab(tab);
               }}
-              onActionPress={() => setActiveTab('산책')}
+              onActionPress={() => {
+                if (subScreen !== 'main') {
+                  setSubScreen('main');
+                }
+                setActiveTab('산책');
+              }}
             />
           </View>
         )}
