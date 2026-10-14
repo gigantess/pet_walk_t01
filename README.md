@@ -7,7 +7,7 @@
 [![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB.svg)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-0%20Errors%20(Clean)-3178C6.svg)](frontend)
 [![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-255%2F255%20Passed-brightgreen.svg)](backend/test_case)
-[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-172%2F172%20Passed-brightgreen.svg)](frontend)
+[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-180%2F180%20Passed-brightgreen.svg)](frontend)
 [![Code Quality](https://img.shields.io/badge/SonarLint-Line%20%E2%89%A4%20250%20(100%25)-success.svg)](frontend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -606,7 +606,7 @@ python -m pytest
 # 방법 2) backend 폴더로 이동 후 실행
 cd backend && pytest test_case/ -v
 
-# 프론트엔드 Vitest 단위 테스트 (172개 테스트 100% Pass)
+# 프론트엔드 Vitest 단위 테스트 (180개 테스트 100% Pass)
 cd frontend && npm test
 
 # 프론트엔드 TypeScript 무결성 검증 (0 Errors)

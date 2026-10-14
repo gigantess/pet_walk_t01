@@ -7,7 +7,7 @@
  * - 네트워크 오류 / 서버 미실행 시 지면열 수지식 기반 0.1초 무중단 오프라인 폴백
  */
 
-import { HeatRiskHourDTO, HeatRiskLevel, HeatRiskResponse } from '../types/weather';
+import { HeatRiskHourDTO, HeatRiskLevel, HeatRiskResponse, GoldenTimeWindowDay } from '../types/weather';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const API_TIMEOUT_MS = 3000;
@@ -132,6 +132,45 @@ export function computeFocusedGoldenWindow(
 }
 
 /**
+ * 24시간 예보 중 골든타임 구간의 해당 일자('today' | 'tomorrow' | null) 산출
+ */
+export function computeGoldenWindowDay(
+  hourly: readonly HeatRiskHourDTO[],
+  currentHour: number
+): GoldenTimeWindowDay {
+  const safeBlocks: { start: number; end: number }[] = [];
+  let blockStart: number | null = null;
+
+  for (let h = 6; h <= 22; h++) {
+    const isSafe = hourly[h]?.is_golden_time ?? false;
+    if (isSafe) {
+      if (blockStart === null) blockStart = h;
+    } else {
+      if (blockStart !== null) {
+        safeBlocks.push({ start: blockStart, end: h });
+        blockStart = null;
+      }
+    }
+  }
+  if (blockStart !== null) {
+    safeBlocks.push({ start: blockStart, end: 22 });
+  }
+
+  // 1) 현재 진행 중인 안전 블록 -> today
+  const active = safeBlocks.find((b) => currentHour >= b.start && currentHour < b.end);
+  if (active) return 'today';
+
+  // 2) 오늘 앞으로 다가올 가장 가까운 다음 안전 블록 -> today
+  const next = safeBlocks.find((b) => b.start > currentHour);
+  if (next) return 'today';
+
+  // 3) 오늘 안전 블록이 이미 모두 끝난 경우 -> tomorrow
+  if (safeBlocks.length > 0) return 'tomorrow';
+
+  return null;
+}
+
+/**
  * 오프라인 / 장애 대응 지면열 추정 및 골든타임 폴백 데이터 생성
  */
 export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResponse {
@@ -157,6 +196,7 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
 
   const currentDto = hourly[currentHour] || hourly[12];
   const goldenWindow = computeFocusedGoldenWindow(hourly, currentHour);
+  const goldenWindowDay = computeGoldenWindowDay(hourly, currentHour);
 
   return {
     isLiveServer: false,
@@ -166,6 +206,7 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
     current_risk_level: currentDto.risk_level,
     is_current_golden: currentDto.is_golden_time,
     golden_time_window: goldenWindow,
+    golden_time_window_day: goldenWindowDay,
     hourly_forecast: hourly,
     notice: '본 지수는 기상청 예보 모델 기반 추정치입니다.',
     fetched_at: now.toISOString(),
@@ -198,6 +239,14 @@ export async function fetchHeatRiskForecast(
     if (res.ok) {
       const data = await res.json();
       const current = data.current || {};
+      const goldenWindow = data.golden_time_window ?? '18:00 ~ 20:00';
+      const goldenWindowDay: GoldenTimeWindowDay =
+        data.golden_time_window_day !== undefined
+          ? data.golden_time_window_day
+          : goldenWindow.startsWith('내일')
+            ? 'tomorrow'
+            : 'today';
+
       const response: HeatRiskResponse = {
         isLiveServer: true,
         current_hour: current.hour ?? new Date().getHours(),
@@ -205,7 +254,8 @@ export async function fetchHeatRiskForecast(
         current_surface_temp: current.estimated_surface_temp ?? 31.0,
         current_risk_level: current.risk_level ?? 'SAFE',
         is_current_golden: current.is_golden_time ?? true,
-        golden_time_window: data.golden_time_window ?? '18:00 ~ 20:00',
+        golden_time_window: goldenWindow,
+        golden_time_window_day: goldenWindowDay,
         hourly_forecast: data.hourly_forecast ?? [],
         notice: data.notice ?? '본 지수는 기상청 예보 모델 기반 추정치입니다.',
         fetched_at: new Date().toISOString(),

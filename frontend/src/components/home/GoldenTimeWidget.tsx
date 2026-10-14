@@ -47,7 +47,12 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
   const isCaution = riskLevel === 'CAUTION';
   const isDanger = riskLevel === 'DANGER';
 
-  // 1.5~2시간 집중 골든타임 윈도우 파싱 (예: "18:00 ~ 20:00")
+  // 내일 골든타임 여부 판별 (Issue #50: golden_time_window_day === 'tomorrow' 또는 접두사 '내일')
+  const isTomorrow =
+    weather?.golden_time_window_day === 'tomorrow' ||
+    Boolean(weather?.golden_time_window && weather.golden_time_window.startsWith('내일'));
+
+  // 1.5~2시간 집중 골든타임 윈도우 파싱 (예: "18:00 ~ 20:00" 또는 "내일 06:00 ~ 10:00")
   let start = startTimeLabel;
   let end = endTimeLabel;
 
@@ -64,28 +69,47 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
     }
   }
 
-  const startH = Number.parseInt(start.split(':')[0], 10) || 18;
-  const startM = Number.parseInt(start.split(':')[1], 10) || 0;
-  const endH = Number.parseInt(end.split(':')[0], 10) || 20;
-  const endM = Number.parseInt(end.split(':')[1], 10) || 0;
-
-  const startMinutes = startH * 60 + startM;
-  const endMinutes = endH * 60 + endM;
-  const currentMinutes = currentHour * 60 + currentMin;
-  const duration = Math.max(30, endMinutes - startMinutes);
+  // 시각 형식("HH:MM") 유효성 확인
+  const timeRegex = /^\d{1,2}:\d{2}$/;
+  const hasValidTimes = Boolean(
+    start &&
+    end &&
+    timeRegex.test(start.trim()) &&
+    timeRegex.test(end.trim())
+  );
 
   let isUpcoming = false;
   let isPast = false;
-  let computedProgress = 50;
+  let computedProgress = 0;
 
-  if (currentMinutes < startMinutes) {
+  if (isTomorrow) {
+    // 내일 구간인 경우: 아직 시작 전이므로 진행 막대는 0%, upcoming 상태 (Issue #50)
     isUpcoming = true;
+    isPast = false;
     computedProgress = 0;
-  } else if (currentMinutes > endMinutes) {
-    isPast = true;
-    computedProgress = 100;
+  } else if (!hasValidTimes) {
+    // 구간 문구가 시각 형식이 아닌 경우(예: "일몰 후 (19:00 ~ 22:00) 권장"): 막대 계산 건너뛰기 (Issue #50)
+    computedProgress = 0;
   } else {
-    computedProgress = Math.round(((currentMinutes - startMinutes) / duration) * 100);
+    const startH = Number.parseInt(start.split(':')[0], 10) || 18;
+    const startM = Number.parseInt(start.split(':')[1], 10) || 0;
+    const endH = Number.parseInt(end.split(':')[0], 10) || 20;
+    const endM = Number.parseInt(end.split(':')[1], 10) || 0;
+
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    const currentMinutes = currentHour * 60 + currentMin;
+    const duration = Math.max(30, endMinutes - startMinutes);
+
+    if (currentMinutes < startMinutes) {
+      isUpcoming = true;
+      computedProgress = 0;
+    } else if (currentMinutes > endMinutes) {
+      isPast = true;
+      computedProgress = 100;
+    } else {
+      computedProgress = Math.round(((currentMinutes - startMinutes) / duration) * 100);
+    }
   }
 
   const progress = Math.max(0, Math.min(100, progressPercent ?? computedProgress));
@@ -95,14 +119,18 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
   const statusBg = isDanger ? '#FEE2E2' : isCaution ? '#FEF3C7' : colors.primaryLight;
   const statusBorder = isDanger ? '#FCA5A5' : isCaution ? '#FCD34D' : colors.primaryMint;
 
+  // 표시용 시간 라벨 (내일이면 "내일 06:00" 처럼 표시)
+  const startDisplay = isTomorrow ? `내일 ${start}` : start;
+  const timeRangeDisplay = isTomorrow ? `내일 ${start} ~ ${end}` : `${start} ~ ${end}`;
+
   // 서브텍스트 및 알림 메시지 구성
   let subtitleText = '';
   let badgeNotice = statusNotice;
 
   if (isDanger) {
-    subtitleText = `현재 지면열이 ${currentTemp.toFixed(1)}℃로 매우 뜨거워요. ${start} 이후 서늘한 산책을 추천해요.`;
+    subtitleText = `현재 지면열이 ${currentTemp.toFixed(1)}℃로 매우 뜨거워요. ${startDisplay} 이후 서늘한 산책을 추천해요.`;
     if (!badgeNotice) {
-      badgeNotice = `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ 고열 위험 (발바닥 화상 주의)`;
+      badgeNotice = `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ 고열 위험 · ${startDisplay} 권장`;
     }
   } else if (isCaution) {
     subtitleText = `현재 지면온도 ${currentTemp.toFixed(1)}℃로 다소 높아요. 아스팔트 대신 그늘길 산책을 권장해요.`;
@@ -151,17 +179,21 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
       {/* 1.5~2시간 집중 추천 슬롯 헤더 */}
       <View style={styles.slotHeaderRow}>
         <Text style={[styles.slotBadgeText, { color: statusColor }]}>
-          {isUpcoming
-            ? `🕒 다음 추천 골든타임 (${start} ~ ${end})`
-            : isPast
-              ? `오늘 골든타임 종료 (${start} ~ ${end})`
-              : `✨ 지금 안심 골든타임 (${start} ~ ${end})`}
+          {isTomorrow
+            ? `🕒 다음 추천 골든타임 (${timeRangeDisplay})`
+            : isUpcoming
+              ? `🕒 다음 추천 골든타임 (${timeRangeDisplay})`
+              : isPast
+                ? `오늘 골든타임 종료 (${timeRangeDisplay})`
+                : `✨ 지금 안심 골든타임 (${timeRangeDisplay})`}
         </Text>
       </View>
 
       {/* 게이지 타임라인 */}
       <View style={styles.timelineRow}>
-        <Text style={[styles.timeLabel, { color: colors.textMuted }]}>{start}</Text>
+        <Text style={[styles.timeLabel, isTomorrow && styles.timeLabelWide, { color: colors.textMuted }]}>
+          {startDisplay}
+        </Text>
         <View style={[styles.track, { backgroundColor: isDanger ? '#FEE2E2' : colors.borderSubtle }]}>
           <View
             style={[
@@ -222,7 +254,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  timeLabel: { fontSize: 10, fontWeight: '600', width: 36 },
+  timeLabel: { fontSize: 10, fontWeight: '600', minWidth: 36 },
+  timeLabelWide: { minWidth: 54 },
   track: { flex: 1, height: 6, borderRadius: 3, position: 'relative', justifyContent: 'center' },
   progressFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 3 },
   indicator: {

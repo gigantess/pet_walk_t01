@@ -11,6 +11,7 @@ import {
   getCachedWeather,
   buildWeatherCacheKey,
   computeFocusedGoldenWindow,
+  computeGoldenWindowDay,
 } from './weatherApi';
 
 describe('weatherApi - US-F1 지면열 추정 및 골든타임 서비스', () => {
@@ -155,6 +156,37 @@ describe('weatherApi - US-F1 지면열 추정 및 골든타임 서비스', () =>
       const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
       const windowStr = computeFocusedGoldenWindow(fallback.hourly_forecast, 7);
       expect(windowStr).toBe('06:00 ~ 08:00');
+    });
+  });
+
+  describe('computeGoldenWindowDay (오늘/내일 구분 표시 - Issue #50)', () => {
+    it('낮 또는 초저녁(13시, 18시)에는 당일 골든타임(today)을 반환해야 한다', () => {
+      const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
+      const day13 = computeGoldenWindowDay(fallback.hourly_forecast, 13);
+      const day18 = computeGoldenWindowDay(fallback.hourly_forecast, 18);
+      expect(day13).toBe('today');
+      expect(day18).toBe('today');
+    });
+
+    it('오늘 모든 안전 구간이 종료된 심야(23시)에는 내일(tomorrow)을 반환해야 한다', () => {
+      const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
+      const day23 = computeGoldenWindowDay(fallback.hourly_forecast, 23);
+      expect(day23).toBe('tomorrow');
+    });
+
+    it('서버 응답에 golden_time_window_day가 전달되면 그대로 보존해야 한다', async () => {
+      const mockPayload = {
+        current: { hour: 20, air_temp_celsius: 13.2, estimated_surface_temp: 13.2, risk_level: 'SAFE', is_golden_time: true },
+        golden_time_window: '20:00 ~ 23:00',
+        golden_time_window_day: 'today',
+      };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPayload,
+      } as Response);
+
+      const res = await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON, { forceRefresh: true });
+      expect(res.golden_time_window_day).toBe('today');
     });
   });
 });
