@@ -24,6 +24,10 @@ import { LocalStorageService } from '../services/storage';
 
 export interface HomeScreenProps {
   dog: DogProfile;
+  dogs?: readonly DogProfile[];
+  selectedDogId?: string;
+  onSelectDog?: (dogId: string) => void;
+  onAddDog?: () => void;
   feedbackSummary: FeedbackSummaryPayload | null;
   onPressProfile: () => void;
   onStartWalk: () => void;
@@ -32,6 +36,10 @@ export interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   dog,
+  dogs,
+  selectedDogId,
+  onSelectDog,
+  onAddDog,
   feedbackSummary,
   onPressProfile,
   onStartWalk,
@@ -98,9 +106,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
-      {/* 2. 메인 반려견 카드 (초코 상태, 프리셋 칩, 산책 시작 버튼) */}
+      {/* 2. 메인 반려견 카드 / 다견 슬라이더 (좌우 스와이프 페이징 연동) */}
       <HomeDogCard
         profile={dog}
+        dogs={dogs}
+        selectedDogId={selectedDogId}
+        onSelectDog={onSelectDog}
+        onAddDog={onAddDog}
         onPressProfile={onPressProfile}
         onStartWalk={onStartWalk}
       />

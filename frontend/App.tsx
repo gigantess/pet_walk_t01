@@ -385,7 +385,12 @@ export default function App() {
               <ErrorBoundary>
                 {activeTab === '홈' && (
                   <HomeScreen
-                    dog={activeDog} feedbackSummary={feedbackSummary}
+                    dog={activeDog}
+                    dogs={dogs}
+                    selectedDogId={selectedDogId}
+                    onSelectDog={setSelectedDogId}
+                    onAddDog={() => setSubScreen('dog_selection')}
+                    feedbackSummary={feedbackSummary}
                     onPressProfile={() => setSubScreen('dog_selection')}
                     onStartWalk={handleStartTopCourse}
                     onOpenPlanner={() => setActiveTab('산책')}
