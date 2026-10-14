@@ -23,6 +23,10 @@ import { LegalTermsModal, LegalTabType } from '../components/common/LegalTermsMo
 
 export interface MyProfileTabScreenProps {
   dog: DogProfile;
+  dogs?: readonly DogProfile[];
+  selectedDogId?: string;
+  onSelectDog?: (dogId: string) => void;
+  onAddDog?: (newDog: DogProfile) => void;
   feedbackSummary?: FeedbackSummaryPayload | null;
   onSaveDog: (fields: Partial<DogProfile>) => void;
   onInjectFeedback: (dissatisfied: boolean) => void;
@@ -36,7 +40,19 @@ export interface MyProfileTabScreenProps {
 type SubTabKey = 'profile_theme' | 'walk_records' | 'settings';
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
-  dog, feedbackSummary, onSaveDog, onInjectFeedback, onResetFeedback, onStartBookmark, onResetData, onOpenOnboarding, onOpenAuthModal,
+  dog,
+  dogs,
+  selectedDogId,
+  onSelectDog,
+  onAddDog,
+  feedbackSummary,
+  onSaveDog,
+  onInjectFeedback,
+  onResetFeedback,
+  onStartBookmark,
+  onResetData,
+  onOpenOnboarding,
+  onOpenAuthModal,
 }) => {
   const [subTab, setSubTab] = useState<SubTabKey>('profile_theme');
   const [walkSubFilter, setWalkSubFilter] = useState<'history' | 'bookmarks'>('history');
@@ -135,8 +151,15 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           {/* 🎨 3대 컬러 테마 선택기 */}
           <ThemeSelectorCard />
 
-          {/* 반려견 프로필 편집 카드 */}
-          <DogProfileEditCard dog={dog} onSaveDog={onSaveDog} />
+          {/* 반려견 프로필 편집 카드 (다견 선택 칩 및 퀵 추가 연동) */}
+          <DogProfileEditCard
+            dog={dog}
+            dogs={dogs}
+            selectedDogId={selectedDogId}
+            onSelectDog={onSelectDog}
+            onAddDog={onAddDog}
+            onSaveDog={onSaveDog}
+          />
         </ScrollView>
       )}
 

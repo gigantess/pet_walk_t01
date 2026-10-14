@@ -416,8 +416,17 @@ export default function App() {
                 )}
                 {activeTab === '마이' && (
                   <MyProfileTabScreen
-                    dog={activeDog} feedbackSummary={feedbackSummary} onSaveDog={handleSaveActiveDog} onInjectFeedback={handleInjectSampleWalk}
-                    onResetFeedback={handleResetFeedback} onStartBookmark={handleStartBookmark} onResetData={handleResetAllData}
+                    dog={activeDog}
+                    dogs={dogs}
+                    selectedDogId={selectedDogId}
+                    onSelectDog={setSelectedDogId}
+                    onAddDog={handleAddDog}
+                    feedbackSummary={feedbackSummary}
+                    onSaveDog={handleSaveActiveDog}
+                    onInjectFeedback={handleInjectSampleWalk}
+                    onResetFeedback={handleResetFeedback}
+                    onStartBookmark={handleStartBookmark}
+                    onResetData={handleResetAllData}
                     onOpenOnboarding={() => setSubScreen('onboarding')}
                     onOpenAuthModal={handleOpenAuthModal}
                   />
