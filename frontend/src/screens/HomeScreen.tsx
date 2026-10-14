@@ -135,11 +135,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         onPress={onStartWalk}
       />
 
-      {/* (선택) 최근 피드백 AI 보정 브리핑 (간결한 1줄) */}
+      {/* (선택) 최근 피드백 AI 보정 브리핑 (전체 메시지 가독성 확보) */}
       {feedbackSummary && feedbackSummary.recent_walk_count > 0 && (
         <View style={[styles.feedbackBadge, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
-          <AppIcon name="sparkle" size={13} color={colors.primaryDark} />
-          <Text style={[styles.feedbackText, { color: colors.primaryDark }]} numberOfLines={1}>
+          <View style={styles.feedbackIconWrap}>
+            <AppIcon name="sparkle" size={13} color={colors.primaryDark} />
+          </View>
+          <Text style={[styles.feedbackText, { color: colors.primaryDark }]}>
             AI 맞춤 보정: {FeedbackContextService.generateBriefingNotice(feedbackSummary)}
           </Text>
         </View>
@@ -176,15 +178,19 @@ const styles = StyleSheet.create({
   },
   feedbackBadge: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    alignItems: 'flex-start',
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 12,
     borderWidth: 1,
-    gap: 6,
+    gap: 7,
+  },
+  feedbackIconWrap: {
+    marginTop: 1,
   },
   feedbackText: {
     fontSize: 11,
+    lineHeight: 16,
     fontWeight: '600',
     flex: 1,
   },
