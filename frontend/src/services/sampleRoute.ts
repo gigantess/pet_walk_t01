@@ -589,7 +589,12 @@ export function getCoursePlanById(
 /** 선택된 파일럿 공원 ID 및 코스 인덱스에 매핑되는 코스 플랜 반환 */
 export function getCoursePlanByParkId(parkId?: string, courseIndex = 0): CoursePlanData {
   const normalizedParkId = parkId ?? 'yurim';
-  const courseSuffix = courseIndex === 1 ? 'course_2' : courseIndex === 2 ? 'course_3' : 'course_1';
+  let courseSuffix = 'course_1';
+  if (courseIndex === 1) {
+    courseSuffix = 'course_2';
+  } else if (courseIndex === 2) {
+    courseSuffix = 'course_3';
+  }
   const specificKey = `${normalizedParkId}_${courseSuffix}`;
 
   if (COURSE_PLANS[specificKey]) {

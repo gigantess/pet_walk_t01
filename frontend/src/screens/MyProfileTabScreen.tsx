@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { DogProfile } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
 import { BookmarkListView } from '../components/bookmark/BookmarkListView';
@@ -39,6 +39,149 @@ export interface MyProfileTabScreenProps {
 }
 
 export type SubTabKey = 'dog_profile' | 'theme_account' | 'walk_records' | 'settings';
+
+interface AccountAuthActionsProps {
+  currentUser: ReturnType<typeof SupabaseService.getCurrentUser>;
+  colors: ReturnType<typeof useAppTheme>['colors'];
+  onOpenAuthModal?: (mode?: 'signup' | 'signin') => void;
+}
+
+const AccountAuthActions: React.FC<AccountAuthActionsProps> = ({ currentUser, colors, onOpenAuthModal }) => {
+  if (!onOpenAuthModal) return null;
+
+  if (currentUser) {
+    return (
+      <TouchableOpacity
+        onPress={() => onOpenAuthModal('signin')}
+        style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}
+      >
+        <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>계정 전환</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View style={styles.authBtnGroup}>
+      <TouchableOpacity
+        onPress={() => onOpenAuthModal('signup')}
+        style={[styles.accountBtn, { backgroundColor: colors.primary }]}>
+        <Text style={[styles.accountBtnText, { color: '#FFFFFF' }]}>회원가입</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => onOpenAuthModal('signin')}
+        style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}>
+        <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>로그인</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+interface SettingsSubTabSectionProps {
+  colors: ReturnType<typeof useAppTheme>['colors'];
+  feedbackSummary?: FeedbackSummaryPayload | null;
+  onInjectFeedback: (dissatisfied: boolean) => void;
+  onResetFeedback?: () => void;
+  onOpenOnboarding?: () => void;
+  onResetData?: () => Promise<void>;
+  onOpenLegal: (tab: LegalTabType) => void;
+  onResetCompleted: () => void;
+}
+
+const SettingsSubTabSection: React.FC<SettingsSubTabSectionProps> = ({
+  colors,
+  feedbackSummary,
+  onInjectFeedback,
+  onResetFeedback,
+  onOpenOnboarding,
+  onResetData,
+  onOpenLegal,
+  onResetCompleted,
+}) => (
+  <ScrollView
+    style={styles.tabScrollContainer}
+    contentContainerStyle={styles.scrollContent}
+    showsVerticalScrollIndicator={false}
+    nestedScrollEnabled={true}
+  >
+    {/* 🎙️ AI 음성 가이드 보이스 프로필 & 미리듣기 (US-C2, #37) */}
+    <VoiceSettingCard style={{ marginBottom: 10 }} />
+
+    <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
+      <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>🧪 [테스트] AI 산책로 보정 시뮬레이터</Text>
+      {feedbackSummary && (
+        <View style={styles.simStatusBadge}>
+          <Text style={styles.simStatusText}>
+            최근 {feedbackSummary.recent_walk_count}회 · 경사 불만족 {feedbackSummary.slope_dissatisfaction_count}회 (보정: {feedbackSummary.recommended_max_slope_offset}%)
+          </Text>
+        </View>
+      )}
+      <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+        <TouchableOpacity
+          onPress={() => onInjectFeedback(true)}
+          style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', flex: 1 }]}
+        >
+          <Text style={{ color: '#991B1B', fontSize: 11, fontWeight: '600' }}>+ "경사 부담"</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onInjectFeedback(false)}
+          style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint, flex: 1 }]}
+        >
+          <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: '600' }}>+ "완만한 길"</Text>
+        </TouchableOpacity>
+        {onResetFeedback && (
+          <TouchableOpacity
+            onPress={onResetFeedback}
+            style={[styles.simButton, { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB', flex: 1 }]}
+          >
+            <Text style={{ color: '#4B5563', fontSize: 11, fontWeight: '600' }}>↺ 리셋</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </CardWrapper>
+
+    {/* 📜 약관 및 개인정보 정책 카드 */}
+    <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
+      <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>📜 약관 및 개인정보 정책</Text>
+      <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
+        편안하개의 Local-First 프라이버시 원칙과 서비스 이용약관을 확인할 수 있습니다.
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onOpenLegal('terms')}
+          style={[styles.simButton, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1 }]}
+        >
+          <Text style={{ color: colors.textMain, fontSize: 12, fontWeight: '700' }}>📄 회원가입 약관</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onOpenLegal('privacy')}
+          style={[styles.simButton, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1 }]}
+        >
+          <Text style={{ color: colors.textMain, fontSize: 12, fontWeight: '700' }}>🔒 개인정보보호정책</Text>
+        </TouchableOpacity>
+      </View>
+    </CardWrapper>
+
+    {onOpenOnboarding && (
+      <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onOpenOnboarding}
+          style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint }]}
+        >
+          <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>
+            📖 4단계 온보딩 플로우 다시 보기 (가입·등록·위치·지도)
+          </Text>
+        </TouchableOpacity>
+      </CardWrapper>
+    )}
+
+    {onResetData && (
+      <DataResetCard onReset={onResetData} onCompleted={onResetCompleted} />
+    )}
+  </ScrollView>
+);
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog,
@@ -150,22 +293,11 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
                   </Text>
                 )}
               </View>
-              {onOpenAuthModal && (
-                currentUser ? (
-                  <TouchableOpacity onPress={() => onOpenAuthModal('signin')} style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}>
-                    <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>계정 전환</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.authBtnGroup}>
-                    <TouchableOpacity onPress={() => onOpenAuthModal('signup')} style={[styles.accountBtn, { backgroundColor: colors.primary }]}>
-                      <Text style={[styles.accountBtnText, { color: '#FFFFFF' }]}>회원가입</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => onOpenAuthModal('signin')} style={[styles.accountBtn, { backgroundColor: colors.primaryLight }]}>
-                      <Text style={[styles.accountBtnText, { color: colors.primaryDark }]}>로그인</Text>
-                    </TouchableOpacity>
-                  </View>
-                )
-              )}
+              <AccountAuthActions
+                currentUser={currentUser}
+                colors={colors}
+                onOpenAuthModal={onOpenAuthModal}
+              />
             </View>
           </CardWrapper>
 
@@ -228,90 +360,19 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
       {/* 서브탭 4: 안내 음성 설정 및 미리듣기, AI 시뮬레이터, 약관 및 데이터 초기화 */}
       {subTab === 'settings' && (
-        <ScrollView
-          style={styles.tabScrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled={true}
-        >
-          {/* 🎙️ AI 음성 가이드 보이스 프로필 & 미리듣기 (US-C2, #37) */}
-          <VoiceSettingCard style={{ marginBottom: 10 }} />
-
-          <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
-            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>🧪 [테스트] AI 산책로 보정 시뮬레이터</Text>
-            {feedbackSummary && (
-              <View style={styles.simStatusBadge}>
-                <Text style={styles.simStatusText}>
-                  최근 {feedbackSummary.recent_walk_count}회 · 경사 불만족 {feedbackSummary.slope_dissatisfaction_count}회 (보정: {feedbackSummary.recommended_max_slope_offset}%)
-                </Text>
-              </View>
-            )}
-            <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
-              <TouchableOpacity
-                onPress={() => onInjectFeedback(true)}
-                style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', flex: 1 }]}
-              >
-                <Text style={{ color: '#991B1B', fontSize: 11, fontWeight: '600' }}>+ "경사 부담"</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => onInjectFeedback(false)}
-                style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint, flex: 1 }]}
-              >
-                <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: '600' }}>+ "완만한 길"</Text>
-              </TouchableOpacity>
-              {onResetFeedback && (
-                <TouchableOpacity
-                  onPress={onResetFeedback}
-                  style={[styles.simButton, { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB', flex: 1 }]}
-                >
-                  <Text style={{ color: '#4B5563', fontSize: 11, fontWeight: '600' }}>↺ 리셋</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </CardWrapper>
-
-          {/* 📜 약관 및 개인정보 정책 카드 */}
-          <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
-            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>📜 약관 및 개인정보 정책</Text>
-            <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
-              편안하개의 Local-First 프라이버시 원칙과 서비스 이용약관을 확인할 수 있습니다.
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => { setLegalTab('terms'); setLegalVisible(true); }}
-                style={[styles.simButton, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1 }]}
-              >
-                <Text style={{ color: colors.textMain, fontSize: 12, fontWeight: '700' }}>📄 회원가입 약관</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => { setLegalTab('privacy'); setLegalVisible(true); }}
-                style={[styles.simButton, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1 }]}
-              >
-                <Text style={{ color: colors.textMain, fontSize: 12, fontWeight: '700' }}>🔒 개인정보보호정책</Text>
-              </TouchableOpacity>
-            </View>
-          </CardWrapper>
-
-          {onOpenOnboarding && (
-            <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={onOpenOnboarding}
-                style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint }]}
-              >
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>
-                  📖 4단계 온보딩 플로우 다시 보기 (가입·등록·위치·지도)
-                </Text>
-              </TouchableOpacity>
-            </CardWrapper>
-          )}
-
-          {onResetData && (
-            <DataResetCard onReset={onResetData} onCompleted={() => setResetCount((c) => c + 1)} />
-          )}
-        </ScrollView>
+        <SettingsSubTabSection
+          colors={colors}
+          feedbackSummary={feedbackSummary}
+          onInjectFeedback={onInjectFeedback}
+          onResetFeedback={onResetFeedback}
+          onOpenOnboarding={onOpenOnboarding}
+          onResetData={onResetData}
+          onOpenLegal={(tab) => {
+            setLegalTab(tab);
+            setLegalVisible(true);
+          }}
+          onResetCompleted={() => setResetCount((c) => c + 1)}
+        />
       )}
 
       {/* 약관 및 개인정보보호정책 열람 모달 */}
