@@ -35,9 +35,10 @@ export interface MyProfileTabScreenProps {
   onResetData?: () => Promise<void>;
   onOpenOnboarding?: () => void;
   onOpenAuthModal?: (mode?: 'signup' | 'signin') => void;
+  initialSubTab?: SubTabKey;
 }
 
-type SubTabKey = 'dog_profile' | 'theme_account' | 'walk_records' | 'settings';
+export type SubTabKey = 'dog_profile' | 'theme_account' | 'walk_records' | 'settings';
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog,
@@ -53,8 +54,16 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   onResetData,
   onOpenOnboarding,
   onOpenAuthModal,
+  initialSubTab,
 }) => {
-  const [subTab, setSubTab] = useState<SubTabKey>('dog_profile');
+  const [subTab, setSubTab] = useState<SubTabKey>(initialSubTab || 'dog_profile');
+
+  React.useEffect(() => {
+    if (initialSubTab) {
+      setSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
   const [walkSubFilter, setWalkSubFilter] = useState<'history' | 'bookmarks'>('history');
   const [resetCount, setResetCount] = useState(0);
   const [legalVisible, setLegalVisible] = useState(false);

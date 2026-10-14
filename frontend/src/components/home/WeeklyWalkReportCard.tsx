@@ -2,10 +2,10 @@
  * [편안하개 - PetWalk]
  * 홈 화면 이번 주 산책 달성도 & 관절 케어 리포트 카드 (WeeklyWalkReportCard.tsx)
  *
- * 1. 주간 목표 달성률 (예: 주 4/5회 달성)
+ * 1. 주간 목표 달성 프로그레스 바 (예: 주 5회 목표 중 3회 완주, 60%)
  * 2. 3대 보행 헬스케어 지표 (누적 거리, 총 소요 시간, 완만 노면율)
- * 3. 월~일 7일 미니 활동 인디케이터
- * 4. 관절 안심 케어 피드백 메시지
+ * 3. 매일 목표 대비 달성도 막대그래프 (Daily Goal Bar Chart)
+ * 4. 관절 안심 케어 피드백 & 산책 통계 화면 원터치 이동
  */
 
 import React from 'react';
@@ -37,16 +37,19 @@ export const WeeklyWalkReportCard: React.FC<WeeklyWalkReportCardProps> = ({
         },
       ]}
     >
-      {/* 1. 카드 헤더 */}
+      {/* 1. 카드 헤더 & 주간 목표 뱃지 */}
       <View style={styles.headerRow}>
         <View style={styles.titleGroup}>
           <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
             <AppIcon name="sparkle" size={14} color={colors.primaryDark} />
           </View>
           <View>
-            <Text style={[styles.cardTitle, { color: colors.textMain }]}>이번 주 산책 달성도</Text>
+            <View style={styles.titleWithArrow}>
+              <Text style={[styles.cardTitle, { color: colors.textMain }]}>이번 주 산책 달성도</Text>
+              <AppIcon name="chevronRight" size={14} color={colors.textMuted} />
+            </View>
             <Text style={[styles.rangeSubtitle, { color: colors.textMuted }]}>
-              {stats.weekRangeLabel}
+              {stats.weekRangeLabel} · 터치 시 통계 상세
             </Text>
           </View>
         </View>
@@ -77,7 +80,22 @@ export const WeeklyWalkReportCard: React.FC<WeeklyWalkReportCardProps> = ({
         </View>
       </View>
 
-      {/* 2. 3대 지표 요약 박스 (누적 거리, 소요 시간, 완만 노면율) */}
+      {/* 2. 주간 목표 프로그레스 바 (Progress Bar) */}
+      <View style={styles.progressBarSection}>
+        <View style={styles.progressBarTrack}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${Math.min(100, Math.max(0, stats.completionRatePercent))}%`,
+                backgroundColor: colors.primary,
+              },
+            ]}
+          />
+        </View>
+      </View>
+
+      {/* 3. 3대 지표 요약 박스 (누적 거리, 소요 시간, 완만 노면율) */}
       <View style={[styles.metricsContainer, { backgroundColor: colors.background }]}>
         <View style={styles.metricItem}>
           <Text style={[styles.metricLabel, { color: colors.textMuted }]}>누적 거리</Text>
@@ -101,43 +119,88 @@ export const WeeklyWalkReportCard: React.FC<WeeklyWalkReportCardProps> = ({
         </View>
       </View>
 
-      {/* 3. 월~일 7일간 미니 활동 도트 인디케이터 */}
-      <View style={styles.daysRow}>
-        {stats.dailyStats.map((item) => (
-          <View key={item.dateStr} style={styles.dayCol}>
-            <View
-              style={[
-                styles.dayDot,
-                item.hasWalked
-                  ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                  : { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' },
-                item.isToday && styles.todayDot,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.dayDotIcon,
-                  item.hasWalked ? { color: '#FFFFFF' } : { color: '#94A3B8' },
-                ]}
-              >
-                {item.hasWalked ? '🐾' : '·'}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.dayLabel,
-                item.isToday
-                  ? { color: colors.primaryDark, fontWeight: '800' }
-                  : { color: colors.textMuted },
-              ]}
-            >
-              {item.dayLabel}
-            </Text>
-          </View>
-        ))}
+      {/* 4. 매일 목표 대비 달성도 막대그래프 (Daily Goal Bar Chart) */}
+      <View style={styles.chartSection}>
+        <View style={styles.chartHeaderRow}>
+          <Text style={[styles.chartHeaderTitle, { color: colors.textMuted }]}>
+            요일별 일일 목표(1회) 달성도
+          </Text>
+          <Text style={[styles.chartHeaderGoal, { color: colors.primaryDark }]}>
+            목표: 매일 1회 이상
+          </Text>
+        </View>
+        <View style={styles.barsRow}>
+          {stats.dailyStats.map((item) => {
+            const fillPercent = Math.min(100, item.achievementRatePercent);
+            const isCompleted = item.walkCount >= item.targetCount;
+
+            return (
+              <View key={item.dateStr} style={styles.barCol}>
+                {/* 상단: 완주 수치 라벨 */}
+                <Text
+                  style={[
+                    styles.barTopLabel,
+                    isCompleted
+                      ? { color: colors.primaryDark, fontWeight: '700' }
+                      : { color: colors.textMuted },
+                  ]}
+                >
+                  {item.walkCount > 0 ? `${item.walkCount}회` : '-'}
+                </Text>
+
+                {/* 중앙: 세로 막대그래프 트랙 & 채움 바 */}
+                <View
+                  style={[
+                    styles.barTrack,
+                    item.isToday && styles.barTrackToday,
+                    { borderColor: item.isToday ? colors.primary : '#E2E8F0' },
+                  ]}
+                >
+                  {/* 목표선 (트랙 상단 100% 점선 가이드) */}
+                  <View style={styles.goalTargetLine} />
+
+                  {/* 실제 달성도 게이지 */}
+                  {fillPercent > 0 && (
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          height: `${fillPercent}%`,
+                          backgroundColor:
+                            item.walkCount > item.targetCount
+                              ? '#059669' // 초과 달성: 진한 에메랄드
+                              : colors.primary,
+                        },
+                      ]}
+                    >
+                      {isCompleted && (
+                        <Text style={styles.barPawIcon}>🐾</Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+
+                {/* 하단: 요일 라벨 및 오늘 인디케이터 */}
+                <View style={styles.dayLabelWrap}>
+                  <Text
+                    style={[
+                      styles.dayLabel,
+                      item.isToday
+                        ? { color: colors.primaryDark, fontWeight: '800' }
+                        : { color: colors.textMuted },
+                    ]}
+                  >
+                    {item.dayLabel}
+                  </Text>
+                  {item.isToday && <View style={[styles.todayIndicatorDot, { backgroundColor: colors.primary }]} />}
+                </View>
+              </View>
+            );
+          })}
+        </View>
       </View>
 
-      {/* 4. 관절 안심 케어 한줄 브리핑 */}
+      {/* 5. 관절 안심 케어 한줄 브리핑 */}
       <View style={[styles.jointNoticeBox, { backgroundColor: colors.primaryLight }]}>
         <Text style={[styles.jointNoticeText, { color: colors.primaryDark }]} numberOfLines={1}>
           💡 {stats.jointCareMessage}
@@ -163,7 +226,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   titleGroup: {
     flexDirection: 'row',
@@ -176,6 +239,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  titleWithArrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   cardTitle: {
     fontSize: 14,
@@ -196,13 +264,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  progressBarSection: {
+    marginBottom: 8,
+  },
+  progressBarTrack: {
+    height: 5,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
   metricsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     paddingHorizontal: 12,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   metricItem: {
     flex: 1,
@@ -211,49 +292,100 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: 10,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   metricValue: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '800',
   },
   metricUnit: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   divider: {
     width: 1,
-    height: 24,
+    height: 22,
   },
-  daysRow: {
+  chartSection: {
+    marginBottom: 8,
+  },
+  chartHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-  dayCol: {
     alignItems: 'center',
-    gap: 3,
+    marginBottom: 5,
+    paddingHorizontal: 2,
   },
-  dayDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  chartHeaderTitle: {
+    fontSize: 10.5,
+    fontWeight: '600',
   },
-  todayDot: {
-    borderWidth: 2,
-    borderColor: '#059669',
-  },
-  dayDotIcon: {
+  chartHeaderGoal: {
     fontSize: 10,
     fontWeight: '700',
+  },
+  barsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 2,
+  },
+  barCol: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 3,
+  },
+  barTopLabel: {
+    fontSize: 9.5,
+    fontWeight: '600',
+    minHeight: 12,
+  },
+  barTrack: {
+    width: 22,
+    height: 40,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 6,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    borderWidth: 1,
+    position: 'relative',
+  },
+  barTrackToday: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.5,
+  },
+  goalTargetLine: {
+    position: 'absolute',
+    top: 4,
+    left: 2,
+    right: 2,
+    height: 1,
+    backgroundColor: '#CBD5E1',
+    zIndex: 1,
+  },
+  barFill: {
+    width: '100%',
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 2,
+  },
+  barPawIcon: {
+    fontSize: 8,
+  },
+  dayLabelWrap: {
+    alignItems: 'center',
+    gap: 2,
   },
   dayLabel: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  todayIndicatorDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   jointNoticeBox: {
     borderRadius: 8,

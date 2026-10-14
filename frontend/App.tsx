@@ -65,6 +65,7 @@ export default function App() {
   const [completedRecord, setCompletedRecord] = useState<WalkRecord | null>(null);
   const [authModalVisible, setAuthModalVisible] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signup' | 'signin'>('signup');
+  const [myProfileSubTab, setMyProfileSubTab] = useState<'dog_profile' | 'theme_account' | 'walk_records' | 'settings'>('dog_profile');
   const walk = useWalkGuidance(SAMPLE_ROUTE, SAMPLE_STEP_PINS);
   const [walkBookmark, setWalkBookmark] = useState<BookmarkedRoute | null>(null);
   const consent = useLocationConsent();
@@ -431,6 +432,11 @@ export default function App() {
                     onPressProfile={() => setSubScreen('dog_selection')}
                     onStartWalk={handleStartTopCourse}
                     onOpenPlanner={() => setActiveTab('산책')}
+                    onOpenStats={() => {
+                      if (subScreen !== 'main') setSubScreen('main');
+                      setMyProfileSubTab('walk_records');
+                      setActiveTab('마이');
+                    }}
                   />
                 )}
                 {subScreen === 'main' && activeTab === '산책' && (
@@ -466,6 +472,7 @@ export default function App() {
                     onResetData={handleResetAllData}
                     onOpenOnboarding={() => setSubScreen('onboarding')}
                     onOpenAuthModal={handleOpenAuthModal}
+                    initialSubTab={myProfileSubTab}
                   />
                 )}
               </ErrorBoundary>
@@ -478,12 +485,6 @@ export default function App() {
                   setSubScreen('main');
                 }
                 setActiveTab(tab);
-              }}
-              onActionPress={() => {
-                if (subScreen !== 'main') {
-                  setSubScreen('main');
-                }
-                setActiveTab('산책');
               }}
             />
           </View>

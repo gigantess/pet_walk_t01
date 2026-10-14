@@ -14,7 +14,10 @@ export interface DailyWalkStat {
   dayLabel: string; // '월', '화', '수', '목', '금', '토', '일'
   dateStr: string;  // 'YYYY-MM-DD'
   distanceKm: number;
+  durationMinutes: number;
   walkCount: number;
+  targetCount: number; // 일일 목표 (기본 1회)
+  achievementRatePercent: number; // 일일 달성률 (0 ~ 100%+)
   hasWalked: boolean;
   isToday: boolean;
 }
@@ -45,6 +48,13 @@ export interface PeriodWalkStats {
   averageComfortScore: number;
 }
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export class WalkStatisticsService {
   /**
    * 이번 주(월~일 또는 최근 7일) 산책 달성도 및 관절 케어 통계 계산
@@ -60,13 +70,15 @@ export class WalkStatisticsService {
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
-    const mondayStr = monday.toISOString().slice(0, 10);
-    const sundayStr = sunday.toISOString().slice(0, 10);
+    const mondayStr = toLocalDateStr(monday);
+    const sundayStr = toLocalDateStr(sunday);
+    const todayStr = toLocalDateStr(today);
     const weekRangeLabel = `${monday.getMonth() + 1}.${monday.getDate()} ~ ${sunday.getMonth() + 1}.${sunday.getDate()}`;
 
     // 이번 주에 속한 기록 필터링
     const thisWeekRecords = records.filter((r) => {
-      const recDateStr = r.completedAt.slice(0, 10);
+      const recDate = new Date(r.completedAt);
+      const recDateStr = toLocalDateStr(recDate);
       return recDateStr >= mondayStr && recDateStr <= sundayStr;
     });
 
@@ -81,17 +93,25 @@ export class WalkStatisticsService {
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
-      const dayRecs = thisWeekRecords.filter((r) => r.completedAt.slice(0, 10) === dateStr);
+      const dateStr = toLocalDateStr(d);
+      const dayRecs = thisWeekRecords.filter((r) => {
+        return toLocalDateStr(new Date(r.completedAt)) === dateStr;
+      });
 
       const dayDist = dayRecs.reduce((acc, r) => acc + (r.totalDistanceKm || 0), 0);
-      const isToday = dateStr === today.toISOString().slice(0, 10);
+      const dayDur = dayRecs.reduce((acc, r) => acc + (r.durationMinutes || 0), 0);
+      const isToday = dateStr === todayStr;
+      const targetCount = 1; // 일일 기본 목표 1회
+      const achievementRatePercent = Math.min(100, Math.round((dayRecs.length / targetCount) * 100));
 
       dailyStats.push({
         dayLabel: dayLabels[i],
         dateStr,
         distanceKm: Math.round(dayDist * 10) / 10,
+        durationMinutes: dayDur,
         walkCount: dayRecs.length,
+        targetCount,
+        achievementRatePercent,
         hasWalked: dayRecs.length > 0,
         isToday,
       });

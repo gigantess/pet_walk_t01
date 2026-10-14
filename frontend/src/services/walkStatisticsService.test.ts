@@ -47,6 +47,10 @@ describe('WalkStatisticsService', () => {
     expect(stats.totalDurationMinutes).toBe(55);
     expect(stats.totalPoopCount).toBe(3);
     expect(stats.dailyStats).toHaveLength(7);
+    expect(stats.dailyStats[0].dayLabel).toBe('월');
+    expect(stats.dailyStats[0].walkCount).toBe(1);
+    expect(stats.dailyStats[0].durationMinutes).toBe(30);
+    expect(stats.dailyStats[0].achievementRatePercent).toBe(100);
     expect(stats.completionRatePercent).toBe(40); // 2 / 5 = 40%
     expect(stats.safeSurfaceRatioPercent).toBe(88); // (0.9 + 0.85) / 2 = 87.5 -> 88%
     expect(stats.jointCareMessage).toContain('완만 노면');

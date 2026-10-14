@@ -34,6 +34,7 @@ export interface HomeScreenProps {
   onPressProfile: () => void;
   onStartWalk: () => void;
   onOpenPlanner: () => void;
+  onOpenStats?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -46,6 +47,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onPressProfile,
   onStartWalk,
   onOpenPlanner,
+  onOpenStats,
 }) => {
   const { colors } = useAppTheme();
   const [weather, setWeather] = useState<HeatRiskResponse | null>(null);
@@ -126,16 +128,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 3. 산책하기 좋은 시간 (지면온도 골든타임 위젯 실데이터 연동) */}
       <GoldenTimeWidget weather={weather} />
 
-      {/* 4. 이번 주 산책 달성도 & 관절 케어 통계 위젯 */}
-      <WeeklyWalkReportCard stats={weeklyStats} onPress={onOpenPlanner} />
+      {/* 4. 이번 주 산책 달성도 & 관절 케어 통계 위젯 (터치 시 통계 화면으로 이동) */}
+      <WeeklyWalkReportCard stats={weeklyStats} onPress={onOpenStats || onOpenPlanner} />
 
-      {/* 5. 최근 산책 요약 카드 ("오늘의 산책 / 2.4 km · 38분") */}
+      {/* 5. 최근 산책 요약 카드 ("오늘의 산책 / 2.4 km · 38분", 기록 보기 터치 시 통계 화면) */}
       <RecentWalkCard
         title={recentStats.title}
         distanceKm={recentStats.distanceKm}
         durationMinutes={recentStats.durationMinutes}
         safeRatioPercent={recentStats.safeRatioPercent}
-        onPress={onStartWalk}
+        onPress={onOpenStats || onStartWalk}
       />
 
       {/* (선택) 최근 피드백 AI 보정 브리핑 (전체 메시지 가독성 확보) */}
