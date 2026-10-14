@@ -112,9 +112,9 @@ export class WalkStatisticsService {
 
     let jointCareMessage = '완만한 평지 위주로 관절에 무리 없이 안전하게 걸었어요!';
     if (safeSurfaceRatioPercent >= 85) {
-      jointCareMessage = `완만 노면 ${safeSurfaceRatioPercent}% 달성! 슬개골과 관절 충격을 훌륭히 예방했어요 🐾`;
+      jointCareMessage = `완만 노면 ${safeSurfaceRatioPercent}% 달성! 다리와 관절 부담을 줄인 안심 산책이었어요 🐾`;
     } else if (safeSurfaceRatioPercent >= 70) {
-      jointCareMessage = `완만 노면 ${safeSurfaceRatioPercent}% 유지! 조금 더 평지 위주 산책을 권장해요.`;
+      jointCareMessage = `완만 노면 ${safeSurfaceRatioPercent}% 유지! 조금 더 부드러운 길 위주 산책을 권장해요.`;
     }
 
     return {

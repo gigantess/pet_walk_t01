@@ -81,4 +81,13 @@ describe('WalkStatisticsService', () => {
     expect(parsed.totalRecords).toBe(2);
     expect(parsed.records).toHaveLength(2);
   });
+
+  it('웰니스 카피라이팅 원칙 준수: 임상 질병 용어(슬개골, 탈구, 관절염 등)가 포함되지 않는다', () => {
+    const refDate = new Date('2026-10-14T12:00:00.000Z');
+    const stats = WalkStatisticsService.getWeeklyStats(mockRecords, refDate);
+    const forbidden = ['슬개골', '탈구', '관절염', '디스크', '질환', '환견'];
+    for (const term of forbidden) {
+      expect(stats.jointCareMessage).not.toContain(term);
+    }
+  });
 });
