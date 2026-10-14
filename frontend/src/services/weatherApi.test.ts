@@ -140,22 +140,14 @@ describe('weatherApi - US-F1 지면열 추정 및 골든타임 서비스', () =>
   });
 
   describe('computeFocusedGoldenWindow (1.5~2시간 슬롯 압축)', () => {
-    it('한낮(13시)에는 다가올 저녁 골든타임(예: 18:00 ~ 20:00) 2시간 슬롯을 반환해야 한다', () => {
+    it.each([
+      [13, '18:00 ~ 20:00', '한낮(13시)에는 다가올 저녁 골든타임 슬롯 반환'],
+      [18, '18:00 ~ 20:00', '골든타임 시간대(18시)에는 현재 진행 중인 슬롯 반환'],
+      [7, '06:00 ~ 08:00', '아침 시간대(7시)에는 아침 안심 슬롯 반환'],
+    ])('%s시 테스트: %s (%s)', (hour, expected) => {
       const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
-      const windowStr = computeFocusedGoldenWindow(fallback.hourly_forecast, 13);
-      expect(windowStr).toBe('18:00 ~ 20:00');
-    });
-
-    it('골든타임 시간대(18시)에는 현재 진행 중인 2시간 슬롯(18:00 ~ 20:00)을 반환해야 한다', () => {
-      const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
-      const windowStr = computeFocusedGoldenWindow(fallback.hourly_forecast, 18);
-      expect(windowStr).toBe('18:00 ~ 20:00');
-    });
-
-    it('아침 시간대(7시)에는 아침 안심 슬롯을 반환해야 한다', () => {
-      const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
-      const windowStr = computeFocusedGoldenWindow(fallback.hourly_forecast, 7);
-      expect(windowStr).toBe('06:00 ~ 08:00');
+      const windowStr = computeFocusedGoldenWindow(fallback.hourly_forecast, hour);
+      expect(windowStr).toBe(expected);
     });
   });
 

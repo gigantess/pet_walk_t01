@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { HeatRiskResponse } from '../../types/weather';
+import { HeatRiskLevel, HeatRiskResponse } from '../../types/weather';
 import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 
@@ -20,6 +20,158 @@ export interface GoldenTimeWidgetProps {
   readonly endTimeLabel?: string;
   readonly progressPercent?: number;
   readonly statusNotice?: string;
+}
+
+const TIME_REGEX = /^\d{1,2}:\d{2}$/;
+
+interface WindowRange {
+  start: string;
+  end: string;
+  hasValidTimes: boolean;
+}
+
+function resolveRiskLevel(currentTemp: number, serverRiskLevel?: HeatRiskLevel): HeatRiskLevel {
+  if (serverRiskLevel) return serverRiskLevel;
+  if (currentTemp <= 35) return 'SAFE';
+  if (currentTemp <= 45) return 'CAUTION';
+  return 'DANGER';
+}
+
+function parseGoldenWindow(
+  windowStr?: string,
+  startProp?: string,
+  endProp?: string
+): WindowRange {
+  let start = startProp;
+  let end = endProp;
+
+  if (!start || !end) {
+    if (windowStr?.includes('~')) {
+      const parts = windowStr.split('~').map((s) => s.trim().replace(/^내일\s*/, ''));
+      start ??= parts[0] ?? '18:00';
+      end ??= parts[1] ?? '20:00';
+    } else {
+      start ??= '18:00';
+      end ??= '20:00';
+    }
+  }
+
+  const hasValidTimes = TIME_REGEX.test(start.trim()) && TIME_REGEX.test(end.trim());
+  return { start, end, hasValidTimes };
+}
+
+function calculateProgress(
+  range: WindowRange,
+  isTomorrow: boolean,
+  currentHour: number,
+  currentMin: number,
+  overridePercent?: number
+): { progress: number; isUpcoming: boolean; isPast: boolean } {
+  if (overridePercent !== undefined) {
+    return { progress: Math.max(0, Math.min(100, overridePercent)), isUpcoming: false, isPast: false };
+  }
+  if (isTomorrow || !range.hasValidTimes) {
+    return { progress: 0, isUpcoming: isTomorrow, isPast: false };
+  }
+
+  const startH = Number.parseInt(range.start.split(':')[0], 10) || 18;
+  const startM = Number.parseInt(range.start.split(':')[1], 10) || 0;
+  const endH = Number.parseInt(range.end.split(':')[0], 10) || 20;
+  const endM = Number.parseInt(range.end.split(':')[1], 10) || 0;
+
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+  const currentMinutes = currentHour * 60 + currentMin;
+  const duration = Math.max(30, endMinutes - startMinutes);
+
+  if (currentMinutes < startMinutes) {
+    return { progress: 0, isUpcoming: true, isPast: false };
+  }
+  if (currentMinutes > endMinutes) {
+    return { progress: 100, isUpcoming: false, isPast: true };
+  }
+
+  const progress = Math.max(0, Math.min(100, Math.round(((currentMinutes - startMinutes) / duration) * 100)));
+  return { progress, isUpcoming: false, isPast: false };
+}
+
+interface ThemePalette {
+  statusColor: string;
+  statusBg: string;
+  statusBorder: string;
+  borderColor: string;
+  progressColor: string;
+}
+
+function resolveThemePalette(
+  riskLevel: HeatRiskLevel,
+  colors: ReturnType<typeof useAppTheme>['colors']
+): ThemePalette {
+  if (riskLevel === 'DANGER') {
+    return {
+      statusColor: '#EF4444',
+      statusBg: '#FEE2E2',
+      statusBorder: '#FCA5A5',
+      borderColor: '#FECACA',
+      progressColor: '#EF4444',
+    };
+  }
+  if (riskLevel === 'CAUTION') {
+    return {
+      statusColor: '#F59E0B',
+      statusBg: '#FEF3C7',
+      statusBorder: '#FCD34D',
+      borderColor: '#FDE68A',
+      progressColor: '#F59E0B',
+    };
+  }
+  return {
+    statusColor: colors.primaryDark,
+    statusBg: colors.primaryLight,
+    statusBorder: colors.primaryMint,
+    borderColor: colors.border,
+    progressColor: colors.primary,
+  };
+}
+
+function formatSlotBadgeTitle(
+  isTomorrow: boolean,
+  isUpcoming: boolean,
+  isPast: boolean,
+  timeRangeDisplay: string
+): string {
+  if (isTomorrow || isUpcoming) {
+    return `🕒 다음 추천 골든타임 (${timeRangeDisplay})`;
+  }
+  if (isPast) {
+    return `오늘 골든타임 종료 (${timeRangeDisplay})`;
+  }
+  return `✨ 지금 안심 골든타임 (${timeRangeDisplay})`;
+}
+
+function buildNoticeMessages(
+  riskLevel: HeatRiskLevel,
+  currentTemp: number,
+  startDisplay: string,
+  nowLabel: string,
+  customNotice?: string
+): { subtitleText: string; badgeNotice: string } {
+  if (riskLevel === 'DANGER') {
+    return {
+      subtitleText: `현재 지면열이 ${currentTemp.toFixed(1)}℃로 매우 뜨거워요. ${startDisplay} 이후 서늘한 산책을 추천해요.`,
+      badgeNotice: customNotice ?? `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ 고열 위험 · ${startDisplay} 권장`,
+    };
+  }
+  if (riskLevel === 'CAUTION') {
+    return {
+      subtitleText: `현재 지면온도 ${currentTemp.toFixed(1)}℃로 다소 높아요. 아스팔트 대신 그늘길 산책을 권장해요.`,
+      badgeNotice: customNotice ?? `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ (그늘길 위주 20분 내 산책)`,
+    };
+  }
+  return {
+    subtitleText: `지면온도 ${currentTemp.toFixed(1)}℃로 발바닥이 편안하고 안전해요.`,
+    badgeNotice: customNotice ?? `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ (발바닥 안심 골든타임)`,
+  };
 }
 
 export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
@@ -39,153 +191,65 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
     `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
 
   const currentTemp = weather?.current_surface_temp ?? 24.5;
-  const riskLevel =
-    weather?.current_risk_level ??
-    (currentTemp <= 35 ? 'SAFE' : currentTemp <= 45 ? 'CAUTION' : 'DANGER');
+  const riskLevel = resolveRiskLevel(currentTemp, weather?.current_risk_level);
+  const palette = resolveThemePalette(riskLevel, colors);
 
-  const isSafe = riskLevel === 'SAFE';
-  const isCaution = riskLevel === 'CAUTION';
-  const isDanger = riskLevel === 'DANGER';
-
-  // 내일 골든타임 여부 판별 (Issue #50: golden_time_window_day === 'tomorrow' 또는 접두사 '내일')
   const isTomorrow =
     weather?.golden_time_window_day === 'tomorrow' ||
-    Boolean(weather?.golden_time_window && weather.golden_time_window.startsWith('내일'));
+    Boolean(weather?.golden_time_window?.startsWith('내일'));
 
-  // 1.5~2시간 집중 골든타임 윈도우 파싱 (예: "18:00 ~ 20:00" 또는 "내일 06:00 ~ 10:00")
-  let start = startTimeLabel;
-  let end = endTimeLabel;
-
-  if (!start || !end) {
-    if (weather?.golden_time_window && weather.golden_time_window.includes('~')) {
-      const parts = weather.golden_time_window
-        .split('~')
-        .map((s) => s.trim().replace(/^내일\s*/, ''));
-      start = start ?? parts[0] ?? '18:00';
-      end = end ?? parts[1] ?? '20:00';
-    } else {
-      start = start ?? '18:00';
-      end = end ?? '20:00';
-    }
-  }
-
-  // 시각 형식("HH:MM") 유효성 확인
-  const timeRegex = /^\d{1,2}:\d{2}$/;
-  const hasValidTimes = Boolean(
-    start &&
-    end &&
-    timeRegex.test(start.trim()) &&
-    timeRegex.test(end.trim())
+  const range = parseGoldenWindow(weather?.golden_time_window, startTimeLabel, endTimeLabel);
+  const { progress, isUpcoming, isPast } = calculateProgress(
+    range,
+    isTomorrow,
+    currentHour,
+    currentMin,
+    progressPercent
   );
 
-  let isUpcoming = false;
-  let isPast = false;
-  let computedProgress = 0;
+  const startDisplay = isTomorrow ? `내일 ${range.start}` : range.start;
+  const timeRangeDisplay = isTomorrow ? `내일 ${range.start} ~ ${range.end}` : `${range.start} ~ ${range.end}`;
 
-  if (isTomorrow) {
-    // 내일 구간인 경우: 아직 시작 전이므로 진행 막대는 0%, upcoming 상태 (Issue #50)
-    isUpcoming = true;
-    isPast = false;
-    computedProgress = 0;
-  } else if (!hasValidTimes) {
-    // 구간 문구가 시각 형식이 아닌 경우(예: "일몰 후 (19:00 ~ 22:00) 권장"): 막대 계산 건너뛰기 (Issue #50)
-    computedProgress = 0;
-  } else {
-    const startH = Number.parseInt(start.split(':')[0], 10) || 18;
-    const startM = Number.parseInt(start.split(':')[1], 10) || 0;
-    const endH = Number.parseInt(end.split(':')[0], 10) || 20;
-    const endM = Number.parseInt(end.split(':')[1], 10) || 0;
+  const { subtitleText, badgeNotice } = buildNoticeMessages(
+    riskLevel,
+    currentTemp,
+    startDisplay,
+    nowLabel,
+    statusNotice
+  );
 
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    const currentMinutes = currentHour * 60 + currentMin;
-    const duration = Math.max(30, endMinutes - startMinutes);
-
-    if (currentMinutes < startMinutes) {
-      isUpcoming = true;
-      computedProgress = 0;
-    } else if (currentMinutes > endMinutes) {
-      isPast = true;
-      computedProgress = 100;
-    } else {
-      computedProgress = Math.round(((currentMinutes - startMinutes) / duration) * 100);
-    }
-  }
-
-  const progress = Math.max(0, Math.min(100, progressPercent ?? computedProgress));
-
-  // 상태별 테마 색상 (위험: 레드/로즈, 주의: 앰버/오렌지, 안전: 에메랄드/그린)
-  const statusColor = isDanger ? '#EF4444' : isCaution ? '#F59E0B' : colors.primaryDark;
-  const statusBg = isDanger ? '#FEE2E2' : isCaution ? '#FEF3C7' : colors.primaryLight;
-  const statusBorder = isDanger ? '#FCA5A5' : isCaution ? '#FCD34D' : colors.primaryMint;
-
-  // 표시용 시간 라벨 (내일이면 "내일 06:00" 처럼 표시)
-  const startDisplay = isTomorrow ? `내일 ${start}` : start;
-  const timeRangeDisplay = isTomorrow ? `내일 ${start} ~ ${end}` : `${start} ~ ${end}`;
-
-  // 서브텍스트 및 알림 메시지 구성
-  let subtitleText = '';
-  let badgeNotice = statusNotice;
-
-  if (isDanger) {
-    subtitleText = `현재 지면열이 ${currentTemp.toFixed(1)}℃로 매우 뜨거워요. ${startDisplay} 이후 서늘한 산책을 추천해요.`;
-    if (!badgeNotice) {
-      badgeNotice = `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ 고열 위험 · ${startDisplay} 권장`;
-    }
-  } else if (isCaution) {
-    subtitleText = `현재 지면온도 ${currentTemp.toFixed(1)}℃로 다소 높아요. 아스팔트 대신 그늘길 산책을 권장해요.`;
-    if (!badgeNotice) {
-      badgeNotice = `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ (그늘길 위주 20분 내 산책)`;
-    }
-  } else {
-    subtitleText = `지면온도 ${currentTemp.toFixed(1)}℃로 발바닥이 편안하고 안전해요.`;
-    if (!badgeNotice) {
-      badgeNotice = `현재 ${nowLabel} · 지면 ${currentTemp.toFixed(1)}℃ (발바닥 안심 골든타임)`;
-    }
-  }
+  const slotBadgeTitle = formatSlotBadgeTitle(isTomorrow, isUpcoming, isPast, timeRangeDisplay);
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: colors.surface,
-          borderColor: isDanger ? '#FECACA' : isCaution ? '#FDE68A' : colors.border,
-        },
-      ]}
-    >
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: palette.borderColor }]}>
       <View style={styles.headerRow}>
-        <AppIcon name="sun" size={18} color={statusColor} />
+        <AppIcon name="sun" size={18} color={palette.statusColor} />
         <Text style={[styles.title, { color: colors.textMain }]}>산책하기 좋은 지면온도 시간</Text>
-        {isDanger ? (
+        {riskLevel === 'DANGER' && (
           <View style={[styles.liveBadge, { backgroundColor: '#FEE2E2' }]}>
             <Text style={[styles.liveBadgeText, { color: '#B91C1C' }]}>고열 주의</Text>
           </View>
-        ) : isCaution ? (
+        )}
+        {riskLevel === 'CAUTION' && (
           <View style={[styles.liveBadge, { backgroundColor: '#FEF3C7' }]}>
             <Text style={[styles.liveBadgeText, { color: '#B45309' }]}>주의</Text>
           </View>
-        ) : weather?.isLiveServer ? (
+        )}
+        {riskLevel === 'SAFE' && Boolean(weather?.isLiveServer) && (
           <View style={[styles.liveBadge, { backgroundColor: colors.primaryLight }]}>
             <Text style={[styles.liveBadgeText, { color: colors.primaryDark }]}>기상청 연동</Text>
           </View>
-        ) : null}
+        )}
       </View>
 
-      <Text style={[styles.subText, { color: isDanger ? '#DC2626' : colors.textMuted }]}>
+      <Text style={[styles.subText, { color: riskLevel === 'DANGER' ? '#DC2626' : colors.textMuted }]}>
         {subtitleText}
       </Text>
 
       {/* 1.5~2시간 집중 추천 슬롯 헤더 */}
       <View style={styles.slotHeaderRow}>
-        <Text style={[styles.slotBadgeText, { color: statusColor }]}>
-          {isTomorrow
-            ? `🕒 다음 추천 골든타임 (${timeRangeDisplay})`
-            : isUpcoming
-              ? `🕒 다음 추천 골든타임 (${timeRangeDisplay})`
-              : isPast
-                ? `오늘 골든타임 종료 (${timeRangeDisplay})`
-                : `✨ 지금 안심 골든타임 (${timeRangeDisplay})`}
+        <Text style={[styles.slotBadgeText, { color: palette.statusColor }]}>
+          {slotBadgeTitle}
         </Text>
       </View>
 
@@ -194,13 +258,13 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
         <Text style={[styles.timeLabel, isTomorrow && styles.timeLabelWide, { color: colors.textMuted }]}>
           {startDisplay}
         </Text>
-        <View style={[styles.track, { backgroundColor: isDanger ? '#FEE2E2' : colors.borderSubtle }]}>
+        <View style={[styles.track, { backgroundColor: riskLevel === 'DANGER' ? '#FEE2E2' : colors.borderSubtle }]}>
           <View
             style={[
               styles.progressFill,
               {
                 width: `${progress}%`,
-                backgroundColor: isDanger ? '#EF4444' : isCaution ? '#F59E0B' : colors.primary,
+                backgroundColor: palette.progressColor,
               },
             ]}
           />
@@ -209,19 +273,19 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
               styles.indicator,
               {
                 left: `${progress}%`,
-                backgroundColor: statusColor,
+                backgroundColor: palette.statusColor,
               },
             ]}
           >
             <View style={styles.indicatorDot} />
           </View>
         </View>
-        <Text style={[styles.timeLabel, { textAlign: 'right', color: colors.textMuted }]}>{end}</Text>
+        <Text style={[styles.timeLabel, { textAlign: 'right', color: colors.textMuted }]}>{range.end}</Text>
       </View>
 
       <View style={styles.badgeContainer}>
-        <View style={[styles.statusBadge, { backgroundColor: statusBg, borderColor: statusBorder }]}>
-          <Text style={[styles.statusBadgeText, { color: statusColor }]}>{badgeNotice}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: palette.statusBg, borderColor: palette.statusBorder }]}>
+          <Text style={[styles.statusBadgeText, { color: palette.statusColor }]}>{badgeNotice}</Text>
         </View>
       </View>
     </View>

@@ -95,12 +95,10 @@ export function computeFocusedGoldenWindow(
   for (let h = 6; h <= 22; h++) {
     const isSafe = hourly[h]?.is_golden_time ?? false;
     if (isSafe) {
-      if (blockStart === null) blockStart = h;
-    } else {
-      if (blockStart !== null) {
-        safeBlocks.push({ start: blockStart, end: h });
-        blockStart = null;
-      }
+      blockStart ??= h;
+    } else if (blockStart !== null) {
+      safeBlocks.push({ start: blockStart, end: h });
+      blockStart = null;
     }
   }
   if (blockStart !== null) {
@@ -144,12 +142,10 @@ export function computeGoldenWindowDay(
   for (let h = 6; h <= 22; h++) {
     const isSafe = hourly[h]?.is_golden_time ?? false;
     if (isSafe) {
-      if (blockStart === null) blockStart = h;
-    } else {
-      if (blockStart !== null) {
-        safeBlocks.push({ start: blockStart, end: h });
-        blockStart = null;
-      }
+      blockStart ??= h;
+    } else if (blockStart !== null) {
+      safeBlocks.push({ start: blockStart, end: h });
+      blockStart = null;
     }
   }
   if (blockStart !== null) {
@@ -157,12 +153,14 @@ export function computeGoldenWindowDay(
   }
 
   // 1) 현재 진행 중인 안전 블록 -> today
-  const active = safeBlocks.find((b) => currentHour >= b.start && currentHour < b.end);
-  if (active) return 'today';
+  if (safeBlocks.some((b) => currentHour >= b.start && currentHour < b.end)) {
+    return 'today';
+  }
 
   // 2) 오늘 앞으로 다가올 가장 가까운 다음 안전 블록 -> today
-  const next = safeBlocks.find((b) => b.start > currentHour);
-  if (next) return 'today';
+  if (safeBlocks.some((b) => b.start > currentHour)) {
+    return 'today';
+  }
 
   // 3) 오늘 안전 블록이 이미 모두 끝난 경우 -> tomorrow
   if (safeBlocks.length > 0) return 'tomorrow';
@@ -213,6 +211,19 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
   };
 }
 
+function resolveGoldenTimeWindowDay(
+  serverDay?: GoldenTimeWindowDay,
+  goldenWindow?: string
+): GoldenTimeWindowDay {
+  if (serverDay !== undefined) {
+    return serverDay;
+  }
+  if (goldenWindow?.startsWith('내일')) {
+    return 'tomorrow';
+  }
+  return 'today';
+}
+
 /**
  * 현위치 위경도 기준 실시간 기상청 지면열 정보 요청 (1시간 캐싱 적용)
  */
@@ -240,12 +251,7 @@ export async function fetchHeatRiskForecast(
       const data = await res.json();
       const current = data.current || {};
       const goldenWindow = data.golden_time_window ?? '18:00 ~ 20:00';
-      const goldenWindowDay: GoldenTimeWindowDay =
-        data.golden_time_window_day !== undefined
-          ? data.golden_time_window_day
-          : goldenWindow.startsWith('내일')
-            ? 'tomorrow'
-            : 'today';
+      const goldenWindowDay = resolveGoldenTimeWindowDay(data.golden_time_window_day, goldenWindow);
 
       const response: HeatRiskResponse = {
         isLiveServer: true,
