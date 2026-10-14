@@ -39,6 +39,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog, feedbackSummary, onSaveDog, onInjectFeedback, onResetFeedback, onStartBookmark, onResetData, onOpenOnboarding, onOpenAuthModal,
 }) => {
   const [subTab, setSubTab] = useState<SubTabKey>('profile_theme');
+  const [walkSubFilter, setWalkSubFilter] = useState<'history' | 'bookmarks'>('history');
   const [resetCount, setResetCount] = useState(0);
   const [legalVisible, setLegalVisible] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTabType>('terms');
@@ -78,7 +79,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           style={[styles.segmentBtn, subTab === 'walk_records' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
           <Text style={[styles.segmentText, subTab === 'walk_records' && { color: colors.primaryDark, fontWeight: '700' }]}>
-            📜 산책 기록
+            📜 산책 활동
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -86,7 +87,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           style={[styles.segmentBtn, subTab === 'settings' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
           <Text style={[styles.segmentText, subTab === 'settings' && { color: colors.primaryDark, fontWeight: '700' }]}>
-            ⚙️ 설정·보관함
+            ⚙️ 앱 설정
           </Text>
         </TouchableOpacity>
       </View>
@@ -134,19 +135,62 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         </View>
       )}
 
-      {/* 서브탭 2: 산책 기록 목록 및 커뮤니티 공개(is_public) 토글 (US-G2) */}
+      {/* 서브탭 2: 산책 활동 (완주 산책 기록 ｜ 찜한 안심 코스 2단 서브 필터 칩 토글) */}
       {subTab === 'walk_records' && (
         <View>
-          <MyWalkHistoryView dogName={dog.name} onOpenAuthModal={onOpenAuthModal} />
+          <View style={[styles.filterChipContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setWalkSubFilter('history')}
+              style={[
+                styles.filterChip,
+                walkSubFilter === 'history' && { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  walkSubFilter === 'history' && { color: colors.primaryDark, fontWeight: '700' },
+                ]}
+              >
+                🐾 완주 산책 기록
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setWalkSubFilter('bookmarks')}
+              style={[
+                styles.filterChip,
+                walkSubFilter === 'bookmarks' && { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  walkSubFilter === 'bookmarks' && { color: colors.primaryDark, fontWeight: '700' },
+                ]}
+              >
+                ⭐ 찜한 안심 코스
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {walkSubFilter === 'history' ? (
+            <MyWalkHistoryView dogName={dog.name} onOpenAuthModal={onOpenAuthModal} />
+          ) : (
+            <BookmarkListView
+              key={resetCount}
+              onStartBookmark={onStartBookmark}
+              dogSpeedKmH={dog.speedKmH}
+            />
+          )}
         </View>
       )}
 
-      {/* 서브탭 3: 즐겨찾기, 파일 백업, AI 시뮬레이터 및 데이터 초기화 */}
+      {/* 서브탭 3: 파일 백업, AI 시뮬레이터, 약관 및 데이터 초기화 (스크롤 금지 원칙 준수) */}
       {subTab === 'settings' && (
         <View>
-          <BookmarkListView key={resetCount} onStartBookmark={onStartBookmark} dogSpeedKmH={dog.speedKmH} />
-
-          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+          <CardWrapper variant="flat" style={{ marginBottom: 10 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>💾 반려견 프로필 백업 및 복원</Text>
             <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
               소중한 반려견 프로필을 내 스마트폰 파일로 안전하게 보관합니다.
@@ -160,7 +204,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             </TouchableOpacity>
           </CardWrapper>
 
-          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+          <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>🧪 [테스트] AI 산책로 보정 시뮬레이터</Text>
             {feedbackSummary && (
               <View style={styles.simStatusBadge}>
@@ -194,7 +238,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </CardWrapper>
 
           {/* 📜 약관 및 개인정보 정책 카드 */}
-          <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+          <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>📜 약관 및 개인정보 정책</Text>
             <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
               편안하개의 Local-First 프라이버시 원칙과 서비스 이용약관을 확인할 수 있습니다.
@@ -218,7 +262,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </CardWrapper>
 
           {onOpenOnboarding && (
-            <CardWrapper variant="flat" style={{ marginBottom: 12 }}>
+            <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onOpenOnboarding}
@@ -270,6 +314,24 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   segmentText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  filterChipContainer: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 3,
+    marginBottom: 10,
+    gap: 4,
+  },
+  filterChip: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  filterChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
   accountCard: { marginBottom: 10, paddingVertical: 10 },
   accountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   accountTitle: { fontSize: 12, fontWeight: '700' },

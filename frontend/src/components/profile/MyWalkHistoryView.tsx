@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { CardWrapper } from '../common/CardWrapper';
 import { AppIcon } from '../common/AppIcon';
@@ -60,7 +60,7 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName, o
     return (
       <CardWrapper variant="flat" style={{ marginBottom: 16 }}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>🐾 나의 산책 기록 목록 (US-G2)</Text>
+          <Text style={styles.title}>🐾 나의 산책 기록 목록</Text>
           <View style={styles.badge}><Text style={styles.badgeText}>클라우드 연동</Text></View>
         </View>
         <Text style={styles.emptyText}>
@@ -77,11 +77,17 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName, o
         <View style={styles.badge}><Text style={styles.badgeText}>DB 동기화</Text></View>
       </View>
       <Text style={styles.subDesc}>
-        완주한 기록을 확인하고, "후기 공개"를 누르면 이웃 견주들과 안심 코스를 나눕니다.
+        완주한 기록을 확인하고, "후기 공유"를 누르면 이웃 견주들과 안심 코스를 나눕니다.
       </Text>
 
-      <View style={{ gap: 10, marginTop: 10 }}>
-        {records.slice(0, 5).map((rec) => {
+      {/* 누적된 모든 산책 기록을 탐색할 수 있는 스크롤 격리 영역 */}
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
+        {records.map((rec) => {
           const isPublic = publicMap[rec.id] ?? false;
           const dateStr = new Date(rec.completedAt).toLocaleDateString('ko-KR', {
             month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -121,7 +127,7 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName, o
             </View>
           );
         })}
-      </View>
+      </ScrollView>
     </CardWrapper>
   );
 };
@@ -176,4 +182,13 @@ const styles = StyleSheet.create({
   },
   feedbackComfort: { fontSize: 11, fontWeight: '600', color: TOKENS.colors.primaryDark },
   feedbackComment: { fontSize: 11, color: TOKENS.colors.textMuted, marginTop: 2, fontStyle: 'italic' },
+  scrollArea: {
+    maxHeight: 280,
+    marginTop: 10,
+  },
+  scrollContent: {
+    gap: 10,
+    paddingRight: 4,
+    paddingBottom: 4,
+  },
 });
