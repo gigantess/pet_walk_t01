@@ -8,6 +8,7 @@ import { BookmarkService, createBookmark, MAX_BOOKMARKS } from './bookmarkServic
 import { SAMPLE_ROUTE, SAMPLE_STEP_PINS } from './sampleRoute';
 import { DEFAULT_RECOMMENDED_COURSES } from '../types/walkSettings';
 import { BookmarkedRoute, CoursePlan } from '../types/bookmark';
+import { WalkDogSummary } from '../types/dogProfile';
 
 const memoryStore = new Map<string, string>();
 
@@ -50,7 +51,7 @@ describe('US-29 createBookmark', () => {
   });
 
   it('WalkDogSummary 객체를 전달하면 dogName과 dogSummary 객체가 함께 보관된다', () => {
-    const summary = {
+    const summary: WalkDogSummary = {
       id: 'dog_123',
       name: '보리',
       breed: '포메라니안',
