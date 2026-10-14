@@ -7,7 +7,7 @@
 [![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB.svg)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-0%20Errors%20(Clean)-3178C6.svg)](frontend)
 [![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-255%2F255%20Passed-brightgreen.svg)](backend/test_case)
-[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-172%2F172%20Passed-brightgreen.svg)](frontend)
+[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-180%2F180%20Passed-brightgreen.svg)](frontend)
 [![Code Quality](https://img.shields.io/badge/SonarLint-Line%20%E2%89%A4%20250%20(100%25)-success.svg)](frontend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -273,7 +273,23 @@ graph TB
 
 ### 5.1 📸 실제 구동 화면 스크린샷 갤러리 (Key Screenshots Gallery)
 
-편안하개 모바일 애플리케이션의 핵심 사용자 여정(User Journey)을 담은 9종의 실제 구동 화면입니다. (고화질 원본: [`docs/screenshots/`](docs/screenshots/))
+편안하개 모바일 애플리케이션의 핵심 사용자 여정(User Journey)과 10월 14일 최신 고도화 화면 모음입니다. (고화질 원본: [`docs/screenshots/`](docs/screenshots/))
+
+#### 🌟 10월 14일 최신 구동 화면 (Zero-Scroll & UX 고도화 캡처)
+
+| 01. Zero-Scroll 메인 홈 | 02. 추천 안심 코스 | 03. 실시간 보행 트레일 | 04. 커뮤니티 안심 피드 |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/1014-home1.png" width="220" alt="Zero-Scroll 메인 홈"/> | <img src="docs/screenshots/1014-course1.png" width="220" alt="추천 안심 코스"/> | <img src="docs/screenshots/1014-trail1.png" width="220" alt="실시간 보행 트레일"/> | <img src="docs/screenshots/1014-community1.png" width="220" alt="커뮤니티 안심 피드"/> |
+| **Zero-Scroll 단일 뷰포트**<br>• 주간 산책 리포트 7구간 바 차트<br>• 최근 산책 요약 인라인 풋터 병합<br>• 골든타임 오늘/내일 구분 안내 | **실시간 AI 코스 브리핑**<br>• 관절 안심 순환로 요약<br>• 경사/노면/그늘 3대 안심 지표<br>• 실제 도로망 지도 프리뷰 | **시선 해방 실시간 안내**<br>• 30m 전 음성 코칭 연동<br>• 백그라운드 실시간 위치 추적<br>• 긴급 복귀 & 출발지 안내 | **자택 200m 공간 마스킹**<br>• 이웃 동네 안심 산책로 공유<br>• 자택 위치 은폐 교차로 스냅<br>• 실시간 서버/오프라인 듀얼 모드 |
+
+| 05. 🐾 반려견 프로필 편집 | 06. 🎨 3대 테마 & 안심 로그아웃 | 07. 📜 산책 활동 & 보관함 | 08. ⚙️ AI 음성 & 시뮬레이터 | 09. ⚙️ 투명 약관 & 데이터 관리 |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/1014-setting0.png" width="180" alt="반려견 프로필 편집"/> | <img src="docs/screenshots/1014-setting1.png" width="180" alt="테마 및 계정 관리"/> | <img src="docs/screenshots/1014-setting2.png" width="180" alt="산책 활동 및 보관함"/> | <img src="docs/screenshots/1014-setting3.png" width="180" alt="음성 및 시뮬레이터"/> | <img src="docs/screenshots/1014-setting4.png" width="180" alt="약관 및 데이터 초기화"/> |
+| **반려견 맞춤 케어**<br>• 체중/나이/성별 관리<br>• 관절 케어 레벨 3단계<br>• 맞춤 보행 속도 설정 | **3대 테마 & 안심 계정**<br>• 숲길/비비드/다크 테마<br>• Supabase 클라우드 연동<br>• Local-First 안심 로그아웃 | **활동 기록 & 찜한 코스**<br>• 완주 산책 이력 뷰어<br>• 찜한 코스 0.1초 즉시 재산책<br>• 산책 기록 CSV 내보내기 | **AI 맞춤 보정 설정**<br>• 음성 안내 보이스 프로필<br>• TTS 미리듣기 시연<br>• 경사 체감 AI 보정 시뮬레이터 | **프라이버시 & 무결성**<br>• 위치정보 수집 투명 약관<br>• 개인정보 처리방침 전문<br>• 데이터 영구 초기화 보호 |
+
+---
+
+#### 📱 9대 핵심 사용자 여정 아카이브 (MVP & Phase 2 기초 갤러리)
 
 | 01. 신규 온보딩 가이드 | 02. 메인 홈 화면 | 03. 맞춤 산책 조건 설정 |
 | :---: | :---: | :---: |
@@ -606,7 +622,7 @@ python -m pytest
 # 방법 2) backend 폴더로 이동 후 실행
 cd backend && pytest test_case/ -v
 
-# 프론트엔드 Vitest 단위 테스트 (172개 테스트 100% Pass)
+# 프론트엔드 Vitest 단위 테스트 (180개 테스트 100% Pass)
 cd frontend && npm test
 
 # 프론트엔드 TypeScript 무결성 검증 (0 Errors)
