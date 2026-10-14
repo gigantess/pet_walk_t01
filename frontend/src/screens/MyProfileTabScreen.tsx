@@ -9,7 +9,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { DogProfile } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
-import { BackupService } from '../services/backupService';
 import { BookmarkListView } from '../components/bookmark/BookmarkListView';
 import { BookmarkedRoute } from '../types/bookmark';
 import { DataResetCard } from '../components/privacy/DataResetCard';
@@ -38,7 +37,7 @@ export interface MyProfileTabScreenProps {
   onOpenAuthModal?: (mode?: 'signup' | 'signin') => void;
 }
 
-type SubTabKey = 'profile_theme' | 'walk_records' | 'settings';
+type SubTabKey = 'dog_profile' | 'theme_account' | 'walk_records' | 'settings';
 
 export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   dog,
@@ -55,23 +54,13 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   onOpenOnboarding,
   onOpenAuthModal,
 }) => {
-  const [subTab, setSubTab] = useState<SubTabKey>('profile_theme');
+  const [subTab, setSubTab] = useState<SubTabKey>('dog_profile');
   const [walkSubFilter, setWalkSubFilter] = useState<'history' | 'bookmarks'>('history');
   const [resetCount, setResetCount] = useState(0);
   const [legalVisible, setLegalVisible] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTabType>('terms');
   const currentUser = SupabaseService.getCurrentUser();
   const { colors } = useAppTheme();
-
-  const handleBackupDownload = () => {
-    const ok = BackupService.downloadProfileJsonFile(dog);
-    if (ok) {
-      Alert.alert('프로필 저장 완료', `🐾 ${dog.name} 프로필 파일이 기기에 다운로드되었습니다.`);
-    } else {
-      const jsonStr = BackupService.exportProfileToJson(dog);
-      Alert.alert('프로필 내보내기', `백업 데이터가 생성되었습니다:\n${jsonStr.slice(0, 80)}...`);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -81,42 +70,64 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         <Text style={[styles.sectionTitle, { color: colors.textMain }]}>우리 아이 정보 & 테마 설정 🐾</Text>
       </View>
 
-      {/* 🚀 Rule 11 컴팩트 세그먼트 네비게이션 (스크롤 방지) */}
+      {/* 🚀 Rule 11 컴팩트 세그먼트 네비게이션 (단일 뷰포트 / 스크롤 배제 4단 세그먼트) */}
       <View style={[styles.segmentContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TouchableOpacity
-          onPress={() => setSubTab('profile_theme')}
-          style={[styles.segmentBtn, subTab === 'profile_theme' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+          onPress={() => setSubTab('dog_profile')}
+          style={[styles.segmentBtn, subTab === 'dog_profile' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
-          <Text style={[styles.segmentText, subTab === 'profile_theme' && { color: colors.primaryDark, fontWeight: '700' }]}>
-            🐾 프로필·테마
+          <Text numberOfLines={1} style={[styles.segmentText, subTab === 'dog_profile' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            🐾 프로필
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSubTab('theme_account')}
+          style={[styles.segmentBtn, subTab === 'theme_account' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+        >
+          <Text numberOfLines={1} style={[styles.segmentText, subTab === 'theme_account' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            🎨 테마·계정
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSubTab('walk_records')}
           style={[styles.segmentBtn, subTab === 'walk_records' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
-          <Text style={[styles.segmentText, subTab === 'walk_records' && { color: colors.primaryDark, fontWeight: '700' }]}>
-            📜 산책 활동
+          <Text numberOfLines={1} style={[styles.segmentText, subTab === 'walk_records' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            📜 활동
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSubTab('settings')}
           style={[styles.segmentBtn, subTab === 'settings' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
-          <Text style={[styles.segmentText, subTab === 'settings' && { color: colors.primaryDark, fontWeight: '700' }]}>
-            ⚙️ 앱 설정
+          <Text numberOfLines={1} style={[styles.segmentText, subTab === 'settings' && { color: colors.primaryDark, fontWeight: '700' }]}>
+            ⚙️ 설정
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* 서브탭 1: 프로필 & 3대 테마 선택 & 계정 상태 (스크롤 지원) */}
-      {subTab === 'profile_theme' && (
+      {/* 서브탭 1: 반려견 프로필 편집 카드 단독 렌더링 (단일 뷰포트 최적화) */}
+      {subTab === 'dog_profile' && (
         <ScrollView
           style={styles.tabScrollContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled={true}
         >
+          <DogProfileEditCard
+            dog={dog}
+            dogs={dogs}
+            selectedDogId={selectedDogId}
+            onSelectDog={onSelectDog}
+            onAddDog={onAddDog}
+            onSaveDog={onSaveDog}
+          />
+        </ScrollView>
+      )}
+
+      {/* 서브탭 2: 3대 테마 선택 & 계정 상태 (단일 뷰포트 / 스크롤 완전 배제) */}
+      {subTab === 'theme_account' && (
+        <View style={styles.tabScrollContainer}>
           <CardWrapper variant="flat" style={styles.accountCard}>
             <View style={styles.accountRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
@@ -151,20 +162,10 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
           {/* 🎨 3대 컬러 테마 선택기 */}
           <ThemeSelectorCard />
-
-          {/* 반려견 프로필 편집 카드 (다견 선택 칩 및 퀵 추가 연동) */}
-          <DogProfileEditCard
-            dog={dog}
-            dogs={dogs}
-            selectedDogId={selectedDogId}
-            onSelectDog={onSelectDog}
-            onAddDog={onAddDog}
-            onSaveDog={onSaveDog}
-          />
-        </ScrollView>
+        </View>
       )}
 
-      {/* 서브탭 2: 산책 활동 (완주 산책 기록 ｜ 찜한 안심 코스 2단 서브 필터 칩 토글) */}
+      {/* 서브탭 3: 산책 활동 (완주 산책 기록 ｜ 찜한 안심 코스 2단 서브 필터 칩 토글) */}
       {subTab === 'walk_records' && (
         <View style={styles.tabScrollContainer}>
           <View style={[styles.filterChipContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -216,7 +217,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         </View>
       )}
 
-      {/* 서브탭 3: 파일 백업, AI 시뮬레이터, 약관 및 데이터 초기화 */}
+      {/* 서브탭 4: 안내 음성 설정 및 미리듣기, AI 시뮬레이터, 약관 및 데이터 초기화 */}
       {subTab === 'settings' && (
         <ScrollView
           style={styles.tabScrollContainer}
@@ -226,20 +227,6 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         >
           {/* 🎙️ AI 음성 가이드 보이스 프로필 & 미리듣기 (US-C2, #37) */}
           <VoiceSettingCard style={{ marginBottom: 10 }} />
-
-          <CardWrapper variant="flat" style={{ marginBottom: 10 }}>
-            <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>💾 반려견 프로필 백업 및 복원</Text>
-            <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
-              소중한 반려견 프로필을 내 스마트폰 파일로 안전하게 보관합니다.
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleBackupDownload}
-              style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint, marginTop: 8 }]}
-            >
-              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '700' }}>📥 프로필 파일로 저장</Text>
-            </TouchableOpacity>
-          </CardWrapper>
 
           <CardWrapper variant="flat" style={{ marginBottom: 8 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>🧪 [테스트] AI 산책로 보정 시뮬레이터</Text>
@@ -352,7 +339,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  segmentText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  segmentText: { fontSize: 11, fontWeight: '600', color: '#6B7280' },
   filterChipContainer: {
     flexDirection: 'row',
     borderRadius: 12,
