@@ -21,6 +21,8 @@ import { AppIcon } from '../components/common/AppIcon';
 import { fetchHeatRiskForecast } from '../services/weatherApi';
 import { HeatRiskResponse } from '../types/weather';
 import { LocalStorageService } from '../services/storage';
+import { WeeklyWalkReportCard } from '../components/home/WeeklyWalkReportCard';
+import { WalkStatisticsService, WeeklyWalkStats } from '../services/walkStatisticsService';
 
 export interface HomeScreenProps {
   dog: DogProfile;
@@ -47,6 +49,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const { colors } = useAppTheme();
   const [weather, setWeather] = useState<HeatRiskResponse | null>(null);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyWalkStats>(() =>
+    WalkStatisticsService.getWeeklyStats([])
+  );
   const [recentStats, setRecentStats] = useState({
     title: '오늘의 산책',
     distanceKm: 2.4,
@@ -61,6 +66,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     });
     void LocalStorageService.getWalkHistory().then((history) => {
       if (!isMounted || history.length === 0) return;
+      setWeeklyStats(WalkStatisticsService.getWeeklyStats(history));
       const todayStr = new Date().toISOString().slice(0, 10);
       const todayList = history.filter((r) => r.completedAt.slice(0, 10) === todayStr);
 
@@ -120,7 +126,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 3. 산책하기 좋은 시간 (지면온도 골든타임 위젯 실데이터 연동) */}
       <GoldenTimeWidget weather={weather} />
 
-      {/* 4. 최근 산책 요약 카드 ("오늘의 산책 / 2.4 km · 38분") */}
+      {/* 4. 이번 주 산책 달성도 & 관절 케어 통계 위젯 */}
+      <WeeklyWalkReportCard stats={weeklyStats} onPress={onOpenPlanner} />
+
+      {/* 5. 최근 산책 요약 카드 ("오늘의 산책 / 2.4 km · 38분") */}
       <RecentWalkCard
         title={recentStats.title}
         distanceKm={recentStats.distanceKm}
@@ -148,8 +157,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
+    gap: 6,
     justifyContent: 'space-between', // 스크롤 없이 한 화면에 균형 배치
   },
   greetingSection: {
