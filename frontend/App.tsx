@@ -14,7 +14,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { TOKENS } from './src/theme/tokens';
 import { themeManager, useAppTheme } from './src/theme/themeManager';
 import { BottomTabBar, TabKey } from './src/components/common/BottomTabBar';
-import { DogProfile, DEFAULT_DOGS, calculateRecommendedSpeedKmH } from './src/types/dogProfile';
+import { DogProfile, DEFAULT_DOGS, calculateRecommendedSpeedKmH, toWalkDogSummary } from './src/types/dogProfile';
 import { WalkPreferences, RecommendedCourse } from './src/types/walkSettings';
 import { LocalStorageService } from './src/services/storage';
 import { FeedbackContextService, FeedbackSummaryPayload } from './src/services/feedbackContext';
@@ -148,7 +148,11 @@ export default function App() {
   };
 
   const handleStartWalk = (course?: RecommendedCourse, plan?: CoursePlan) =>
-    void beginWalk(course?.name ?? '편안한 숲길 코스', plan, course && plan ? createBookmark(course, plan, activeDog.name) : null);
+    void beginWalk(
+      course?.name ?? '편안한 숲길 코스',
+      plan,
+      course && plan ? createBookmark(course, plan, toWalkDogSummary(activeDog)) : null
+    );
 
   /**
    * 1. 홈 화면 "산책 시작" 버튼 클릭 시:
@@ -193,13 +197,16 @@ export default function App() {
     const distKm = walk.stats.distanceKm;
     const gpsTrack = walk.getTrackBuffer().map((p) => ({ lat: p.latitude, lon: p.longitude, timestamp: p.timestamp }));
     const newRecord: WalkRecord = {
-      id: `walk_${Date.now()}`, dogId: activeDog.id,
+      id: `walk_${Date.now()}`,
+      dogId: activeDog.id,
+      dogSummary: toWalkDogSummary(activeDog),
       startedAt: new Date(Date.now() - walk.stats.elapsedSec * 1000).toISOString(),
       completedAt: new Date().toISOString(),
       durationMinutes: Math.max(1, Math.round(walk.stats.elapsedSec / 60)),
       totalDistanceKm: distKm > 0 ? distKm : 1.2,
       averageSpeedKmH: walk.stats.speedKmH > 0 ? walk.stats.speedKmH : activeDog.speedKmH,
-      safeSurfaceRatio: 0.88, gpsTrack,
+      safeSurfaceRatio: 0.88,
+      gpsTrack,
       poopCount: walk.poopCount,
       poopEvents: walk.poopEvents,
     };

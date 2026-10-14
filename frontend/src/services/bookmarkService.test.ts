@@ -48,6 +48,21 @@ describe('US-29 createBookmark', () => {
     expect(a1.id).toBe(a2.id);
     expect(a1.id).not.toBe(b.id);
   });
+
+  it('WalkDogSummary 객체를 전달하면 dogName과 dogSummary 객체가 함께 보관된다', () => {
+    const summary = {
+      id: 'dog_123',
+      name: '보리',
+      breed: '포메라니안',
+      ageYears: 2,
+      weightKg: 3.2,
+      jointCareLevel: 2,
+      photoUri: 'preset:pomeranian',
+    };
+    const bm = createBookmark(DEFAULT_RECOMMENDED_COURSES[0], PLAN, summary);
+    expect(bm.dogName).toBe('보리');
+    expect(bm.dogSummary).toEqual(summary);
+  });
 });
 
 describe('US-29 BookmarkService CRUD 및 영속성', () => {

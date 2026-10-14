@@ -19,7 +19,7 @@ import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 import { CoursePlan } from '../../types/bookmark';
 import { buildCourseSummary } from '../../services/routeGeometry';
-import { DogProfile } from '../../types/dogProfile';
+import { DogProfile, toWalkDogSummary } from '../../types/dogProfile';
 import { RecommendedCourse, WalkPreferences } from '../../types/walkSettings';
 import { RouteMapView } from '../map/RouteMapView';
 import { FeedbackSummaryPayload } from '../../services/feedbackContext';
@@ -82,8 +82,8 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
     [activeRoute, dog.speedKmH],
   );
   const bookmarkCandidate = useMemo(
-    () => (currentCourse ? createBookmark(currentCourse, plan, dog.name) : null),
-    [currentCourse, plan, dog.name],
+    () => (currentCourse ? createBookmark(currentCourse, plan, toWalkDogSummary(dog)) : null),
+    [currentCourse, plan, dog],
   );
 
   const conditionLabels = useMemo(() => {

@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'rea
 import { TOKENS } from '../../theme/tokens';
 import { CardWrapper } from '../common/CardWrapper';
 import { AppIcon } from '../common/AppIcon';
+import { DogAvatar } from '../common/DogAvatar';
 import { WalkRecord } from '../../types/storage';
 import { LocalStorageService } from '../../services/storage';
 import { SupabaseService } from '../../services/supabaseService';
@@ -96,8 +97,22 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName, o
           return (
             <View key={rec.id} style={[styles.recordCard, isPublic && styles.recordCardPublic]}>
               <View style={styles.recordTop}>
-                <View>
-                  <Text style={styles.recordDate}>{dateStr}</Text>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <View style={styles.recordHeaderRow}>
+                    <Text style={styles.recordDate}>{dateStr}</Text>
+                    {rec.dogSummary ? (
+                      <View style={styles.dogBadge}>
+                        <DogAvatar photoUri={rec.dogSummary.photoUri} size={15} />
+                        <Text style={styles.dogBadgeText}>
+                          {rec.dogSummary.name} ({rec.dogSummary.breed})
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={styles.dogBadge}>
+                        <Text style={styles.dogBadgeText}>🐾 {dogName}</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.recordMetrics}>
                     {rec.totalDistanceKm.toFixed(1)}km · {rec.durationMinutes}분 · 평균 {rec.averageSpeedKmH.toFixed(1)}km/h
                   </Text>
@@ -153,6 +168,27 @@ const styles = StyleSheet.create({
   },
   recordCardPublic: { borderColor: '#10B981', backgroundColor: '#F0FDF4' },
   recordTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  recordHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+    flexWrap: 'wrap',
+  },
+  dogBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: TOKENS.colors.primaryLight,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    gap: 4,
+  },
+  dogBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: TOKENS.colors.primaryDark,
+  },
   recordDate: { fontSize: 13, fontWeight: '700', color: TOKENS.colors.textMain },
   recordMetrics: { fontSize: 12, color: TOKENS.colors.textMuted, marginTop: 2 },
   publicBtn: {

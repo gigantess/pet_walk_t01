@@ -16,6 +16,7 @@ import { BookmarkService } from '../../services/bookmarkService';
 import { CardWrapper } from '../common/CardWrapper';
 import { AppIcon } from '../common/AppIcon';
 import { RouteMapView } from '../map/RouteMapView';
+import { DogAvatar } from '../common/DogAvatar';
 
 
 export interface BookmarkListViewProps {
@@ -106,6 +107,22 @@ export const BookmarkListView: React.FC<BookmarkListViewProps> = ({
                     >
                       <Text style={styles.removeText}>삭제</Text>
                     </TouchableOpacity>
+                  </View>
+
+                  {/* 산책 대상 반려견 스펙 요약 뱃지 */}
+                  <View style={styles.dogSummaryRow}>
+                    {bm.dogSummary ? (
+                      <View style={styles.dogSummaryBadge}>
+                        <DogAvatar photoUri={bm.dogSummary.photoUri} size={18} />
+                        <Text style={styles.dogSummaryText}>
+                          {bm.dogSummary.name} ({bm.dogSummary.breed} · {bm.dogSummary.weightKg}kg)
+                        </Text>
+                      </View>
+                    ) : bm.dogName ? (
+                      <View style={styles.dogSummaryBadge}>
+                        <Text style={styles.dogSummaryText}>🐾 {bm.dogName} 추천 코스</Text>
+                      </View>
+                    ) : null}
                   </View>
 
                   {/* 4대 보행 메타 요약 */}
@@ -545,5 +562,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  dogSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  dogSummaryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: TOKENS.colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: TOKENS.colors.primaryMint,
+    gap: 6,
+  },
+  dogSummaryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: TOKENS.colors.primaryDark,
   },
 });
