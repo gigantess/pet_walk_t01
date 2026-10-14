@@ -3,12 +3,14 @@
  * 반려견 안심 케어 프로필 편집 카드 (US-A2)
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { DogProfile, JointCareLevel } from '../../types/dogProfile';
 import { CardWrapper } from '../common/CardWrapper';
 import { GradientButton } from '../common/GradientButton';
+import { DogAvatar } from '../common/DogAvatar';
+import { PhotoPickerModal } from './PhotoPickerModal';
 
 export interface DogProfileEditCardProps {
   readonly dog: DogProfile;
@@ -16,8 +18,39 @@ export interface DogProfileEditCardProps {
 }
 
 export const DogProfileEditCard: React.FC<DogProfileEditCardProps> = ({ dog, onSaveDog }) => {
+  const [pickerVisible, setPickerVisible] = useState(false);
+
   return (
     <CardWrapper style={{ marginBottom: 16 }}>
+      {/* 반려견 대표 사진 & 변경 영역 */}
+      <View style={styles.photoRow}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setPickerVisible(true)}
+          style={styles.avatarTouchArea}
+        >
+          <DogAvatar photoUri={dog.photoUri} size={60} />
+          <View style={styles.cameraBadge}>
+            <Text style={styles.cameraIcon}>📷</Text>
+          </View>
+        </TouchableOpacity>
+        <View style={styles.photoInfoArea}>
+          <Text style={styles.photoTitle}>우리 아이 대표 사진</Text>
+          <Text style={styles.photoSub}>
+            {dog.photoUri ? '대표 사진이 등록되어 있습니다' : '사진을 등록해주세요'}
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setPickerVisible(true)}
+            style={styles.changePhotoBtn}
+          >
+            <Text style={styles.changePhotoText}>
+              {dog.photoUri ? '사진/캐릭터 변경' : '대표 사진 등록'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <Text style={styles.fieldLabel}>이름</Text>
       <TextInput
         value={dog.name}
@@ -72,11 +105,72 @@ export const DogProfileEditCard: React.FC<DogProfileEditCardProps> = ({ dog, onS
       >
         반려견 프로필 저장 ✓
       </GradientButton>
+
+      <PhotoPickerModal
+        visible={pickerVisible}
+        currentPhotoUri={dog.photoUri}
+        onClose={() => setPickerVisible(false)}
+        onSelectPhoto={(uri) => onSaveDog({ photoUri: uri })}
+      />
     </CardWrapper>
   );
 };
 
 const styles = StyleSheet.create({
+  photoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: TOKENS.colors.border,
+  },
+  avatarTouchArea: {
+    position: 'relative',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: TOKENS.colors.surface,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: TOKENS.colors.border,
+  },
+  cameraIcon: {
+    fontSize: 10,
+  },
+  photoInfoArea: {
+    flex: 1,
+  },
+  photoTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: TOKENS.colors.textMain,
+  },
+  photoSub: {
+    fontSize: 11,
+    color: TOKENS.colors.textMuted,
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  changePhotoBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: TOKENS.colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  changePhotoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: TOKENS.colors.primaryDark,
+  },
   fieldLabel: { fontSize: 12, fontWeight: '600', color: TOKENS.colors.textMain, marginBottom: 4 },
   input: {
     backgroundColor: TOKENS.colors.background,

@@ -17,6 +17,8 @@ import { DogProfile, calculateRecommendedSpeedKmH } from '../../types/dogProfile
 import { SupabaseService } from '../../services/supabaseService';
 import { NearbyExploreMapView } from './NearbyExploreMapView';
 import { LegalTermsModal, LegalTabType } from '../common/LegalTermsModal';
+import { DogAvatar } from '../common/DogAvatar';
+import { PhotoPickerModal } from '../profile/PhotoPickerModal';
 
 export interface OnboardingWizardProps {
   onComplete: (registeredDog?: DogProfile) => void;
@@ -42,7 +44,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [dogName, setDogName] = useState('초코');
   const [breed, setBreed] = useState('골든 리트리버');
   const [weightKg, setWeightKg] = useState('24');
-  const [photoSelected, setPhotoSelected] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
+  const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
 
   // 3단계 상태: 위치 권한
   const [locationAgreed, setLocationAgreed] = useState(true);
@@ -85,7 +88,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       weightKg: weight,
       jointCareLevel: 1,
       speedKmH: speed,
-      photoUri: photoSelected ? 'mock_photo_url' : undefined,
+      photoUri: photoUri,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -217,12 +220,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => setPhotoSelected(!photoSelected)}
-              style={[styles.photoSelectBox, photoSelected && styles.photoSelectBoxActive]}
+              onPress={() => setPhotoPickerVisible(true)}
+              style={[styles.photoSelectBox, Boolean(photoUri) && styles.photoSelectBoxActive]}
             >
-              <AppIcon name="paw" size={18} color={photoSelected ? '#10B981' : TOKENS.colors.textMuted} />
-              <Text style={[styles.photoSelectText, photoSelected && { color: '#065F46', fontWeight: '700' }]}>
-                {photoSelected ? '📷 대표 사진 등록 완료' : '📷 대표 사진 등록하기 (터치)'}
+              <DogAvatar photoUri={photoUri} size={36} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={[styles.photoSelectText, Boolean(photoUri) && { color: '#065F46', fontWeight: '700' }]}>
+                  {photoUri ? '✓ 대표 사진 선택 완료' : '📷 대표 사진 등록하기 (터치)'}
+                </Text>
+                <Text style={{ fontSize: 10.5, color: TOKENS.colors.textMuted, marginTop: 2 }}>
+                  {photoUri ? '터치하여 다른 사진이나 캐릭터로 변경' : '앨범 사진 또는 귀여운 견종 캐릭터'}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, color: TOKENS.colors.primaryDark, fontWeight: '700' }}>
+                {photoUri ? '변경' : '선택'}
               </Text>
             </TouchableOpacity>
 
@@ -289,6 +300,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           }
         }}
         showAcceptButton
+      />
+
+      {/* 대표 사진 선택 모달 */}
+      <PhotoPickerModal
+        visible={photoPickerVisible}
+        currentPhotoUri={photoUri}
+        onClose={() => setPhotoPickerVisible(false)}
+        onSelectPhoto={(uri) => setPhotoUri(uri)}
       />
     </View>
   );

@@ -10,6 +10,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { DogProfile } from '../../types/dogProfile';
 import { AppIcon } from '../common/AppIcon';
+import { DogAvatar } from '../common/DogAvatar';
 
 export interface HomeDogCardProps {
   profile: DogProfile;
@@ -29,11 +30,9 @@ export const HomeDogCard: React.FC<HomeDogCardProps> = ({
         onPress={onPressProfile}
         style={styles.profileRow}
       >
-        {/* 원형 아바타 */}
+        {/* 원형 아바타 (대표 사진 및 프리셋 캐릭터 지원) */}
         <View style={styles.avatarWrapper}>
-          <View style={styles.avatarContainer}>
-            <AppIcon name="pawOutline" size={30} color={TOKENS.colors.primaryDark} />
-          </View>
+          <DogAvatar photoUri={profile.photoUri} size={48} />
           <View style={styles.onlineBadge} />
         </View>
 
