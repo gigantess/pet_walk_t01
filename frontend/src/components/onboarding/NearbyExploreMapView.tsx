@@ -15,7 +15,7 @@ import { GradientButton } from '../common/GradientButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAP_WIDTH = Math.min(SCREEN_WIDTH - 48, 420);
-const MAP_HEIGHT = 220;
+const MAP_HEIGHT = 180;
 
 export interface NearbyDogMarker {
   id: string;
@@ -139,11 +139,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: TOKENS.colors.surface,
-    padding: 12,
+    padding: 10,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: TOKENS.colors.border,
-    marginBottom: 10,
+    marginBottom: 8,
     width: '100%',
   },
   sparkleBadge: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: TOKENS.colors.primary,
-    marginBottom: 10,
+    marginBottom: 8,
     width: '100%',
   },
   privacyNoticeText: {
