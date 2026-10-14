@@ -234,11 +234,21 @@ export default function App() {
   const handlePocketUnlock = () => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const finish = window.confirm('산책을 종료하고 완주 리포트를 확인할까요?');
-      if (finish) void handleStopWalkAndReport(); else setSubScreen('course_recommend');
+      if (finish) void handleStopWalkAndReport();
+      else {
+        setSubScreen('main');
+        setActiveTab('산책');
+      }
       return;
     }
     Alert.alert('산책을 종료할까요?', '지도를 확인하거나 산책을 마칠 수 있어요.', [
-      { text: '지도 보기', onPress: () => setSubScreen('course_recommend') },
+      {
+        text: '지도 보기',
+        onPress: () => {
+          setSubScreen('main');
+          setActiveTab('산책');
+        },
+      },
       { text: '산책 종료', onPress: () => void handleStopWalkAndReport() },
     ]);
   };
@@ -331,7 +341,12 @@ export default function App() {
         {subScreen === 'dog_selection' && (
           <DogSelectionView
             dogs={dogs} selectedDogId={selectedDogId} onSelectDog={setSelectedDogId}
-            onAddDog={handleAddDog} onContinue={() => setSubScreen('walk_settings')} onBack={() => setSubScreen('main')}
+            onAddDog={handleAddDog}
+            onContinue={() => {
+              setSubScreen('main');
+              setActiveTab('산책');
+            }}
+            onBack={() => setSubScreen('main')}
           />
         )}
         {subScreen === 'walk_settings' && (
@@ -348,22 +363,24 @@ export default function App() {
         )}
         {subScreen === 'main' && (
           <View style={styles.mainContainer}>
-            <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-              <View style={styles.logoGroup}>
-                <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.logoIcon}>🐾</Text>
+            {activeTab !== '산책' && (
+              <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+                <View style={styles.logoGroup}>
+                  <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.logoIcon}>🐾</Text>
+                  </View>
+                  <Text style={[styles.appTitle, { color: colors.textMain }]}>편안하개</Text>
                 </View>
-                <Text style={[styles.appTitle, { color: colors.textMain }]}>편안하개</Text>
+                <View style={styles.headerActions}>
+                  <TouchableOpacity onPress={() => Alert.alert('알림', '새로운 소식이 없습니다.')} style={styles.iconBtn}>
+                    <Text style={[styles.iconText, { color: colors.textMain }]}>🔔</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setSubScreen('dog_selection')} style={styles.iconBtn}>
+                    <Text style={[styles.iconText, { color: colors.textMain }]}>⋯</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.headerActions}>
-                <TouchableOpacity onPress={() => Alert.alert('알림', '새로운 소식이 없습니다.')} style={styles.iconBtn}>
-                  <Text style={[styles.iconText, { color: colors.textMain }]}>🔔</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSubScreen('dog_selection')} style={styles.iconBtn}>
-                  <Text style={[styles.iconText, { color: colors.textMain }]}>⋯</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            )}
             <View style={styles.tabContentContainer}>
               <ErrorBoundary>
                 {activeTab === '홈' && (
@@ -371,13 +388,18 @@ export default function App() {
                     dog={activeDog} feedbackSummary={feedbackSummary}
                     onPressProfile={() => setSubScreen('dog_selection')}
                     onStartWalk={handleStartTopCourse}
-                    onOpenPlanner={() => setSubScreen('walk_settings')}
+                    onOpenPlanner={() => setActiveTab('산책')}
                   />
                 )}
                 {activeTab === '산책' && (
                   <WalkTabScreen
-                    dog={activeDog} preferences={preferences} feedbackSummary={feedbackSummary} onBack={() => setActiveTab('홈')}
-                    onStartWalk={handleStartWalk} onPinSelect={TTSNavigationService.speak}
+                    dog={activeDog}
+                    preferences={preferences}
+                    onUpdatePreferences={setPreferences}
+                    feedbackSummary={feedbackSummary}
+                    onBack={() => setActiveTab('홈')}
+                    onStartWalk={handleStartWalk}
+                    onPinSelect={TTSNavigationService.speak}
                   />
                 )}
                 {activeTab === '커뮤니티' && (
@@ -400,13 +422,9 @@ export default function App() {
             <BottomTabBar
               activeTab={activeTab}
               onTabChange={(tab) => {
-                if (tab === '산책') {
-                  setSubScreen('walk_settings');
-                } else {
-                  setActiveTab(tab);
-                }
+                setActiveTab(tab);
               }}
-              onActionPress={() => setSubScreen('walk_settings')}
+              onActionPress={() => setActiveTab('산책')}
             />
           </View>
         )}
