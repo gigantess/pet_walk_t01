@@ -83,23 +83,67 @@ function evaluateRisk(surfaceTemp: number): { riskLevel: HeatRiskLevel; isGolden
 }
 
 /**
+ * 24시간 예보 중 현재 시각 기준 진행 중이거나 가장 가까운 안전 골든타임 윈도우(1.5~2시간 슬롯) 산출
+ */
+export function computeFocusedGoldenWindow(
+  hourly: readonly HeatRiskHourDTO[],
+  currentHour: number
+): string {
+  const safeBlocks: { start: number; end: number }[] = [];
+  let blockStart: number | null = null;
+
+  for (let h = 6; h <= 22; h++) {
+    const isSafe = hourly[h]?.is_golden_time ?? false;
+    if (isSafe) {
+      if (blockStart === null) blockStart = h;
+    } else {
+      if (blockStart !== null) {
+        safeBlocks.push({ start: blockStart, end: h });
+        blockStart = null;
+      }
+    }
+  }
+  if (blockStart !== null) {
+    safeBlocks.push({ start: blockStart, end: 22 });
+  }
+
+  // 1) 현재 진행 중인 안전 블록 (현재 시각 기점 1.5~2시간 슬롯)
+  const active = safeBlocks.find((b) => currentHour >= b.start && currentHour < b.end);
+  if (active) {
+    const end = Math.min(active.end, active.start + 2);
+    return `${String(active.start).padStart(2, '0')}:00 ~ ${String(end).padStart(2, '0')}:00`;
+  }
+
+  // 2) 오늘 앞으로 다가올 가장 가까운 다음 안전 블록
+  const next = safeBlocks.find((b) => b.start > currentHour);
+  if (next) {
+    const end = Math.min(next.end, next.start + 2);
+    return `${String(next.start).padStart(2, '0')}:00 ~ ${String(end).padStart(2, '0')}:00`;
+  }
+
+  // 3) 오늘 안전 블록이 이미 모두 끝난 경우 (내일 아침 첫 골든타임)
+  if (safeBlocks.length > 0) {
+    const first = safeBlocks[0];
+    const end = Math.min(first.end, first.start + 2);
+    return `${String(first.start).padStart(2, '0')}:00 ~ ${String(end).padStart(2, '0')}:00`;
+  }
+
+  return '18:00 ~ 20:00';
+}
+
+/**
  * 오프라인 / 장애 대응 지면열 추정 및 골든타임 폴백 데이터 생성
  */
 export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResponse {
   const now = new Date();
   const currentHour = now.getHours();
   const hourly: HeatRiskHourDTO[] = [];
-  const goldenHours: number[] = [];
 
   for (let h = 0; h < 24; h++) {
     const airTemp = getAirTempForHour(h);
     const weight = getInsolationWeightForHour(h);
     const surfaceTemp = Math.round((airTemp + weight * 15.0) * 10) / 10;
     const { riskLevel, isGolden } = evaluateRisk(surfaceTemp);
-
-    if (isGolden && (h >= 6 && h <= 22)) {
-      goldenHours.push(h);
-    }
 
     hourly.push({
       hour: h,
@@ -112,12 +156,7 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
   }
 
   const currentDto = hourly[currentHour] || hourly[12];
-  let goldenWindow = '일몰 후 (19:00 ~ 22:00) 권장';
-  if (goldenHours.length > 0) {
-    const first = goldenHours[0];
-    const last = goldenHours.at(-1) ?? first;
-    goldenWindow = `${String(first).padStart(2, '0')}:00 ~ ${String(last + 1).padStart(2, '0')}:00`;
-  }
+  const goldenWindow = computeFocusedGoldenWindow(hourly, currentHour);
 
   return {
     isLiveServer: false,

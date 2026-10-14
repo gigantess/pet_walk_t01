@@ -7,13 +7,13 @@
 [![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB.svg)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-0%20Errors%20(Clean)-3178C6.svg)](frontend)
 [![Pytest TDD](https://img.shields.io/badge/Pytest%20TDD-255%2F255%20Passed-brightgreen.svg)](backend/test_case)
-[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-141%2F141%20Passed-brightgreen.svg)](frontend)
+[![Mobile Tests](https://img.shields.io/badge/Vitest%20Mobile-172%2F172%20Passed-brightgreen.svg)](frontend)
 [![Code Quality](https://img.shields.io/badge/SonarLint-Line%20%E2%89%A4%20250%20(100%25)-success.svg)](frontend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 ## 테스트용 앱 다운로드 주소
-https://expo.dev/artifacts/eas/5vER01pLSzWqzEo_viUhWrzpcIYVr7gU31nb0vRBLig.apk
+https://expo.dev/accounts/pettrail/projects/petwalk-production/builds/7b0c35d8-8354-402c-9f74-325428e45ccd
 
 ## ⚡ 빠른 시작 및 가동 가이드 (Quick Start Guide)
 
@@ -606,12 +606,20 @@ python -m pytest
 # 방법 2) backend 폴더로 이동 후 실행
 cd backend && pytest test_case/ -v
 
-# 프론트엔드 Vitest 단위 테스트 (141개 테스트 100% Pass)
+# 프론트엔드 Vitest 단위 테스트 (172개 테스트 100% Pass)
 cd frontend && npm test
 
 # 프론트엔드 TypeScript 무결성 검증 (0 Errors)
 cd frontend && npm run check
 ```
+
+---
+
+### 9.5 주요 개발 현황 보고서 및 설계 문서
+- 🐾 [10월 14일 김승현(앱 리드) 개발 현황 보고서](docs/reports/10월14일_김승현_구현현황보고서.md)
+- 🐾 [10월 13일 개발 결과 보고서](docs/reports/10월13일_작업결과보고서.md)
+- 🐾 [김승현 향후 구현 계획서 (v2.4 개정판)](docs/implementation_plan/김승현_향후_구현계획.md)
+- 📸 [주요 화면 스크린샷 갤러리](docs/screenshots/README.md)
 
 ---
 
