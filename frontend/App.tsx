@@ -326,26 +326,6 @@ export default function App() {
           barStyle={subScreen === 'pocket' || theme === 'dark' ? 'light-content' : 'dark-content'}
           backgroundColor={subScreen === 'pocket' ? colors.pocketBg : colors.background}
         />
-        {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
-        {subScreen === 'pocket' && (
-          <DarkPocketScreen
-            dogName={activeDog.name}
-            stats={walk.stats}
-            targetMinutes={preferences.durationMinutes}
-            isFreeWalk={preferences.isFreeWalk}
-            onUnlock={handlePocketUnlock}
-            onMarkPoop={walk.markPoop}
-            poopCount={walk.poopCount}
-          />
-        )}
-        {subScreen === 'report' && completedRecord && (
-          <WalkReportScreen
-            record={completedRecord} dogName={activeDog.name} bookmarkCandidate={walkBookmark}
-            onSaveFeedback={handleSaveReportFeedback} onGoHome={() => { setSubScreen('main'); setActiveTab('홈'); }}
-            onGoToCommunity={() => { setSubScreen('main'); setActiveTab('커뮤니티'); }}
-            onOpenAuthModal={handleOpenAuthModal}
-          />
-        )}
         {/* 풀스크린 온보딩/절전/완주 리포트 */}
         {subScreen === 'onboarding' && <OnboardingWizard onComplete={handleCompleteOnboarding} />}
         {subScreen === 'pocket' && (
