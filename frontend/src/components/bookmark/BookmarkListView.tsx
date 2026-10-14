@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   desc: { fontSize: 12, color: TOKENS.colors.textMuted, lineHeight: 16, marginTop: 4 },
   empty: { fontSize: 12, color: TOKENS.colors.primaryDark, marginTop: 12, textAlign: 'center' },
   scrollArea: {
-    maxHeight: 280,
+    maxHeight: 520,
     marginTop: 8,
   },
   scrollContent: {

@@ -142,12 +142,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
       {/* 서브탭 2: 산책 활동 (완주 산책 기록 ｜ 찜한 안심 코스 2단 서브 필터 칩 토글) */}
       {subTab === 'walk_records' && (
-        <ScrollView
-          style={styles.tabScrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled={true}
-        >
+        <View style={styles.tabScrollContainer}>
           <View style={[styles.filterChipContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -194,7 +189,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
               dogSpeedKmH={dog.speedKmH}
             />
           )}
-        </ScrollView>
+        </View>
       )}
 
       {/* 서브탭 3: 파일 백업, AI 시뮬레이터, 약관 및 데이터 초기화 */}

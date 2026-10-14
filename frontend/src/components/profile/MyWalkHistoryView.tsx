@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   feedbackComfort: { fontSize: 11, fontWeight: '600', color: TOKENS.colors.primaryDark },
   feedbackComment: { fontSize: 11, color: TOKENS.colors.textMuted, marginTop: 2, fontStyle: 'italic' },
   scrollArea: {
-    maxHeight: 280,
+    maxHeight: 520,
     marginTop: 10,
   },
   scrollContent: {
