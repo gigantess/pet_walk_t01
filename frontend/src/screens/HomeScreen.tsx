@@ -87,14 +87,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     };
   }, []);
 
-  const currentTemp = typeof weather?.current_surface_temp === 'number'
-    ? weather.current_surface_temp
-    : 24;
-
-  const goldenNotice = weather
-    ? `현재 ${currentTemp.toFixed(0)}℃ · ${weather.notice ?? '산책 추천 시간대 (지면온도 적정)'}`
-    : '현재 15:30 · 산책 추천 시간대 (지면온도 적정)';
-
   return (
     <View style={styles.container}>
       {/* 1. 환영 인사 (02_home_screen.png 원형 복원) */}
@@ -114,13 +106,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       />
 
       {/* 3. 산책하기 좋은 시간 (지면온도 골든타임 위젯 실데이터 연동) */}
-      <GoldenTimeWidget
-        currentTimeLabel={new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
-        startTimeLabel="14:00"
-        endTimeLabel="17:00"
-        progressPercent={Math.min(100, Math.max(0, Math.round(((currentTemp - 15) / 25) * 100)))}
-        statusNotice={goldenNotice}
-      />
+      <GoldenTimeWidget weather={weather} />
 
       {/* 4. '산책' 버튼 (누르면 '산책 설정' 페이지로 이동) */}
       <TouchableOpacity
