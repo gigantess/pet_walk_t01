@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { DogProfile } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
 import { BackupService } from '../services/backupService';
@@ -92,9 +92,14 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* 서브탭 1: 프로필 & 3대 테마 선택 & 계정 상태 (한 화면 컴팩트 뷰) */}
+      {/* 서브탭 1: 프로필 & 3대 테마 선택 & 계정 상태 (스크롤 지원) */}
       {subTab === 'profile_theme' && (
-        <View>
+        <ScrollView
+          style={styles.tabScrollContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+        >
           <CardWrapper variant="flat" style={styles.accountCard}>
             <View style={styles.accountRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
@@ -132,12 +137,17 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
           {/* 반려견 프로필 편집 카드 */}
           <DogProfileEditCard dog={dog} onSaveDog={onSaveDog} />
-        </View>
+        </ScrollView>
       )}
 
       {/* 서브탭 2: 산책 활동 (완주 산책 기록 ｜ 찜한 안심 코스 2단 서브 필터 칩 토글) */}
       {subTab === 'walk_records' && (
-        <View>
+        <ScrollView
+          style={styles.tabScrollContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+        >
           <View style={[styles.filterChipContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -184,12 +194,17 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
               dogSpeedKmH={dog.speedKmH}
             />
           )}
-        </View>
+        </ScrollView>
       )}
 
-      {/* 서브탭 3: 파일 백업, AI 시뮬레이터, 약관 및 데이터 초기화 (스크롤 금지 원칙 준수) */}
+      {/* 서브탭 3: 파일 백업, AI 시뮬레이터, 약관 및 데이터 초기화 */}
       {subTab === 'settings' && (
-        <View>
+        <ScrollView
+          style={styles.tabScrollContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+        >
           <CardWrapper variant="flat" style={{ marginBottom: 10 }}>
             <Text style={[styles.cardHeaderTitle, { color: colors.textMain }]}>💾 반려견 프로필 백업 및 복원</Text>
             <Text style={[styles.backupDesc, { color: colors.textMuted }]}>
@@ -278,7 +293,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           {onResetData && (
             <DataResetCard onReset={onResetData} onCompleted={() => setResetCount((c) => c + 1)} />
           )}
-        </View>
+        </ScrollView>
       )}
 
       {/* 약관 및 개인정보보호정책 열람 모달 */}
@@ -293,6 +308,8 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  tabScrollContainer: { flex: 1 },
+  scrollContent: { paddingBottom: 64 },
   sectionHeader: { marginBottom: 10 },
   sectionSubtitle: { fontSize: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
