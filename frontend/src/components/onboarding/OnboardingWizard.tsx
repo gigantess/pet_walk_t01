@@ -8,8 +8,8 @@
  * 4단계: 주변 코스 및 실시간 산책견 지도 탐색 (NearbyExploreMapView)
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, BackHandler, ScrollView } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { GradientButton } from '../common/GradientButton';
 import { AppIcon } from '../common/AppIcon';
@@ -26,6 +26,25 @@ export interface OnboardingWizardProps {
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // 안드로이드 하드웨어 뒤로가기 버튼 처리
+  useEffect(() => {
+    const onBackPress = () => {
+      if (currentStep > 1) {
+        setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3 | 4);
+        return true;
+      }
+      return false;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [currentStep]);
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3 | 4);
+    }
+  };
 
   // 1단계 상태: 가입 및 약관
   const [email, setEmail] = useState('');
@@ -105,25 +124,56 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
   return (
     <View style={styles.container}>
-      {/* 상단 4단계 인디케이터 헤더 그룹 (타이틀 + 진행 바 일체화) */}
+      {/* 상단 4단계 인디케이터 헤더 그룹 (타이틀 + 이전 버튼 + 진행 바 일체화) */}
       <View style={styles.headerGroup}>
         <View style={styles.topNav}>
-          <Text style={styles.topLogo}>🐾 편안하개 시작하기</Text>
+          {currentStep > 1 ? (
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="이전 단계로 이동"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <AppIcon name="back" size={20} color={TOKENS.colors.primaryDark} strokeWidth={2.4} />
+              <Text style={styles.backButtonText}>이전</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.topLogo}>🐾 편안하개 시작하기</Text>
+          )}
+
+          {currentStep > 1 && (
+            <Text style={styles.topLogoCompact}>🐾 편안하개 시작하기</Text>
+          )}
+
           <Text style={styles.stepCounter}>{currentStep} / 4 단계</Text>
         </View>
 
         <View style={styles.stepProgressRow}>
           {[1, 2, 3, 4].map((s) => (
-            <View
+            <TouchableOpacity
               key={s}
-              style={[styles.stepProgressBar, s <= currentStep && styles.stepProgressBarActive]}
+              onPress={() => s < currentStep && setCurrentStep(s as 1 | 2 | 3 | 4)}
+              disabled={s >= currentStep}
+              style={[
+                styles.stepProgressBar,
+                s <= currentStep && styles.stepProgressBarActive,
+                s < currentStep && styles.stepProgressBarClickable,
+              ]}
+              accessibilityLabel={`${s}단계로 이동`}
+              accessibilityRole={s < currentStep ? 'button' : undefined}
             />
           ))}
         </View>
       </View>
 
-      {/* 스텝별 콘텐츠 영역 (상단 정렬 및 균형 배치) */}
-      <View style={styles.stepContentContainer}>
+      {/* 스텝별 콘텐츠 영역 (스크롤 지원으로 하단 잘림 완전 방지) */}
+      <ScrollView
+        style={styles.stepScrollView}
+        contentContainerStyle={styles.stepContentContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* 1단계: 가입약관 및 계정 */}
         {currentStep === 1 && (
           <View style={styles.stepCard}>
@@ -285,7 +335,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         {currentStep === 4 && (
           <NearbyExploreMapView dogName={dogName} onStartFirstWalk={handleFinish} />
         )}
-      </View>
+      </ScrollView>
 
       {/* 약관 및 개인정보보호정책 모달 */}
       <LegalTermsModal
@@ -317,21 +367,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: TOKENS.colors.background,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingTop: 10,
     paddingBottom: 16,
   },
   headerGroup: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   topNav: {
-    height: 32,
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   topLogo: { fontSize: 16, fontWeight: '800', color: TOKENS.colors.primaryDark },
+  topLogoCompact: { fontSize: 14, fontWeight: '800', color: TOKENS.colors.textMain },
   stepCounter: { fontSize: 12, fontWeight: '700', color: TOKENS.colors.textMuted },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 4,
+    paddingRight: 8,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: TOKENS.colors.primaryDark,
+  },
   stepProgressRow: {
     flexDirection: 'row',
     gap: 6,
@@ -340,16 +403,23 @@ const styles = StyleSheet.create({
   },
   stepProgressBar: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: TOKENS.colors.border,
   },
   stepProgressBarActive: {
     backgroundColor: TOKENS.colors.primary,
   },
-  stepContentContainer: {
+  stepProgressBarClickable: {
+    opacity: 0.85,
+  },
+  stepScrollView: {
     flex: 1,
+  },
+  stepContentContainer: {
+    flexGrow: 1,
     justifyContent: 'flex-start',
+    paddingBottom: 20,
   },
   stepCard: {
     backgroundColor: TOKENS.colors.surface,
