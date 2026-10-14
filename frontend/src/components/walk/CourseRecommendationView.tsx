@@ -68,7 +68,10 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
     if (planResult?.isLiveServer && selectedCourseIndex === 0) {
       return { route: planResult.route, stepPins: planResult.stepPins };
     }
-    return getCoursePlanById(currentCourse?.id, getCoursePlanByParkId(preferences?.pilotParkId));
+    return getCoursePlanById(
+      currentCourse?.id,
+      getCoursePlanByParkId(preferences?.pilotParkId, selectedCourseIndex)
+    );
   }, [candidatePlan, currentCourse?.id, planResult, selectedCourseIndex, preferences?.pilotParkId]);
 
   const activeRoute = activePlan.route;
