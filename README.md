@@ -13,7 +13,7 @@
 
 ---
 ## 테스트용 앱 다운로드 주소
-https://expo.dev/artifacts/eas/5vER01pLSzWqzEo_viUhWrzpcIYVr7gU31nb0vRBLig.apk
+https://expo.dev/accounts/pettrail/projects/petwalk-production/builds/7b0c35d8-8354-402c-9f74-325428e45ccd
 
 ## ⚡ 빠른 시작 및 가동 가이드 (Quick Start Guide)
 
