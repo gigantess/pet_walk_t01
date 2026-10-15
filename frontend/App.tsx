@@ -8,7 +8,7 @@
  * - Phase 5: 완주 기록 영구 저장 (100회 FIFO) & 3초 인포그래픽 리포트
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, StatusBar, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { TOKENS } from './src/theme/tokens';
@@ -95,7 +95,6 @@ export default function App() {
         if (!savedProfile) await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, migratedDogs[0]);
       }
       setFeedbackSummary(await FeedbackContextService.buildRecentFeedbackContext());
-      if (typeof window !== 'undefined') (window as any).__petWalkNav = { setSubScreen, setActiveTab, setCompletedRecord, handleStopWalkAndReport, consent };
       if (!(await OnboardingService.hasSeenOnboarding())) setSubScreen('onboarding');
     }
     void loadData();
@@ -226,6 +225,12 @@ export default function App() {
 
       handleStartWalk(topCourse, plan);
     } catch (err) {
+      if ((preferences.originMode ?? 'park') !== 'current_location') {
+        const message = err instanceof Error ? err.message : '공원 내부 경로를 생성하지 못했습니다.';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+        else Alert.alert('산책 경로 확인 필요', message);
+        return;
+      }
       console.warn('[App] 실시간 AI 추천 코스 생성 중 오류 발생, 로컬 안전 코스로 즉시 폴백합니다:', err);
       const fallbackCourses = generateAdaptiveCourses(activeDog, preferences, feedbackSummary);
       const topCourse = fallbackCourses[0];
@@ -247,7 +252,7 @@ export default function App() {
     void beginWalk(title, { route, stepPins: [...stepPins] }, null);
   };
 
-  const handleStopWalkAndReport = async () => {
+  const handleStopWalkAndReport = useCallback(async () => {
     const distKm = walk.stats.distanceKm;
     const gpsTrack = walk.getTrackBuffer().map((p) => ({ lat: p.latitude, lon: p.longitude, timestamp: p.timestamp }));
     const newRecord: WalkRecord = {
@@ -277,7 +282,13 @@ export default function App() {
     await walk.stop();
     setCompletedRecord(newRecord);
     setSubScreen('report');
-  };
+  }, [walk, activeDog]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__petWalkNav = { setSubScreen, setActiveTab, setCompletedRecord, handleStopWalkAndReport, consent };
+    }
+  }, [handleStopWalkAndReport, consent]);
 
   const handleResetAllData = async () => {
     await ConsentService.resetAllLocalData();
