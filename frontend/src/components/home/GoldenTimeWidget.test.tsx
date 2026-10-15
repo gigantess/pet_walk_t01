@@ -135,4 +135,57 @@ describe('GoldenTimeWidget - Issue #50 골든타임 위젯 오늘/내일 구분 
     expect(html).not.toContain('내일 18:00');
     expect(html).toContain('18:00 ~ 20:00');
   });
+
+  describe('Issue #57 - Open-Meteo 일사량 출처 표기 (attribution, CC BY 4.0)', () => {
+    it('attribution이 문자열로 주어지면 골든타임 위젯 하단에 출처 문구가 렌더링되어야 한다', () => {
+      const weatherWithAttribution: HeatRiskResponse = {
+        isLiveServer: true,
+        current_hour: 14,
+        current_air_temp: 28.0,
+        current_surface_temp: 34.0,
+        current_risk_level: 'SAFE',
+        is_current_golden: true,
+        golden_time_window: '17:00 ~ 19:00',
+        golden_time_window_day: 'today',
+        hourly_forecast: [],
+        notice: '기상청 예보 연동',
+        attribution: 'Weather data by Open-Meteo.com (CC BY 4.0)',
+        insolation_source: 'open_meteo',
+        fetched_at: new Date().toISOString(),
+      };
+
+      const html = renderToStaticMarkup(<GoldenTimeWidget weather={weatherWithAttribution} />);
+
+      expect(html).toContain('Weather data by Open-Meteo.com (CC BY 4.0)');
+    });
+
+    it('attribution이 null이거나 undefined이면 출처 문구가 렌더링되지 않아야 한다', () => {
+      const weatherWithoutAttribution: HeatRiskResponse = {
+        isLiveServer: true,
+        current_hour: 14,
+        current_air_temp: 28.0,
+        current_surface_temp: 34.0,
+        current_risk_level: 'SAFE',
+        is_current_golden: true,
+        golden_time_window: '17:00 ~ 19:00',
+        golden_time_window_day: 'today',
+        hourly_forecast: [],
+        notice: '기상청 예보 연동',
+        attribution: null,
+        insolation_source: 'sky_fallback',
+        fetched_at: new Date().toISOString(),
+      };
+
+      const html = renderToStaticMarkup(<GoldenTimeWidget weather={weatherWithoutAttribution} />);
+
+      expect(html).not.toContain('Weather data by Open-Meteo.com');
+    });
+
+    it('weather가 null이어도 오류 없이 안전하게 렌더링되어야 한다', () => {
+      const html = renderToStaticMarkup(<GoldenTimeWidget weather={null} />);
+
+      expect(html).toContain('산책하기 좋은 지면온도 시간');
+      expect(html).not.toContain('Weather data by Open-Meteo.com');
+    });
+  });
 });

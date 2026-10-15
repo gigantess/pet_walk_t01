@@ -181,4 +181,56 @@ describe('weatherApi - US-F1 지면열 추정 및 골든타임 서비스', () =>
       expect(res.golden_time_window_day).toBe('today');
     });
   });
+
+  describe('Issue #57 - Open-Meteo 일사량 출처 표기 (attribution, CC BY 4.0)', () => {
+    it('서버 응답에 attribution과 insolation_source가 제공되면 그대로 보존해야 한다', async () => {
+      const mockPayload = {
+        current: {
+          hour: 15,
+          air_temp_celsius: 27.5,
+          estimated_surface_temp: 32.0,
+          risk_level: 'SAFE',
+          is_golden_time: true,
+        },
+        golden_time_window: '17:00 ~ 20:00',
+        attribution: 'Weather data by Open-Meteo.com (CC BY 4.0)',
+        insolation_source: 'open_meteo',
+      };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPayload,
+      } as Response);
+
+      const res = await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON, { forceRefresh: true });
+      expect(res.attribution).toBe('Weather data by Open-Meteo.com (CC BY 4.0)');
+      expect(res.insolation_source).toBe('open_meteo');
+    });
+
+    it('서버 응답에 attribution이 누락되거나 null이어도 깨지지 않고 attribution=null로 처리되어야 한다', async () => {
+      const mockPayload = {
+        current: {
+          hour: 15,
+          air_temp_celsius: 27.5,
+          estimated_surface_temp: 32.0,
+          risk_level: 'SAFE',
+          is_golden_time: true,
+        },
+        golden_time_window: '17:00 ~ 20:00',
+      };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPayload,
+      } as Response);
+
+      const res = await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON, { forceRefresh: true });
+      expect(res.attribution).toBeNull();
+      expect(res.insolation_source).toBeUndefined();
+    });
+
+    it('오프라인 폴백 데이터 생성 시 attribution은 null, insolation_source는 sky_fallback이어야 한다', () => {
+      const fallback = generateFallbackHeatRisk(SEOUL_LAT, SEOUL_LON);
+      expect(fallback.attribution).toBeNull();
+      expect(fallback.insolation_source).toBe('sky_fallback');
+    });
+  });
 });

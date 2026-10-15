@@ -207,6 +207,8 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
     golden_time_window_day: goldenWindowDay,
     hourly_forecast: hourly,
     notice: '본 지수는 기상청 예보 모델 기반 추정치입니다.',
+    attribution: null,
+    insolation_source: 'sky_fallback',
     fetched_at: now.toISOString(),
   };
 }
@@ -264,6 +266,8 @@ export async function fetchHeatRiskForecast(
         golden_time_window_day: goldenWindowDay,
         hourly_forecast: data.hourly_forecast ?? [],
         notice: data.notice ?? '본 지수는 기상청 예보 모델 기반 추정치입니다.',
+        attribution: data.attribution ?? null,
+        insolation_source: data.insolation_source,
         fetched_at: new Date().toISOString(),
       };
       weatherMemoryCache.set(cacheKey, { timestamp: Date.now(), data: response });

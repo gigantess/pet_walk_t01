@@ -31,6 +31,44 @@ const API_TIMEOUT_MS = 3500;
  */
 import { getPilotParkById } from '../types/pilotParks';
 
+function createCurrentLocationFallbackPlan(lat: number, lon: number): { route: RouteFeatureCollection; stepPins: RouteStepPin[] } {
+  const count = 8;
+  const radiusDeg = 0.0018; // 약 200m 완만 순환
+  const coords: [number, number][] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (i * 2 * Math.PI) / count;
+    const pLon = lon + radiusDeg * Math.cos(angle) * 1.2;
+    const pLat = lat + radiusDeg * Math.sin(angle);
+    coords.push([Number(pLon.toFixed(6)), Number(pLat.toFixed(6))]);
+  }
+  coords.push(coords[0]);
+
+  const route: RouteFeatureCollection = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { segmentType: 'safe', maxSlopePercent: 2.0, shaded: true },
+        geometry: {
+          type: 'LineString',
+          coordinates: coords,
+        },
+      },
+    ],
+  };
+
+  const stepPins: RouteStepPin[] = [
+    {
+      id: 'current_loc_pin_1',
+      kind: 'safe',
+      position: [lon, lat],
+      instruction: '현재 위치 주변 오프라인 안심 완만 순환 코스입니다.',
+    },
+  ];
+
+  return { route, stepPins };
+}
+
 export async function requestWalkPlan(
   dog: DogProfile,
   preferences?: WalkPreferences,
@@ -44,8 +82,13 @@ export async function requestWalkPlan(
   const park = getPilotParkById(preferences?.pilotParkId);
 
   // 1. 현재 위치 기반 vs 2. 지정한 공원 주변 좌표 및 구역 설정
-  const originLat = isCurrentLocation ? 36.3628 : park.center.lat;
-  const originLon = isCurrentLocation ? 127.3592 : park.center.lon;
+  // 단말기 실측 GPS가 전달된 경우 우선 반영
+  const originLat = isCurrentLocation
+    ? (preferences?.userCoordinates?.lat ?? 36.3628)
+    : park.center.lat;
+  const originLon = isCurrentLocation
+    ? (preferences?.userCoordinates?.lon ?? 127.3592)
+    : park.center.lon;
   const parkZone = isCurrentLocation ? '현재 위치 주변' : park.name;
 
   try {
@@ -64,6 +107,7 @@ export async function requestWalkPlan(
       origin_mode: originMode,
       origin_lat: originLat,
       origin_lon: originLon,
+      pilot_park_id: !isCurrentLocation ? preferences?.pilotParkId : undefined,
       park_zone: parkZone,
     };
 
@@ -79,7 +123,9 @@ export async function requestWalkPlan(
     if (response.ok) {
       const data = await response.json();
       const defaultPlan = isCurrentLocation
-        ? { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS }
+        ? (preferences?.userCoordinates
+            ? createCurrentLocationFallbackPlan(originLat, originLon)
+            : { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS })
         : getCoursePlanByParkId(preferences?.pilotParkId);
       return {
         isLiveServer: true,
@@ -100,7 +146,9 @@ export async function requestWalkPlan(
   const fallbackCourses = generateAdaptiveCourses(dog, preferences, feedback);
   const fallbackBriefing = generateAdaptiveBriefing(dog, preferences, feedback);
   const defaultPlan = isCurrentLocation
-    ? { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS }
+    ? (preferences?.userCoordinates
+        ? createCurrentLocationFallbackPlan(originLat, originLon)
+        : { route: SAMPLE_ROUTE, stepPins: SAMPLE_STEP_PINS })
     : getCoursePlanByParkId(preferences?.pilotParkId);
 
   return {

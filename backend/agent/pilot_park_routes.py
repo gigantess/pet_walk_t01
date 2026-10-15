@@ -38,25 +38,70 @@ def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     a = math.sin(dphi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2.0) ** 2
     return 2.0 * R * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
 
+import json
+from pathlib import Path
+from shapely.geometry import shape, LineString, Polygon
+
+_PARK_POLYGONS_CACHE: Optional[Dict[str, Polygon]] = None
+
+def load_pilot_park_polygons() -> Dict[str, Polygon]:
+    """fixtures/park_polygons_pilot.json 에서 4대 공원 경계 폴리곤을 로드."""
+    global _PARK_POLYGONS_CACHE
+    if _PARK_POLYGONS_CACHE is not None:
+        return _PARK_POLYGONS_CACHE
+
+    fixture_path = Path(__file__).resolve().parent.parent / "fixtures" / "park_polygons_pilot.json"
+    polys: Dict[str, Polygon] = {}
+    if fixture_path.exists():
+        with open(fixture_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            for feat in data.get("features", []):
+                p_id = feat.get("properties", {}).get("park_id")
+                geom = feat.get("geometry")
+                if p_id and geom:
+                    polys[p_id] = shape(geom)
+    _PARK_POLYGONS_CACHE = polys
+    return polys
+
+def is_route_inside_park_boundary(coords: List[List[float]], park_id: str) -> bool:
+    """주어진 좌표열이 해당 공원 경계 폴리곤 내부에 완전히 포함되는지 검사."""
+    polys = load_pilot_park_polygons()
+    poly = polys.get(park_id)
+    if poly is None or len(coords) < 2:
+        return True
+    line = LineString(coords)
+    # 완충 0.0005도(약 50m) 여유 허용
+    return poly.buffer(0.0005).contains(line)
+
 def match_pilot_park_loop(
     origin_lat: float,
     origin_lon: float,
     variant: int = 1,
     max_radius_m: float = 2500.0,
+    pilot_park_id: Optional[str] = None,
 ) -> Optional[Tuple[List[List[float]], str]]:
-    """출발 좌표가 대전/세종 4대 거점 공원 2.5km 반경 내에 있을 때, 가장 가까운 실제 OSM 보행로 루프 반환."""
-    candidates = []
-    for park_key, (c_lat, c_lon, park_name) in PILOT_PARK_CENTERS.items():
-        dist = _haversine_m(origin_lat, origin_lon, c_lat, c_lon)
-        if dist <= max_radius_m:
-            candidates.append((dist, park_key, park_name))
+    """공원 식별자 또는 출발 좌표를 기준으로 가장 적합한 실제 OSM 보행로 루프 반환."""
+    best_key: Optional[str] = None
+    best_name: Optional[str] = None
 
-    if not candidates:
-        return None
+    # 1. pilot_park_id 명시 시 최우선 바인딩
+    if pilot_park_id and pilot_park_id in PILOT_PARK_COORDS_MAP:
+        best_key = pilot_park_id
+        best_name = PILOT_PARK_CENTERS[pilot_park_id][2]
+    else:
+        # 2. 반경 내 탐색
+        candidates = []
+        for park_key, (c_lat, c_lon, park_name) in PILOT_PARK_CENTERS.items():
+            dist = _haversine_m(origin_lat, origin_lon, c_lat, c_lon)
+            if dist <= max_radius_m:
+                candidates.append((dist, park_key, park_name))
 
-    # 반경 내 가장 가까운 파일럿 공원 선택
-    candidates.sort(key=lambda x: x[0])
-    _, best_key, best_name = candidates[0]
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda x: x[0])
+        _, best_key, best_name = candidates[0]
+
     base_coords = PILOT_PARK_COORDS_MAP[best_key]
 
     if variant == 2:

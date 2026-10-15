@@ -288,6 +288,14 @@ export const GoldenTimeWidget: React.FC<GoldenTimeWidgetProps> = ({
           <Text style={[styles.statusBadgeText, { color: palette.statusColor }]}>{badgeNotice}</Text>
         </View>
       </View>
+
+      {Boolean(weather?.attribution) && (
+        <View style={styles.attributionContainer}>
+          <Text style={[styles.attributionText, { color: colors.textMuted }]}>
+            {weather?.attribution}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -338,4 +346,13 @@ const styles = StyleSheet.create({
   badgeContainer: { alignItems: 'center' },
   statusBadge: { borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14 },
   statusBadgeText: { fontSize: 11, fontWeight: '700' },
+  attributionContainer: {
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  attributionText: {
+    fontSize: 9.5,
+    fontWeight: '400',
+    textAlign: 'center',
+  },
 });
