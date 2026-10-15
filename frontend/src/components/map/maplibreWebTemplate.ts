@@ -90,7 +90,8 @@ export function buildMapLibreHtml({
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; overflow: hidden; background-color: #E8F1EC; }
-    .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { transform: scale(0.85); transform-origin: bottom; }
+    .maplibregl-ctrl-bottom-left { transform: scale(0.85); transform-origin: bottom left; }
+    .maplibregl-ctrl-attrib { font-size: 10px; }
     
     /* 핀 및 마커 스타일 */
     .step-pin {
@@ -168,8 +169,8 @@ export function buildMapLibreHtml({
         interactive: payload.interactive !== false,
       });
 
-      // 축척 컨트롤 추가
-      map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+      // 출처 표기를 접지 않고 표시
+      map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
 
       // 스타일 로드 실패/지연을 React Native에 알려 다음 폴백 단계로 전환 (T-OFM-7)
       function reportStyleFailure(type) {

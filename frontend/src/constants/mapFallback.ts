@@ -23,7 +23,8 @@ export const MAP_FALLBACK_CHAIN: readonly MapFallbackTier[] = [
 export const STYLE_LOAD_TIMEOUT_MS = 8000;
 
 export const OSM_RASTER_TILE_URL = 'https://tile.openstreetmap.de/{z}/{x}/{y}.png';
-export const OSM_ATTRIBUTION = '© OpenStreetMap contributors';
+export const OSM_ATTRIBUTION =
+  '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>';
 
 /** maplibre-gl StyleSpecification 중 폴백 스타일에 필요한 최소 구조 */
 export interface MapStyleSpec {

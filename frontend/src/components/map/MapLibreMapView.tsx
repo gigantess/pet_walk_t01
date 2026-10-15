@@ -109,6 +109,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         const maplibregl = await import('maplibre-gl');
         if (isDisposed || !webContainerRef.current) return;
 
+        // Expo Metro does not provide MapLibre v6's inferred worker URL. Serve the
+        // version-matched worker as a static public asset instead of a Metro chunk.
+        maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
+
         const initialBounds = getRouteBounds(latestRouteRef.current);
         const defaultCenter: [number, number] = initialBounds
           ? [(initialBounds[0][0] + initialBounds[1][0]) / 2, (initialBounds[0][1] + initialBounds[1][1]) / 2]
@@ -121,7 +125,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           center: defaultCenter,
           zoom: 15,
           interactive,
-          attributionControl: false,
+          // Keep provider and data-source credits visible for the active style.
+          attributionControl: { compact: false },
         });
 
         webMapInstanceRef.current = mapInstance;
