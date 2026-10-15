@@ -29,6 +29,7 @@ export interface MyProfileTabScreenProps {
   onAddDog?: (newDog: DogProfile) => void;
   feedbackSummary?: FeedbackSummaryPayload | null;
   onSaveDog: (fields: Partial<DogProfile>) => void;
+  onDeleteDog?: (dogId: string) => void | Promise<void>;
   onInjectFeedback: (dissatisfied: boolean) => void;
   onResetFeedback?: () => void;
   onStartBookmark: (bookmark: BookmarkedRoute) => void;
@@ -282,6 +283,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   onAddDog,
   feedbackSummary,
   onSaveDog,
+  onDeleteDog,
   onInjectFeedback,
   onResetFeedback,
   onStartBookmark,
@@ -368,6 +370,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             onSelectDog={onSelectDog}
             onAddDog={onAddDog}
             onSaveDog={onSaveDog}
+            onDeleteDog={onDeleteDog}
           />
         </ScrollView>
       )}

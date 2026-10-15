@@ -168,6 +168,28 @@ class SupabaseServiceManager {
     return remote;
   }
 
+  async deleteDogProfile(dogId: string): Promise<boolean> {
+    const user = this.getCurrentUser();
+    // Guest/local profiles and legacy non-UUID IDs have no server row to delete.
+    if (!this.client || !user || !isUuid(user.id) || !isUuid(dogId)) return true;
+
+    try {
+      const { error } = await this.client
+        .from('dog_profiles')
+        .delete()
+        .eq('id', dogId)
+        .eq('user_id', user.id);
+      if (error) {
+        console.warn(`[SupabaseService] dog_profiles 삭제 실패: ${error.message}`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('[SupabaseService] dog_profiles 삭제 중 오류:', error);
+      return false;
+    }
+  }
+
   async createWalkRecord(record: Partial<WalkRecordRemote> & { distance_m: number; duration_min: number }): Promise<WalkRecordRemote> {
     const user = this.getCurrentUser();
     const userId = user?.id ?? 'guest_user';

@@ -8,6 +8,7 @@ import { WalkDogSummary } from './dogProfile';
 export const STORAGE_PREFIX = '@편안하개:';
 
 export const STORAGE_KEYS = {
+  DOG_PROFILES: '@편안하개:dog_profiles',
   DOG_PROFILE: '@편안하개:dog_profile',
   WALK_HISTORY: '@편안하개:walk_history',
   APP_SETTINGS: '@편안하개:app_settings',

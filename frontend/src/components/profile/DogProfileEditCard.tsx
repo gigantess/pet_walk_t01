@@ -17,6 +17,7 @@ import {
   Alert,
   ScrollView,
   Modal,
+  Platform,
 } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import {
@@ -36,6 +37,7 @@ export interface DogProfileEditCardProps {
   readonly onSelectDog?: (dogId: string) => void;
   readonly onAddDog?: (newDog: DogProfile) => void;
   readonly onSaveDog: (fields: Partial<DogProfile>) => void;
+  readonly onDeleteDog?: (dogId: string) => void | Promise<void>;
 }
 
 export const DogProfileEditCard: React.FC<DogProfileEditCardProps> = ({
@@ -45,6 +47,7 @@ export const DogProfileEditCard: React.FC<DogProfileEditCardProps> = ({
   onSelectDog,
   onAddDog,
   onSaveDog,
+  onDeleteDog,
 }) => {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -97,6 +100,21 @@ export const DogProfileEditCard: React.FC<DogProfileEditCardProps> = ({
     setNewPhotoUri(undefined);
 
     Alert.alert('등록 완료', `🐾 ${newDog.name}가 새 가족으로 등록되었습니다!`);
+  };
+
+  const confirmDeleteDog = () => {
+    const deleteDog = () => { void onDeleteDog?.(dog.id); };
+    const message = `${dog.name} 프로필과 이 기기에 저장된 해당 프로필이 삭제됩니다. 로그인 계정에 동기화된 프로필도 함께 삭제됩니다.`;
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`${dog.name} 프로필을 삭제할까요?\n${message}`)) deleteDog();
+      return;
+    }
+
+    Alert.alert('반려견 프로필 삭제', message, [
+      { text: '취소', style: 'cancel' },
+      { text: '삭제', style: 'destructive', onPress: deleteDog },
+    ]);
   };
 
   return (
@@ -234,6 +252,16 @@ export const DogProfileEditCard: React.FC<DogProfileEditCardProps> = ({
         반려견 프로필 저장 ✓
       </GradientButton>
 
+      {onDeleteDog && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={confirmDeleteDog}
+          style={styles.deleteDogButton}
+        >
+          <Text style={styles.deleteDogButtonText}>이 반려견 프로필 삭제</Text>
+        </TouchableOpacity>
+      )}
+
       {/* 기존 프로필 사진 선택 모달 */}
       <PhotoPickerModal
         visible={pickerVisible}
@@ -369,6 +397,21 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: TOKENS.colors.border,
+  },
+  deleteDogButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#D9534F',
+    borderRadius: 12,
+    backgroundColor: '#FFF8F7',
+  },
+  deleteDogButtonText: {
+    color: '#B42318',
+    fontSize: 13,
+    fontWeight: '700',
   },
   chipHeaderRow: {
     flexDirection: 'row',
