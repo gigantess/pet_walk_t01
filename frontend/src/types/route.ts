@@ -11,6 +11,8 @@ export interface RouteSegmentProperties {
   readonly segmentType: SegmentType;
   readonly maxSlopePercent: number;
   readonly shaded: boolean;
+  /** Present when the source identifies stairs along this route segment. */
+  readonly hasStairs?: boolean;
 }
 
 export interface RouteSegmentFeature {

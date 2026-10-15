@@ -14,3 +14,7 @@ copyFileSync(
   path.join(maplibreDist, 'maplibre-gl-worker.mjs'),
   path.join(publicDirectory, 'maplibre-gl-worker.mjs'),
 );
+copyFileSync(
+  path.join(maplibreDist, 'maplibre-gl.css'),
+  path.join(publicDirectory, 'maplibre-gl.css'),
+);

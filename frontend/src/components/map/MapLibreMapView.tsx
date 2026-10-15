@@ -32,6 +32,27 @@ function getRouteBounds(routeData: RouteFeatureCollection): [[number, number], [
   ];
 }
 
+let mapLibreStylesheetPromise: Promise<void> | null = null;
+
+function ensureMapLibreStylesheet(): Promise<void> {
+  if (mapLibreStylesheetPromise) return mapLibreStylesheetPromise;
+
+  const stylesheetId = 'petwalk-maplibre-stylesheet';
+  const existing = document.getElementById(stylesheetId) as HTMLLinkElement | null;
+  if (existing?.sheet) return Promise.resolve();
+
+  mapLibreStylesheetPromise = new Promise((resolve) => {
+    const stylesheet = existing ?? document.createElement('link');
+    stylesheet.id = stylesheetId;
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = '/maplibre-gl.css';
+    stylesheet.onload = () => resolve();
+    stylesheet.onerror = () => resolve();
+    if (!existing) document.head.appendChild(stylesheet);
+  });
+  return mapLibreStylesheetPromise;
+}
+
 export interface MapLibreMapViewProps {
   readonly route: RouteFeatureCollection;
   readonly stepPins?: readonly RouteStepPin[];
@@ -107,6 +128,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     async function initWebMap() {
       try {
         const maplibregl = await import('maplibre-gl');
+        if (isDisposed || !webContainerRef.current) return;
+
+        // DOM markers and controls need MapLibre's layout stylesheet.
+        await ensureMapLibreStylesheet();
         if (isDisposed || !webContainerRef.current) return;
 
         // Expo Metro does not provide MapLibre v6's inferred worker URL. Serve the

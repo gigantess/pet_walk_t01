@@ -15,13 +15,14 @@ import { RouteMapLegend } from './RouteMapLegend';
 import { MapLibreMapView } from './MapLibreMapView';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MAP_WIDTH = Math.min(SCREEN_WIDTH - 32, 380);
-const MAP_HEIGHT = Math.max(220, Math.min(Math.round(SCREEN_HEIGHT * 0.32), 270));
+const MAP_WIDTH = Math.min(SCREEN_WIDTH - 24, 440);
+const MAP_HEIGHT = Math.max(300, Math.min(Math.round(SCREEN_HEIGHT * 0.5), 440));
 
 export interface RouteMapViewProps {
   readonly route: RouteFeatureCollection;
   readonly stepPins: readonly RouteStepPin[];
   readonly speedKmH: number;
+  readonly stairsCount?: string;
   readonly onStart?: () => void;
   readonly onPinSelect?: (instruction: string) => void;
   /** 단독 뷰일 때만 요약 카드를 표시합니다. */
@@ -32,6 +33,7 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
   route,
   stepPins,
   speedKmH,
+  stairsCount,
   onStart,
   onPinSelect,
   showSummaryCard = false,
@@ -43,21 +45,49 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
     [route],
   );
   const summary = useMemo(() => buildCourseSummary(route, speedKmH), [route, speedKmH]);
+  const routeHazardPins = useMemo<readonly RouteStepPin[]>(
+    () => route.features.flatMap((feature, index) => {
+      const hasStairs = feature.properties.hasStairs === true;
+      const hasSlopeWarning = feature.properties.segmentType === 'caution';
+      if (!hasStairs && !hasSlopeWarning) return [];
+
+      const coordinates = feature.geometry.coordinates;
+      const position = coordinates[Math.floor(coordinates.length / 2)];
+      if (!position) return [];
+
+      const slopeText = `${feature.properties.maxSlopePercent}%`;
+      const title = hasStairs ? '계단 구간' : '경사 주의';
+      const detail = hasStairs && hasSlopeWarning
+        ? `경사 ${slopeText} · 계단`
+        : hasStairs ? '계단 포함' : `최대 경사 ${slopeText}`;
+      return [{
+        id: `route-hazard-${index}`,
+        kind: 'caution' as const,
+        position,
+        instruction: `${title}: ${detail}`,
+        icon: '⚠',
+        title,
+        detail,
+      }];
+    }),
+    [route],
+  );
+  const mapPins = useMemo(() => [...stepPins, ...routeHazardPins], [stepPins, routeHazardPins]);
 
   if (allCoords.length === 0) return null;
 
-  const selectedPin = stepPins.find((pin) => pin.id === selectedPinId);
+  const selectedPin = mapPins.find((pin) => pin.id === selectedPinId);
 
   return (
     <View style={styles.container}>
       <View style={styles.mapCanvas}>
         <MapLibreMapView
           route={route}
-          stepPins={stepPins}
+          stepPins={mapPins}
           width={MAP_WIDTH}
           height={MAP_HEIGHT}
           onPinSelect={(instruction) => {
-            const pin = stepPins.find((item) => item.instruction === instruction);
+            const pin = mapPins.find((item) => item.instruction === instruction);
             setSelectedPinId(pin?.id ?? null);
             onPinSelect?.(instruction);
           }}
@@ -65,6 +95,13 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
         <View pointerEvents="none" style={styles.legendOverlay}>
           <RouteMapLegend />
         </View>
+        {stairsCount != null && (
+          <View pointerEvents="none" style={styles.stairsOverlay}>
+            <Text style={styles.stairsOverlayText}>
+              {stairsCount.includes('계단') ? stairsCount : `계단 ${stairsCount}`}
+            </Text>
+          </View>
+        )}
         {selectedPin && (
           <View style={styles.briefingBanner}>
             <Text style={styles.briefingText}>🔊 {selectedPin.instruction}</Text>
@@ -91,7 +128,13 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignSelf: 'center',
   },
-  legendOverlay: { position: 'absolute', left: 8, bottom: 8, zIndex: 2 },
+  legendOverlay: { position: 'absolute', left: 8, top: 8, zIndex: 2 },
+  stairsOverlay: {
+    position: 'absolute', top: 8, right: 8, zIndex: 2,
+    backgroundColor: 'rgba(255,255,255,0.94)', borderRadius: 10,
+    paddingVertical: 6, paddingHorizontal: 9,
+  },
+  stairsOverlayText: { color: TOKENS.colors.textMain, fontSize: 11, fontWeight: '700' },
   briefingBanner: {
     position: 'absolute', bottom: 10, left: 10, right: 10,
     backgroundColor: TOKENS.colors.textMain, borderRadius: 12,
