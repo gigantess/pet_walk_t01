@@ -11,13 +11,11 @@
  */
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { View, StyleSheet, Platform, StyleProp, ViewStyle, Dimensions } from 'react-native';
+import { View, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native';
 import WebView from 'react-native-webview';
 import { RouteFeatureCollection, RouteStepPin, LonLat } from '../../types/route';
 import { useMapThemeStyle } from '../../constants/mapStyles';
 import { buildMapLibreHtml } from './maplibreWebTemplate';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function getRouteBounds(routeData: RouteFeatureCollection): [[number, number], [number, number]] | null {
   const coordinates = routeData.features.flatMap((feature) => feature.geometry.coordinates);
@@ -69,11 +67,13 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   const latestRouteColorsRef = useRef(routeColors);
   const latestOnMapLoadedRef = useRef(onMapLoaded);
   const latestOnPinSelectRef = useRef(onPinSelect);
-  latestRouteRef.current = route;
-  latestPinsRef.current = stepPins;
-  latestRouteColorsRef.current = routeColors;
-  latestOnMapLoadedRef.current = onMapLoaded;
-  latestOnPinSelectRef.current = onPinSelect;
+  useEffect(() => {
+    latestRouteRef.current = route;
+    latestPinsRef.current = stepPins;
+    latestRouteColorsRef.current = routeColors;
+    latestOnMapLoadedRef.current = onMapLoaded;
+    latestOnPinSelectRef.current = onPinSelect;
+  }, [route, stepPins, routeColors, onMapLoaded, onPinSelect]);
 
   // 모든 좌표 Bounding Box 계산
   const routeBounds = useMemo(() => getRouteBounds(route), [route]);
@@ -139,8 +139,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         const maplibregl = await import('maplibre-gl');
         if (isDisposed || !webContainerRef.current) return;
 
-        const defaultCenter: [number, number] = routeBounds
-          ? [(routeBounds[0][0] + routeBounds[1][0]) / 2, (routeBounds[0][1] + routeBounds[1][1]) / 2]
+        const initialBounds = getRouteBounds(latestRouteRef.current);
+        const defaultCenter: [number, number] = initialBounds
+          ? [(initialBounds[0][0] + initialBounds[1][0]) / 2, (initialBounds[0][1] + initialBounds[1][1]) / 2]
           : [127.3805, 36.4315];
 
         mapInstance = new maplibregl.Map({
@@ -159,6 +160,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           webMapLoadedRef.current = true;
           const currentRoute = latestRouteRef.current;
           const currentPins = latestPinsRef.current;
+          const currentColors = latestRouteColorsRef.current;
 
           // 1. 산책 경로 GeoJSON 소스 등록
           mapInstance.addSource('route-source', {
@@ -173,7 +175,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             source: 'route-source',
             layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: {
-              'line-color': routeColors.casing,
+              'line-color': currentColors.casing,
               'line-width': 8,
               'line-opacity': 0.95,
             },
@@ -189,9 +191,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
               'line-color': [
                 'match',
                 ['get', 'segmentType'],
-                'safe', routeColors.safe,
-                'caution', routeColors.caution,
-                routeColors.normal,
+                'safe', currentColors.safe,
+                'caution', currentColors.caution,
+                currentColors.normal,
               ],
               'line-width': 5,
             },
@@ -207,7 +209,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
           latestOnMapLoadedRef.current?.();
         });
-      } catch (err) {
+      } catch {
         // WebGL 미지원 또는 SSR 테스트 환경 에러 방어
       }
     }
@@ -219,7 +221,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       if (webMapInstanceRef.current) {
         try {
           webMapInstanceRef.current.remove();
-        } catch (_) {}
+        } catch {}
         webMapInstanceRef.current = null;
       }
       webMapLoadedRef.current = false;
@@ -280,13 +282,12 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   // ============================================================================
   const webViewRef = useRef<any>(null);
 
-  const initialMobileHtmlRef = useRef<string | null>(null);
-  if (!isWeb && initialMobileHtmlRef.current === null) {
-    initialMobileHtmlRef.current = buildMapLibreHtml({
+  const [htmlSource] = useState(() => {
+    if (isWeb) return '';
+    return buildMapLibreHtml({
       styleUrl: mapStyleUrl, route, stepPins, routeColors, maskingCenter, interactive,
     });
-  }
-  const htmlSource = isWeb ? '' : initialMobileHtmlRef.current ?? '';
+  });
   const mobileMapLoadedRef = useRef(false);
 
   const handleWebViewMessage = (event: any) => {
@@ -301,7 +302,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           action: 'UPDATE_ROUTE', route: latestRouteRef.current, stepPins: latestPinsRef.current,
         }));
       }
-    } catch (_) {}
+    } catch {}
   };
 
   // 모바일 환경에서 테마 변경 시 웹뷰로 새 스타일 전달
