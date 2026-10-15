@@ -1,6 +1,10 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
+import { renderToStaticMarkup } from 'react-dom/server';
+import { HomeDogCard } from './HomeDogCard';
+import { DogProfile } from '../../types/dogProfile';
+
 vi.mock('react-native-svg', () => ({
   default: (props: any) => React.createElement('svg', props),
   Polyline: (props: any) => React.createElement('polyline', props),
@@ -20,10 +24,6 @@ vi.mock('../../services/photoPickerService', () => ({
   ],
   pickDogPhoto: vi.fn(),
 }));
-
-import { renderToStaticMarkup } from 'react-dom/server';
-import { HomeDogCard } from './HomeDogCard';
-import { DogProfile } from '../../types/dogProfile';
 
 describe('HomeDogCard 컴포넌트 및 다견 슬라이더 검증', () => {
   const sampleDog1: DogProfile = {

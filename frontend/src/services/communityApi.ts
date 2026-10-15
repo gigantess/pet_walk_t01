@@ -8,6 +8,8 @@
 
 import { detectLandmarkCategory } from './landmarkTagger';
 
+import { fetchWithServerFallback } from './apiClient';
+
 export interface CommunityFeedItem {
   readonly course_id: string;
   readonly title: string;
@@ -25,8 +27,6 @@ export interface CommunityFeedResponse {
   readonly feeds: readonly CommunityFeedItem[];
   readonly is_supabase?: boolean;
 }
-
-import { fetchWithServerFallback } from './apiClient';
 const DEFAULT_FEEDS: readonly CommunityFeedItem[] = [
   {
     course_id: 'feed_1',
@@ -149,7 +149,7 @@ export async function fetchCommunityFeeds(): Promise<CommunityFeedResponse> {
         is_supabase: Boolean(data.is_supabase),
       };
     }
-  } catch (_e) {
+  } catch {
     // 오프라인 자동 폴백
   } finally {
     clearTimeout(timeoutId);
@@ -179,7 +179,7 @@ export async function shareCommunityCourse(
       const data = await res.json();
       return { success: true, is_supabase: Boolean(data.is_supabase) };
     }
-  } catch (_e) {
+  } catch {
     // 오프라인 모드에서는 성공으로 처리
   }
   return { success: true, is_supabase: false };

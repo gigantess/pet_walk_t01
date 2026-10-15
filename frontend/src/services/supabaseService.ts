@@ -105,7 +105,7 @@ class SupabaseServiceManager {
     if (this.client) {
       try {
         await this.client.auth.signOut();
-      } catch (_e) {
+      } catch {
         // 무시
       }
     }

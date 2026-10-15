@@ -46,7 +46,7 @@ export interface WalkRecord {
   totalDistanceKm: number;
   averageSpeedKmH: number;
   safeSurfaceRatio: number;
-  gpsTrack: Array<{ lat: number; lon: number; timestamp: number }>;
+  gpsTrack: { lat: number; lon: number; timestamp: number }[];
   feedback?: WalkFeedback;
   poopCount?: number;
   poopEvents?: PoopEvent[];

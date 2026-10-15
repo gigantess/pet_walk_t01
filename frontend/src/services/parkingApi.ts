@@ -258,7 +258,7 @@ export async function fetchNearbyParkingLots(
       parkingMemoryCache.set(cacheKey, { timestamp: Date.now(), data: response });
       return response;
     }
-  } catch (_e) {
+  } catch {
     // 서버 장애 시 오프라인 안전 폴백
   } finally {
     clearTimeout(timer);
