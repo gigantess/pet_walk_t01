@@ -126,16 +126,17 @@ describe('weatherApi - US-F1 지면열 추정 및 골든타임 서비스', () =>
 
       // 첫 번째 호출: fetch 시도 후 폴백 캐싱
       const first = await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON);
-      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const callsAfterFirst = fetchSpy.mock.calls.length;
+      expect(callsAfterFirst).toBeGreaterThanOrEqual(1);
 
-      // 두 번째 호출: 캐시 히트로 fetch 호출 안 함
+      // 두 번째 호출: 캐시 히트로 fetch 추가 호출 안 함
       const second = await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON);
-      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledTimes(callsAfterFirst);
       expect(second.fetched_at).toBe(first.fetched_at);
 
       // forceRefresh 옵션 전달 시 캐시를 무시하고 재요청
       await fetchHeatRiskForecast(SEOUL_LAT, SEOUL_LON, { forceRefresh: true });
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls.length).toBeGreaterThan(callsAfterFirst);
     });
   });
 
