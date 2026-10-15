@@ -26,7 +26,7 @@ export interface CommunityFeedResponse {
   readonly is_supabase?: boolean;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+import { fetchWithServerFallback } from './apiClient';
 const DEFAULT_FEEDS: readonly CommunityFeedItem[] = [
   {
     course_id: 'feed_1',
@@ -126,9 +126,9 @@ export async function fetchCommunityFeeds(): Promise<CommunityFeedResponse> {
   const timeoutId = setTimeout(() => controller.abort(), 1200);
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/community/feed`, {
+    const res = await fetchWithServerFallback('/api/v1/community/feed', {
       signal: controller.signal,
-    });
+    }, 1500);
     clearTimeout(timeoutId);
 
     if (res.ok) {
@@ -165,7 +165,7 @@ export async function shareCommunityCourse(
   userId?: string,
 ): Promise<{ success: boolean; is_supabase?: boolean }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/community/share`, {
+    const res = await fetchWithServerFallback('/api/v1/community/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

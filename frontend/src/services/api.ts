@@ -22,7 +22,8 @@ export interface RoutePlanResult {
   readonly coursePlans?: Record<string, { route: RouteFeatureCollection; stepPins: readonly RouteStepPin[] }>;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+import { fetchWithServerFallback } from './apiClient';
+
 const API_TIMEOUT_MS = 3500;
 
 /**
@@ -111,12 +112,16 @@ export async function requestWalkPlan(
       park_zone: parkZone,
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/walk/plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+    const response = await fetchWithServerFallback(
+      '/api/v1/walk/plan',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      },
+      API_TIMEOUT_MS
+    );
 
     clearTimeout(timeoutId);
 

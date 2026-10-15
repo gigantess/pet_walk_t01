@@ -8,8 +8,8 @@
  */
 
 import { HeatRiskHourDTO, HeatRiskLevel, HeatRiskResponse, GoldenTimeWindowDay } from '../types/weather';
+import { fetchWithServerFallback } from './apiClient';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const API_TIMEOUT_MS = 3000;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1시간 TTL
 
@@ -245,8 +245,11 @@ export async function fetchHeatRiskForecast(
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    const url = `${API_BASE_URL}/api/v1/weather/heat-risk?lat=${lat}&lon=${lon}`;
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetchWithServerFallback(
+      `/api/v1/weather/heat-risk?lat=${lat}&lon=${lon}`,
+      { signal: controller.signal },
+      API_TIMEOUT_MS
+    );
     clearTimeout(timer);
 
     if (res.ok) {
