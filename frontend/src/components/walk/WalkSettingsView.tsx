@@ -11,7 +11,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useAppTheme } from '../../theme/themeManager';
 import { AppIcon } from '../common/AppIcon';
 import { DogProfile } from '../../types/dogProfile';
@@ -23,6 +23,7 @@ import {
   WalkOriginMode,
 } from '../../types/walkSettings';
 import { WalkVoiceInputSection } from './WalkVoiceInputSection';
+import { getCurrentLocationCoords } from '../../services/locationService';
 
 export interface WalkSettingsViewProps {
   dog: DogProfile;
@@ -53,6 +54,27 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
     initialPreferences?.environments ?? ['soft', 'shade', 'stairs']
   );
   const [requestText, setRequestText] = useState<string>(initialPreferences?.requestText ?? '');
+  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | undefined>(
+    initialPreferences?.userCoordinates
+  );
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const fetchUserLocation = async () => {
+    setIsLocating(true);
+    setLocationError(null);
+    const res = await getCurrentLocationCoords(5000);
+    setIsLocating(false);
+    if (res.ok && res.coords) {
+      const coords = { lat: res.coords.latitude, lon: res.coords.longitude };
+      setUserCoords(coords);
+      return coords;
+    } else {
+      const err = res.errorMessage || '현재 위치를 확인할 수 없습니다.';
+      setLocationError(err);
+      return null;
+    }
+  };
 
   const handleToggleEnvironment = (id: EnvironmentId) => {
     setEnvironments((prev) =>
@@ -62,15 +84,31 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
 
   const currentPark = getPilotParkById(pilotParkId);
 
-  const handleSubmit = () => {
-    onFindRoute({
-      originMode,
-      durationMinutes: duration,
-      environments,
-      requestText,
-      isFreeWalk: false,
-      pilotParkId: originMode === 'park' ? pilotParkId : undefined,
-    });
+  const handleSubmit = async () => {
+    if (originMode === 'current_location') {
+      let coords = userCoords;
+      if (!coords) {
+        coords = (await fetchUserLocation()) ?? undefined;
+      }
+      onFindRoute({
+        originMode,
+        durationMinutes: duration,
+        environments,
+        requestText,
+        isFreeWalk: false,
+        pilotParkId: undefined,
+        userCoordinates: coords,
+      });
+    } else {
+      onFindRoute({
+        originMode,
+        durationMinutes: duration,
+        environments,
+        requestText,
+        isFreeWalk: false,
+        pilotParkId,
+      });
+    }
   };
 
   return (
@@ -110,7 +148,12 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
         <View style={styles.originModeRow}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => setOriginMode('current_location')}
+            onPress={() => {
+              setOriginMode('current_location');
+              if (!userCoords && !isLocating) {
+                void fetchUserLocation();
+              }
+            }}
             style={[
               styles.originModeBtn,
               {
@@ -159,13 +202,23 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
             <AppIcon name="sparkle" size={15} color={colors.primaryDark} />
             <Text style={[styles.aiBannerTitle, { color: colors.primaryDark }]}>
               {originMode === 'current_location'
-                ? '현재 위치 기준 실시간 안심 경로'
+                ? isLocating
+                  ? '현재 GPS 위치 수신 중...'
+                  : userCoords
+                  ? `현위치 확인 완료 (위도 ${userCoords.lat.toFixed(4)}, 경도 ${userCoords.lon.toFixed(4)})`
+                  : '현재 위치 기준 실시간 안심 경로'
                 : `${currentPark.shortName} (공원 보행률 90% 이상)`}
             </Text>
           </View>
-          <Text style={[styles.aiBannerBody, { color: colors.textMuted }]}>
+          <Text style={[styles.aiBannerBody, { color: locationError ? '#DC2626' : colors.textMuted }]}>
             {originMode === 'current_location'
-              ? '단말기 현위치를 출발점으로 하여 계단 없는 완만 보행로를 AI가 탐색해요. (200m 안심 가림 보호)'
+              ? locationError
+                ? `⚠️ ${locationError}`
+                : isLocating
+                ? '단말기 GPS 신호를 확인하고 있어요. 잠시만 기다려 주세요...'
+                : userCoords
+                ? '단말기 실제 위치를 출발점으로 하여 완만한 산책로를 탐색합니다.'
+                : '단말기 현위치를 출발점으로 하여 계단 없는 완만 보행로를 AI가 탐색해요. (200m 안심 가림 보호)'
               : `${currentPark.name}의 실제 OSM 보행로를 100% 추종하여 쾌적한 공원 순환 코스를 생성해요.`}
           </Text>
 
@@ -287,14 +340,26 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity
           activeOpacity={0.88}
+          disabled={isLocating}
           onPress={handleSubmit}
-          style={[styles.submitButton, { backgroundColor: colors.primary }]}
+          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: isLocating ? 0.75 : 1 }]}
         >
           <View style={styles.submitButtonContent}>
-            <AppIcon name="sparkle" size={18} color={colors.textWhite} />
-            <Text style={[styles.submitButtonText, { color: colors.textWhite }]}>
-              AI 산책 코스 찾아보기
-            </Text>
+            {isLocating ? (
+              <>
+                <ActivityIndicator size="small" color={colors.textWhite} style={{ marginRight: 6 }} />
+                <Text style={[styles.submitButtonText, { color: colors.textWhite }]}>
+                  현재 위치 확인 중...
+                </Text>
+              </>
+            ) : (
+              <>
+                <AppIcon name="sparkle" size={18} color={colors.textWhite} />
+                <Text style={[styles.submitButtonText, { color: colors.textWhite }]}>
+                  AI 산책 코스 찾아보기
+                </Text>
+              </>
+            )}
           </View>
         </TouchableOpacity>
       </View>
