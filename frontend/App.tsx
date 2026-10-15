@@ -491,5 +491,5 @@ const styles = StyleSheet.create({
   logoIcon: { fontSize: 16 }, appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 }, iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 18, color: TOKENS.colors.textMain },
-  tabContentContainer: { flex: 1, padding: 16, paddingBottom: 8 },
+  tabContentContainer: { flex: 1 },
 });
