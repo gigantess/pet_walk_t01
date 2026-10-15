@@ -116,10 +116,10 @@ graph TD
 ## 📋 4. 세부 구현 일정 및 단계별 태스크 (Phase Roadmap)
 
 ### 📅 Sprint 1: 인프라 구축 및 OpenFreeMap 스타일 정의 (1~2일차)
-- [ ] **T-OFM-1: 의존성 패키지 설치**:
+- [x] **T-OFM-1: 의존성 패키지 설치**:
   - `maplibre-gl` (웹 렌더링용)
   - `react-native-webview` (모바일 브릿징용)
-- [ ] **T-OFM-2: 스타일 엔드포인트 및 컬러 매핑 정의 (`src/constants/mapStyles.ts`)**:
+- [x] **T-OFM-2: 스타일 엔드포인트 및 컬러 매핑 정의 (`src/constants/mapStyles.ts`)**:
   - `OPENFREEMAP_STYLES`:
     - `liberty`: `https://tiles.openfreemap.org/styles/liberty`
     - `bright`: `https://tiles.openfreemap.org/styles/bright`
