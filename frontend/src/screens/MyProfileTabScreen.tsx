@@ -152,13 +152,13 @@ const SettingsSubTabSection: React.FC<SettingsSubTabSectionProps> = ({
           onPress={() => onInjectFeedback(true)}
           style={[styles.simButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', flex: 1 }]}
         >
-          <Text style={{ color: '#991B1B', fontSize: 11, fontWeight: '600' }}>+ "경사 부담"</Text>
+          <Text style={{ color: '#991B1B', fontSize: 11, fontWeight: '600' }}>+ &quot;경사 부담&quot;</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => onInjectFeedback(false)}
           style={[styles.simButton, { backgroundColor: colors.primaryWash, borderColor: colors.primaryMint, flex: 1 }]}
         >
-          <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: '600' }}>+ "완만한 길"</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: '600' }}>+ &quot;완만한 길&quot;</Text>
         </TouchableOpacity>
         {onResetFeedback && (
           <TouchableOpacity
@@ -292,12 +292,6 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
 }) => {
   const [subTab, setSubTab] = useState<SubTabKey>(initialSubTab || 'dog_profile');
 
-  React.useEffect(() => {
-    if (initialSubTab) {
-      setSubTab(initialSubTab);
-    }
-  }, [initialSubTab]);
-
   const [walkSubFilter, setWalkSubFilter] = useState<'history' | 'bookmarks'>('history');
   const [resetCount, setResetCount] = useState(0);
   const [legalVisible, setLegalVisible] = useState(false);
@@ -305,9 +299,10 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   const [currentUser, setCurrentUser] = useState(() => SupabaseService.getCurrentUser());
   const { colors } = useAppTheme();
 
-  useEffect(() => {
+  const handleSubTabChange = (nextSubTab: SubTabKey) => {
+    setSubTab(nextSubTab);
     setCurrentUser(SupabaseService.getCurrentUser());
-  }, [subTab]);
+  };
 
   const handleSignOut = () => {
     confirmAndSignOut(() => {
@@ -325,7 +320,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
       {/* 🚀 Rule 11 컴팩트 세그먼트 네비게이션 (단일 뷰포트 / 스크롤 배제 4단 세그먼트) */}
       <View style={[styles.segmentContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TouchableOpacity
-          onPress={() => setSubTab('dog_profile')}
+          onPress={() => handleSubTabChange('dog_profile')}
           style={[styles.segmentBtn, subTab === 'dog_profile' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
           <Text numberOfLines={1} style={[styles.segmentText, subTab === 'dog_profile' && { color: colors.primaryDark, fontWeight: '700' }]}>
@@ -333,7 +328,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setSubTab('theme_account')}
+          onPress={() => handleSubTabChange('theme_account')}
           style={[styles.segmentBtn, subTab === 'theme_account' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
           <Text numberOfLines={1} style={[styles.segmentText, subTab === 'theme_account' && { color: colors.primaryDark, fontWeight: '700' }]}>
@@ -341,7 +336,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setSubTab('walk_records')}
+          onPress={() => handleSubTabChange('walk_records')}
           style={[styles.segmentBtn, subTab === 'walk_records' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
           <Text numberOfLines={1} style={[styles.segmentText, subTab === 'walk_records' && { color: colors.primaryDark, fontWeight: '700' }]}>
@@ -349,7 +344,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setSubTab('settings')}
+          onPress={() => handleSubTabChange('settings')}
           style={[styles.segmentBtn, subTab === 'settings' && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
         >
           <Text numberOfLines={1} style={[styles.segmentText, subTab === 'settings' && { color: colors.primaryDark, fontWeight: '700' }]}>

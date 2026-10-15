@@ -141,10 +141,10 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
         {/* 3. 중앙 실시간 지도 (뷰포트에 최적화된 정중앙 배치) */}
         <View style={styles.mapSection}>
           <RouteMapView
-            key={currentCourse.id}
             route={activeRoute}
             stepPins={activePins}
             speedKmH={dog.speedKmH}
+            stairsCount={currentCourse.stairsCount}
             onStart={() => onStartWalk(currentCourse, plan)}
             onPinSelect={onPinSelect}
           />
@@ -197,10 +197,14 @@ export const CourseRecommendationView: React.FC<CourseRecommendationViewProps> =
           </Text>
         </View>
 
-        {/* 3대 안심 지표 바 (노면 / 경사 / 그늘) */}
+        {/* 4대 안심 지표 바 (노면 / 계단 / 경사 / 그늘) */}
         <View style={[styles.metricsBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             폭신 노면 <Text style={{ color: colors.primary, fontWeight: '700' }}>{currentCourse.softRatio}</Text>
+          </Text>
+          <Text style={styles.metricDot}>·</Text>
+          <Text style={[styles.metricText, { color: colors.textMuted }]}>
+            계단 <Text style={{ color: colors.textMain, fontWeight: '700' }}>{currentCourse.stairsCount}</Text>
           </Text>
           <Text style={styles.metricDot}>·</Text>
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
@@ -290,9 +294,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 8,
+    gap: 6,
   },
-  metricText: { fontSize: 11 },
+  metricText: { fontSize: 10 },
   metricDot: { color: 'rgba(0,0,0,0.2)', fontSize: 10 },
   startButton: {
     height: 48,

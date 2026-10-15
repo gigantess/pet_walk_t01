@@ -50,10 +50,14 @@ export const HomeDogCard: React.FC<HomeDogCardProps> = ({
     return Math.min(w, 480) - 32;
   });
 
-  const [activeIndex, setActiveIndex] = useState<number>(() => {
+  const [internalActiveIndex, setInternalActiveIndex] = useState<number>(() => {
     const initIdx = dogList.findIndex((d) => d.id === (selectedDogId ?? profile.id));
     return initIdx >= 0 ? initIdx : 0;
   });
+  const selectedIndex = selectedDogId
+    ? dogList.findIndex((dog) => dog.id === selectedDogId)
+    : -1;
+  const activeIndex = selectedIndex >= 0 ? selectedIndex : internalActiveIndex;
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -61,8 +65,7 @@ export const HomeDogCard: React.FC<HomeDogCardProps> = ({
   useEffect(() => {
     if (!selectedDogId) return;
     const targetIdx = dogList.findIndex((d) => d.id === selectedDogId);
-    if (targetIdx >= 0 && targetIdx !== activeIndex && cardWidth > 0) {
-      setActiveIndex(targetIdx);
+    if (targetIdx >= 0 && cardWidth > 0) {
       scrollRef.current?.scrollTo({ x: targetIdx * cardWidth, animated: true });
     }
   }, [selectedDogId, dogList, cardWidth]);
@@ -72,7 +75,7 @@ export const HomeDogCard: React.FC<HomeDogCardProps> = ({
     const offsetX = e.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / cardWidth);
     if (newIndex >= 0 && newIndex !== activeIndex) {
-      setActiveIndex(newIndex);
+      setInternalActiveIndex(newIndex);
       if (newIndex < dogList.length) {
         onSelectDog?.(dogList[newIndex].id);
       }
@@ -81,7 +84,7 @@ export const HomeDogCard: React.FC<HomeDogCardProps> = ({
 
   const handleDotPress = (idx: number) => {
     if (cardWidth <= 0) return;
-    setActiveIndex(idx);
+    setInternalActiveIndex(idx);
     scrollRef.current?.scrollTo({ x: idx * cardWidth, animated: true });
     if (idx < dogList.length) {
       onSelectDog?.(dogList[idx].id);

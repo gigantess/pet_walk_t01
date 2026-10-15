@@ -28,13 +28,8 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName, o
   const [period, setPeriod] = useState<StatsPeriodType>('7days');
 
   useEffect(() => {
-    void loadRecords();
+    void LocalStorageService.getWalkHistory().then(setRecords);
   }, []);
-
-  const loadRecords = async () => {
-    const list = await LocalStorageService.getWalkHistory();
-    setRecords(list);
-  };
 
   const periodStats = WalkStatisticsService.getPeriodStats(records, period);
 
@@ -247,7 +242,7 @@ export const MyWalkHistoryView: React.FC<MyWalkHistoryViewProps> = ({ dogName, o
                     만족도 {rec.feedback.comfortScore}점 · {rec.feedback.tags.join(', ')}
                   </Text>
                   {Boolean(rec.feedback.comment) && (
-                    <Text style={styles.feedbackComment}>"{rec.feedback.comment}"</Text>
+                    <Text style={styles.feedbackComment}>&quot;{rec.feedback.comment}&quot;</Text>
                   )}
                 </View>
               )}

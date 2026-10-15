@@ -3,7 +3,7 @@
  * 랜딩 가입 -> 반려견 이름/사진 등록(pet-photos 업로드) -> 홈 진입 플로우 모달 (US-G2, PR #42)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
 import { TOKENS } from '../../theme/tokens';
 import { GradientButton } from '../common/GradientButton';
@@ -24,19 +24,19 @@ export interface LandingAuthModalProps {
 
 export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onClose, onFinish, initialMode = 'signup' }) => {
   const [step, setStep] = useState<'auth' | 'dog'>('auth');
-  const [isSignUp, setIsSignUp] = useState(initialMode !== 'signin');
+  const [signUpOverride, setSignUpOverride] = useState<boolean | null>(null);
+  const isSignUp = signUpOverride ?? initialMode !== 'signin';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userId, setUserId] = useState<string>('');
   const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState<LegalTabType>('terms');
 
-  useEffect(() => {
-    if (visible) {
-      setIsSignUp(initialMode !== 'signin');
-      setStep('auth');
-    }
-  }, [visible, initialMode]);
+  const handleClose = () => {
+    setStep('auth');
+    setSignUpOverride(null);
+    onClose();
+  };
 
   // 반려견 정보
   const [dogName, setDogName] = useState('');
@@ -106,15 +106,15 @@ export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onC
     });
 
     onFinish(newDog);
-    onClose();
+    handleClose();
   };
 
   const handleGuest = () => {
-    onClose();
+    handleClose();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
           {step === 'auth' ? (
@@ -152,7 +152,7 @@ export const LandingAuthModal: React.FC<LandingAuthModalProps> = ({ visible, onC
               </GradientButton>
 
               <View style={styles.switchRow}>
-                <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
+                <TouchableOpacity onPress={() => setSignUpOverride(!isSignUp)}>
                   <Text style={styles.switchText}>
                     {isSignUp ? '이미 계정이 있나요? 로그인' : '아직 회원이 아니신가요? 회원가입'}
                   </Text>

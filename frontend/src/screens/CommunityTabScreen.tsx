@@ -110,7 +110,11 @@ export const CommunityTabScreen: React.FC<CommunityTabScreenProps> = ({
   };
 
   useEffect(() => {
-    void loadFeeds();
+    void fetchCommunityFeeds().then((res) => {
+      setFeeds(res.feeds);
+      setIsSupabase(Boolean(res.is_supabase));
+      setIsLoading(false);
+    });
   }, []);
 
   const handleToggleAccordion = (courseId: string) => {

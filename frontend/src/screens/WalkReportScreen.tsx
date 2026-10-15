@@ -197,7 +197,7 @@ export const WalkReportScreen: React.FC<WalkReportScreenProps> = ({
         </View>
 
         <Text style={[styles.commentText, { color: colors.textMuted }]} numberOfLines={1}>
-          "{comment}"
+          &quot;{comment}&quot;
         </Text>
       </View>
 
