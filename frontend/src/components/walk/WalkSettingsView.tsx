@@ -21,8 +21,10 @@ import {
   WALK_ENVIRONMENTS,
   WalkPreferences,
   WalkOriginMode,
+  formatDurationLabel,
 } from '../../types/walkSettings';
 import { WalkVoiceInputSection } from './WalkVoiceInputSection';
+import { WalkDurationSlider } from './WalkDurationSlider';
 import { getCurrentLocationCoords } from '../../services/locationService';
 
 export interface WalkSettingsViewProps {
@@ -47,8 +49,17 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
   const [pilotParkId, setPilotParkId] = useState<string>(
     initialPreferences?.pilotParkId ?? 'yurim'
   );
-  const [duration, setDuration] = useState<number>(
+  const [duration, setDuration] = useState<number | null>(
     initialPreferences?.durationMinutes ?? 30
+  );
+  const [isFreeWalk, setIsFreeWalk] = useState<boolean>(
+    initialPreferences?.isFreeWalk ?? false
+  );
+  const [showDetailedDuration, setShowDetailedDuration] = useState<boolean>(
+    Boolean(
+      initialPreferences?.isFreeWalk ||
+      (initialPreferences?.durationMinutes && ![20, 30, 40, 60].includes(initialPreferences.durationMinutes))
+    )
   );
   const [environments, setEnvironments] = useState<EnvironmentId[]>(
     initialPreferences?.environments ?? ['soft', 'shade', 'stairs']
@@ -85,6 +96,7 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
   const currentPark = getPilotParkById(pilotParkId);
 
   const handleSubmit = async () => {
+    const payloadDuration = isFreeWalk ? null : duration;
     if (originMode === 'current_location') {
       let coords = userCoords;
       if (!coords) {
@@ -92,20 +104,20 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
       }
       onFindRoute({
         originMode,
-        durationMinutes: duration,
+        durationMinutes: payloadDuration,
         environments,
         requestText,
-        isFreeWalk: false,
+        isFreeWalk,
         pilotParkId: undefined,
         userCoordinates: coords,
       });
     } else {
       onFindRoute({
         originMode,
-        durationMinutes: duration,
+        durationMinutes: payloadDuration,
         environments,
         requestText,
-        isFreeWalk: false,
+        isFreeWalk,
         pilotParkId,
       });
     }
@@ -255,41 +267,82 @@ export const WalkSettingsView: React.FC<WalkSettingsViewProps> = ({
           )}
         </View>
 
-        {/* 5. 섹션 1: 얼마나 걸을까요? (4개 원터치 칩 20분 / 30분 / 40분 / 1시간) */}
+        {/* 5. 섹션 1: 얼마나 걸을까요? (빠른 프리셋 + 상세 설정 & 2시간 확장 복원 - US-A3, #38) */}
         <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionTitle, { color: colors.textMain }]}>얼마나 걸을까요?</Text>
-          <View style={styles.durationChipRow}>
-            {PRESET_DURATIONS.map((min) => {
-              const isSelected = duration === min;
-              const label = min === 60 ? '1시간' : `${min}분`;
-              return (
-                <TouchableOpacity
-                  key={min}
-                  activeOpacity={0.8}
-                  onPress={() => setDuration(min)}
-                  style={[
-                    styles.durationChip,
-                    {
-                      backgroundColor: isSelected ? colors.primary : colors.surface,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.durationTitleRow}>
+              <Text style={[styles.sectionTitle, { color: colors.textMain }]}>얼마나 걸을까요?</Text>
+              <View style={[styles.durationBadge, { backgroundColor: colors.primaryLight }]}>
+                <Text style={[styles.durationBadgeText, { color: colors.primaryDark }]}>
+                  {formatDurationLabel(duration, isFreeWalk)}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowDetailedDuration((prev) => !prev)}
+              style={[styles.detailToggleBtn, { borderColor: colors.primary }]}
+            >
+              <Text style={[styles.detailToggleText, { color: colors.primaryDark }]}>
+                {showDetailedDuration ? '간편 설정 접기 ▲' : '상세 설정 (최대 2시간) ▼'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {!showDetailedDuration ? (
+            <View style={styles.durationChipRow}>
+              {PRESET_DURATIONS.map((min) => {
+                const isSelected = !isFreeWalk && duration === min;
+                const label = min === 60 ? '1시간' : `${min}분`;
+                return (
+                  <TouchableOpacity
+                    key={min}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setIsFreeWalk(false);
+                      setDuration(min);
+                    }}
                     style={[
-                      styles.durationChipText,
+                      styles.durationChip,
                       {
-                        color: isSelected ? colors.textWhite : colors.textMain,
-                        fontWeight: isSelected ? '800' : '600',
+                        backgroundColor: isSelected ? colors.primary : colors.surface,
+                        borderColor: isSelected ? colors.primary : colors.border,
                       },
                     ]}
                   >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    <Text
+                      style={[
+                        styles.durationChipText,
+                        {
+                          color: isSelected ? colors.textWhite : colors.textMain,
+                          fontWeight: isSelected ? '800' : '600',
+                        },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <WalkDurationSlider
+              duration={duration}
+              isFreeWalk={isFreeWalk}
+              onChangeDuration={(mins) => {
+                setIsFreeWalk(false);
+                setDuration(mins);
+              }}
+              onChangeFreeWalk={(free) => {
+                setIsFreeWalk(free);
+                if (free) {
+                  setDuration(null);
+                } else if (!duration) {
+                  setDuration(30);
+                }
+              }}
+            />
+          )}
         </View>
 
         {/* 5. 섹션 2: 어떤 길이 좋을까요? (6대 안심 환경 2열 카드 그리드 복원) */}
@@ -464,6 +517,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
+  },
+  durationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  durationBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  durationBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  detailToggleBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  detailToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 14,
