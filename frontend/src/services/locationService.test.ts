@@ -6,6 +6,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Platform } from 'react-native';
 
+import * as Location from 'expo-location';
+import {
+  startWalkTracking,
+  stopWalkTracking,
+  subscribeToGps,
+  getTrackBuffer,
+  getCurrentLocationCoords,
+  GpsPoint,
+} from './locationService';
+
 vi.mock('expo-task-manager', () => ({
   defineTask: vi.fn(),
 }));
@@ -25,16 +35,6 @@ vi.mock('expo-location', () => ({
   hasStartedLocationUpdatesAsync: vi.fn().mockResolvedValue(false),
   getCurrentPositionAsync: vi.fn(),
 }));
-
-import * as Location from 'expo-location';
-import {
-  startWalkTracking,
-  stopWalkTracking,
-  subscribeToGps,
-  getTrackBuffer,
-  getCurrentLocationCoords,
-  GpsPoint,
-} from './locationService';
 
 describe('locationService - 웹 환경 및 GPS 추적 안전 동작 테스트', () => {
   beforeEach(() => {

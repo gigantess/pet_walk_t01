@@ -13,6 +13,14 @@ import { SAMPLE_ROUTE, SAMPLE_STEP_PINS, getCoursePlanByParkId } from './sampleR
 import { FeedbackSummaryPayload } from './feedbackContext';
 import { generateAdaptiveCourses, generateAdaptiveBriefing } from './courseAdaptivePlanner';
 
+import { fetchWithServerFallback } from './apiClient';
+
+/**
+ * 반려견 조건과 피드백을 기반으로 안심 산책 코스를 요청한다.
+ * 백엔드 서버가 활성화되어 있지 않아도 오프라인 안전 데이터로 즉시 폴백한다.
+ */
+import { getPilotParkById } from '../types/pilotParks';
+
 export interface RoutePlanResult {
   readonly isLiveServer: boolean;
   readonly courses: readonly RecommendedCourse[];
@@ -22,15 +30,7 @@ export interface RoutePlanResult {
   readonly coursePlans?: Record<string, { route: RouteFeatureCollection; stepPins: readonly RouteStepPin[] }>;
 }
 
-import { fetchWithServerFallback } from './apiClient';
-
 const API_TIMEOUT_MS = 3500;
-
-/**
- * 반려견 조건과 피드백을 기반으로 안심 산책 코스를 요청한다.
- * 백엔드 서버가 활성화되어 있지 않아도 오프라인 안전 데이터로 즉시 폴백한다.
- */
-import { getPilotParkById } from '../types/pilotParks';
 
 function createCurrentLocationFallbackPlan(lat: number, lon: number): { route: RouteFeatureCollection; stepPins: RouteStepPin[] } {
   const count = 8;
@@ -141,7 +141,7 @@ export async function requestWalkPlan(
         briefingMessage: data.briefing ?? `${dog.name}를 위한 맞춤형 안심 코스가 생성되었습니다.`,
       };
     }
-  } catch (_err) {
+  } catch {
     // 서버 미응답 또는 타임아웃 시 안전하게 폴백
   } finally {
     clearTimeout(timeoutId);

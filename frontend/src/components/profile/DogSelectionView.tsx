@@ -81,13 +81,15 @@ export const DogSelectionView: React.FC<DogSelectionViewProps> = ({
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={onBack}
-          style={styles.backButton}
-        >
-          <AppIcon name="back" size={24} color={TOKENS.colors.textMain} />
-        </TouchableOpacity>
+        {dogs.length > 0 ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onBack}
+            style={styles.backButton}
+          >
+            <AppIcon name="back" size={24} color={TOKENS.colors.textMain} />
+          </TouchableOpacity>
+        ) : <View style={styles.backButton} />}
         <Text style={styles.headerTitle}>강아지 선택</Text>
         <View style={styles.headerPlaceholder} />
       </View>
@@ -102,6 +104,11 @@ export const DogSelectionView: React.FC<DogSelectionViewProps> = ({
         {/* 내 강아지 리스트 */}
         <View style={styles.listSection}>
           <Text style={styles.sectionHeading}>내 강아지</Text>
+          {dogs.length === 0 && (
+            <Text style={styles.emptyProfilesMessage}>
+              등록된 반려견 프로필이 없습니다. 새 강아지를 등록해 주세요.
+            </Text>
+          )}
 
           {dogs.map((dog) => {
             const isSelected = dog.id === selectedDogId;
@@ -155,7 +162,8 @@ export const DogSelectionView: React.FC<DogSelectionViewProps> = ({
         <TouchableOpacity
           activeOpacity={0.88}
           onPress={onContinue}
-          style={styles.continueButton}
+          disabled={!selectedDog}
+          style={[styles.continueButton, !selectedDog && styles.continueButtonDisabled]}
         >
           <Text style={styles.continueButtonText}>
             {selectedDog ? `${selectedDog.name}와 산책 설정하기` : '강아지를 선택해주세요'}
@@ -318,6 +326,12 @@ const styles = StyleSheet.create({
     color: TOKENS.colors.textMain,
     marginBottom: 12,
   },
+  emptyProfilesMessage: {
+    marginBottom: 12,
+    color: TOKENS.colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
   dogCard: {
     backgroundColor: TOKENS.colors.surface,
     borderRadius: TOKENS.borderRadius.card,
@@ -442,6 +456,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 3,
+  },
+  continueButtonDisabled: {
+    opacity: 0.45,
   },
   continueButtonText: {
     color: '#FFFFFF',

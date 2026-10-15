@@ -5,7 +5,7 @@
  * 3대 테마 선택(숲길/비비드 바이올렛/다크), 컴팩트 세그먼트 탭(스크롤 배제), 산책 기록 및 프로필 관리
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { DogProfile } from '../types/dogProfile';
 import { CardWrapper } from '../components/common/CardWrapper';
@@ -29,6 +29,7 @@ export interface MyProfileTabScreenProps {
   onAddDog?: (newDog: DogProfile) => void;
   feedbackSummary?: FeedbackSummaryPayload | null;
   onSaveDog: (fields: Partial<DogProfile>) => void;
+  onDeleteDog?: (dogId: string) => void | Promise<void>;
   onInjectFeedback: (dissatisfied: boolean) => void;
   onResetFeedback?: () => void;
   onStartBookmark: (bookmark: BookmarkedRoute) => void;
@@ -282,6 +283,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
   onAddDog,
   feedbackSummary,
   onSaveDog,
+  onDeleteDog,
   onInjectFeedback,
   onResetFeedback,
   onStartBookmark,
@@ -368,6 +370,7 @@ export const MyProfileTabScreen: React.FC<MyProfileTabScreenProps> = ({
             onSelectDog={onSelectDog}
             onAddDog={onAddDog}
             onSaveDog={onSaveDog}
+            onDeleteDog={onDeleteDog}
           />
         </ScrollView>
       )}

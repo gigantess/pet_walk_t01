@@ -1,5 +1,10 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { MapLibreMapView } from './MapLibreMapView';
+import { buildMapLibreHtml, generateCirclePolygonCoordinates } from './maplibreWebTemplate';
+import { RouteFeatureCollection, RouteStepPin } from '../../types/route';
+import { THEME_MAP_ROUTE_COLORS } from '../../constants/mapStyles';
 
 vi.mock('react-native-webview', () => ({
   WebView: (props: any) => React.createElement('div', { 'data-testid': 'mock-webview', ...props }),
@@ -18,11 +23,6 @@ vi.mock('maplibre-gl', () => ({
     })),
   },
 }));
-import { renderToStaticMarkup } from 'react-dom/server';
-import { MapLibreMapView } from './MapLibreMapView';
-import { buildMapLibreHtml, generateCirclePolygonCoordinates } from './maplibreWebTemplate';
-import { RouteFeatureCollection, RouteStepPin } from '../../types/route';
-import { THEME_MAP_ROUTE_COLORS } from '../../constants/mapStyles';
 
 describe('MapLibreMapView 및 인라인 템플릿 TDD 검증 (T-OFM-3, T-OFM-4)', () => {
   const mockRoute: RouteFeatureCollection = {

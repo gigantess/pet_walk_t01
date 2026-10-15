@@ -86,7 +86,7 @@ export async function fetchWithServerFallback(
     } else {
       primaryFailed = true;
     }
-  } catch (_err) {
+  } catch {
     primaryFailed = true;
   }
 
@@ -97,7 +97,7 @@ export async function fetchWithServerFallback(
       if (fbRes) {
         return fbRes;
       }
-    } catch (_fbErr) {
+    } catch {
       // 로컬 백엔드마저 실패한 경우 아래에서 throw하여 호출자 서비스가 오프라인 폴백 처리
     }
   }

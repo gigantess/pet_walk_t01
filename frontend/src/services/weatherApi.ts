@@ -276,7 +276,7 @@ export async function fetchHeatRiskForecast(
       weatherMemoryCache.set(cacheKey, { timestamp: Date.now(), data: response });
       return response;
     }
-  } catch (_e) {
+  } catch {
     // 타임아웃 또는 서버 미연결 시 오프라인 폴백으로 전환
   } finally {
     clearTimeout(timer);
