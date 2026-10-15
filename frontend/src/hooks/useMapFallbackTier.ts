@@ -6,21 +6,22 @@
  * - 테마 변경 등으로 resetKey가 바뀌면 다시 1차부터 시도합니다.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { MapFallbackTier, getNextFallbackTier } from '../constants/mapFallback';
 
 export function useMapFallbackTier(hasStaticRoute: boolean, resetKey: string) {
-  const [tier, setTier] = useState<MapFallbackTier>('openfreemap');
-  const hasStaticRouteRef = useRef(hasStaticRoute);
-  hasStaticRouteRef.current = hasStaticRoute;
-
-  useEffect(() => {
-    setTier('openfreemap');
-  }, [resetKey]);
+  const [tierState, setTierState] = useState({ resetKey, tier: 'openfreemap' as MapFallbackTier });
+  const tier = tierState.resetKey === resetKey ? tierState.tier : 'openfreemap';
 
   const degrade = useCallback(() => {
-    setTier((current) => getNextFallbackTier(current, hasStaticRouteRef.current) ?? current);
-  }, []);
+    setTierState((currentState) => {
+      const current = currentState.resetKey === resetKey ? currentState.tier : 'openfreemap';
+      return {
+        resetKey,
+        tier: getNextFallbackTier(current, hasStaticRoute) ?? current,
+      };
+    });
+  }, [hasStaticRoute, resetKey]);
 
   return { tier, degrade };
 }

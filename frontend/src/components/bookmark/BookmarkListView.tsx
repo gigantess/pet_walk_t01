@@ -39,8 +39,16 @@ export const BookmarkListView: React.FC<BookmarkListViewProps> = ({
   }, []);
 
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    let mounted = true;
+    void BookmarkService.getBookmarks().then((items) => {
+      if (!mounted) return;
+      setBookmarks(items);
+      setIsLoading(false);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleRemove = async (id: string) => {
     await BookmarkService.removeBookmark(id);
