@@ -10,6 +10,7 @@
 
 import { RouteFeatureCollection, RouteStepPin, LonLat } from '../../types/route';
 import { MapRouteColors } from '../../constants/mapStyles';
+import { STYLE_LOAD_TIMEOUT_MS } from '../../constants/mapFallback';
 
 export interface BuildMapLibreHtmlOptions {
   readonly styleUrl: string;
@@ -74,6 +75,7 @@ export function buildMapLibreHtml({
     routeColors,
     maskingFeature,
     interactive,
+    styleLoadTimeoutMs: STYLE_LOAD_TIMEOUT_MS,
   });
 
   return `<!DOCTYPE html>
@@ -149,6 +151,14 @@ export function buildMapLibreHtml({
       const bounds = computeBounds(payload.route);
       const defaultCenter = bounds ? [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2] : [127.3805, 36.4315];
 
+      // 현재 표시 중인 데이터/스타일 상태 (스타일 교체 후 레이어 재등록에 사용)
+      let currentRoute = payload.route;
+      let currentPins = payload.stepPins;
+      let currentStyleKey = JSON.stringify(payload.styleUrl);
+      let mapLoaded = false;
+      let failureReported = false;
+      let watchdogId = null;
+
       map = new maplibregl.Map({
         container: 'map',
         style: payload.styleUrl,
@@ -161,14 +171,45 @@ export function buildMapLibreHtml({
       // 축척 컨트롤 추가
       map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 
-      map.on('load', function() {
-        initLayers(payload.route, payload.routeColors, payload.maskingFeature);
-        initMarkers(payload.stepPins, payload.route);
-        if (bounds) {
-          map.fitBounds(bounds, { padding: 40, duration: 600 });
+      // 스타일 로드 실패/지연을 React Native에 알려 다음 폴백 단계로 전환 (T-OFM-7)
+      function reportStyleFailure(type) {
+        if (mapLoaded || failureReported) return;
+        failureReported = true;
+        postToReactNative(type, { ok: false });
+      }
+
+      function armStyleWatchdog() {
+        failureReported = false;
+        if (watchdogId) clearTimeout(watchdogId);
+        watchdogId = setTimeout(function() { reportStyleFailure('STYLE_TIMEOUT'); }, payload.styleLoadTimeoutMs);
+      }
+
+      // 스타일이 (재)로드될 때마다 경로/마스킹/핀 레이어를 다시 등록
+      function applyStyleLayers() {
+        if (map.getSource('route-source')) return;
+        initLayers(currentRoute, payload.routeColors, payload.maskingFeature);
+        initMarkers(currentPins, currentRoute);
+        if (watchdogId) clearTimeout(watchdogId);
+        if (mapLoaded) return;
+        mapLoaded = true;
+        const loadedBounds = computeBounds(currentRoute);
+        if (loadedBounds) {
+          map.fitBounds(loadedBounds, { padding: 40, duration: 600 });
         }
         postToReactNative('MAP_LOADED', { ok: true });
+      }
+
+      map.on('load', applyStyleLayers);
+
+      // 개별 타일/소스 오류와 스타일 파싱 이후의 글리프/스프라이트 오류는 무시하고,
+      // style.load 이전의 스타일 로드 실패만 폴백 대상으로 처리
+      let styleParsed = false;
+      map.on('style.load', function() { styleParsed = true; });
+      map.on('error', function(e) {
+        if (styleParsed || !e || !e.error || e.sourceId || e.tile) return;
+        reportStyleFailure('STYLE_ERROR');
       });
+      armStyleWatchdog();
 
       // 벡터 소스 및 레이어 등록
       function initLayers(routeData, colors, maskData) {
@@ -309,9 +350,18 @@ export function buildMapLibreHtml({
       window.addEventListener('message', function(event) {
         try {
           const msg = JSON.parse(event.data);
-          if (msg.action === 'SET_STYLE' && msg.styleUrl) {
-            map.setStyle(msg.styleUrl);
+          if (msg.action === 'SET_STYLE' && msg.style) {
+            const styleKey = JSON.stringify(msg.style);
+            if (styleKey === currentStyleKey) return;
+            currentStyleKey = styleKey;
+            styleParsed = false;
+            map.once('style.load', applyStyleLayers);
+            // diff:false → 런타임 추가 소스/레이어까지 초기화하고 style.load를 확실히 발생시킴
+            map.setStyle(msg.style, { diff: false });
+            if (!mapLoaded) armStyleWatchdog();
           } else if (msg.action === 'UPDATE_ROUTE' && msg.route) {
+            currentRoute = msg.route;
+            currentPins = msg.stepPins || [];
             const src = map.getSource('route-source');
             if (src) src.setData(msg.route);
             initMarkers(msg.stepPins || [], msg.route);

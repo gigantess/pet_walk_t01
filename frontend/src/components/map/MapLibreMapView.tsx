@@ -15,7 +15,11 @@ import { View, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native';
 import WebView from 'react-native-webview';
 import { RouteFeatureCollection, RouteStepPin, LonLat } from '../../types/route';
 import { useMapThemeStyle } from '../../constants/mapStyles';
+import { STYLE_LOAD_TIMEOUT_MS, isStyleLoadError, resolveFallbackStyle } from '../../constants/mapFallback';
+import { useMapFallbackTier } from '../../hooks/useMapFallbackTier';
 import { buildMapLibreHtml } from './maplibreWebTemplate';
+import { disposeWebMap, removeHandles } from './webMapLifecycle';
+import { MarkerConstructor, renderWebMarkers } from './webMapMarkers';
 
 function getRouteBounds(routeData: RouteFeatureCollection): [[number, number], [number, number]] | null {
   const coordinates = routeData.features.flatMap((feature) => feature.geometry.coordinates);
@@ -52,7 +56,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   style,
   interactive = true,
 }) => {
-  const { mapStyleUrl, routeColors } = useMapThemeStyle();
+  const { mapStyleUrl, routeColors, appColors } = useMapThemeStyle();
   const isWeb = Platform.OS === 'web';
 
   // ============================================================================
@@ -78,60 +82,26 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   // 모든 좌표 Bounding Box 계산
   const routeBounds = useMemo(() => getRouteBounds(route), [route]);
 
+  // 3단계 안전 폴백 (T-OFM-7): OpenFreeMap → 정적 GeoJSON → OSM 래스터
+  const { tier, degrade } = useMapFallbackTier(routeBounds !== null, mapStyleUrl);
+  const activeStyle = useMemo(
+    () => resolveFallbackStyle(tier, mapStyleUrl, appColors.background),
+    [tier, mapStyleUrl, appColors.background],
+  );
+
   useEffect(() => {
     if (!isWeb || typeof window === 'undefined') return;
 
     let mapInstance: any = null;
     let isDisposed = false;
+    let degraded = false;
+    let watchdogId: ReturnType<typeof setTimeout> | null = null;
 
-    function updateWebMarkers(map: any, maplibregl: any, routeData: RouteFeatureCollection, pins: readonly RouteStepPin[]) {
-      webMarkersRef.current.forEach((marker) => marker.remove());
-      webMarkersRef.current = [];
-
-      const firstCoord = routeData.features[0]?.geometry.coordinates[0];
-      if (firstCoord) {
-        const startElement = document.createElement('div');
-        startElement.textContent = '출발/도착 🐾';
-        Object.assign(startElement.style, {
-          padding: '3px 8px', borderRadius: '10px', background: latestRouteColorsRef.current.startMarker,
-          color: '#fff', fontSize: '10px', fontWeight: '800', border: '1.5px solid #fff',
-          whiteSpace: 'nowrap',
-        });
-        webMarkersRef.current.push(new maplibregl.Marker({ element: startElement }).setLngLat(firstCoord).addTo(map));
-      }
-
-      pins.forEach((pin) => {
-        const element = document.createElement(pin.title ? 'div' : 'button');
-        if (!pin.title) (element as HTMLButtonElement).type = 'button';
-        element.setAttribute('aria-label', pin.instruction);
-        element.textContent = pin.icon ?? (pin.kind === 'caution' ? '!' : pin.kind === 'safe' ? '🌿' : '↱');
-        Object.assign(element.style, {
-          width: pin.title ? 'auto' : '28px', height: pin.title ? 'auto' : '28px',
-          borderRadius: pin.title ? '10px' : '50%', border: `2px solid ${pin.title ? '#fff' : '#fff'}`,
-          padding: pin.title ? '4px 6px' : '0',
-          background: pin.title ? '#ffffffed' : pin.kind === 'caution' ? latestRouteColorsRef.current.caution : pin.kind === 'safe' ? latestRouteColorsRef.current.safe : latestRouteColorsRef.current.normal,
-          color: pin.title ? '#1f2937' : '#fff', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 5px #0005',
-          fontSize: pin.title ? '10px' : '13px', whiteSpace: 'nowrap', textAlign: 'center',
-        });
-        if (pin.title) {
-          element.replaceChildren();
-          element.style.display = 'grid';
-          element.style.justifyItems = 'center';
-          element.style.gap = '2px';
-          const icon = document.createElement('span');
-          icon.textContent = pin.icon ?? '';
-          const title = document.createElement('strong');
-          title.textContent = pin.title;
-          element.append(icon, title);
-          if (pin.detail) {
-            const detail = document.createElement('small');
-            detail.textContent = pin.detail;
-            element.appendChild(detail);
-          }
-        }
-        element.addEventListener('click', () => latestOnPinSelectRef.current?.(pin.instruction));
-        webMarkersRef.current.push(new maplibregl.Marker({ element, anchor: pin.title ? 'bottom' : 'center' }).setLngLat([...pin.position]).addTo(map));
-      });
+    // 같은 단계에서 error 이벤트와 타임아웃이 겹쳐도 한 단계만 내려갑니다.
+    function degradeOnce() {
+      if (isDisposed || degraded || webMapLoadedRef.current) return;
+      degraded = true;
+      degrade();
     }
 
     async function initWebMap() {
@@ -146,7 +116,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
         mapInstance = new maplibregl.Map({
           container: webContainerRef.current,
-          style: mapStyleUrl,
+          // 폴백 스타일 객체는 StyleSpecification의 부분 구조이므로 타입 단언이 필요합니다.
+          style: activeStyle as never,
           center: defaultCenter,
           zoom: 15,
           interactive,
@@ -155,8 +126,21 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
         webMapInstanceRef.current = mapInstance;
 
+        // 스타일 로드 실패(오프라인/서버 장애)는 즉시, 응답 지연은 타임아웃으로 다음 단계 전환.
+        // 스타일 파싱 이후의 글리프/스프라이트 오류는 폴백 대상이 아니므로 style.load 이전만 처리합니다.
+        let styleParsed = false;
+        mapInstance.on('style.load', () => {
+          styleParsed = true;
+        });
+        mapInstance.on('error', (event: unknown) => {
+          if (styleParsed) return;
+          if (isStyleLoadError(event as Parameters<typeof isStyleLoadError>[0])) degradeOnce();
+        });
+        watchdogId = setTimeout(degradeOnce, STYLE_LOAD_TIMEOUT_MS);
+
         mapInstance.on('load', () => {
           if (isDisposed) return;
+          if (watchdogId !== null) clearTimeout(watchdogId);
           webMapLoadedRef.current = true;
           const currentRoute = latestRouteRef.current;
           const currentPins = latestPinsRef.current;
@@ -205,7 +189,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             mapInstance.fitBounds(initialBounds, { padding: 40, duration: 600 });
           }
 
-          updateWebMarkers(mapInstance, maplibregl, currentRoute, currentPins);
+          webMarkersRef.current = renderWebMarkers(
+            mapInstance, maplibregl.Marker as MarkerConstructor, currentRoute, currentPins, currentColors,
+            (instruction) => latestOnPinSelectRef.current?.(instruction),
+          );
 
           latestOnMapLoadedRef.current?.();
         });
@@ -218,16 +205,12 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
     return () => {
       isDisposed = true;
-      if (webMapInstanceRef.current) {
-        try {
-          webMapInstanceRef.current.remove();
-        } catch {}
-        webMapInstanceRef.current = null;
-      }
+      disposeWebMap(webMapInstanceRef.current, webMarkersRef.current, watchdogId);
+      webMapInstanceRef.current = null;
       webMapLoadedRef.current = false;
       webMarkersRef.current = [];
     };
-  }, [isWeb, mapStyleUrl, interactive]);
+  }, [isWeb, activeStyle, interactive, degrade]);
 
   useEffect(() => {
     if (!isWeb || !webMapLoadedRef.current || !webMapInstanceRef.current) return;
@@ -237,41 +220,13 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     source.setData(route);
     const updateMarkers = async () => {
       const maplibregl = await import('maplibre-gl');
-      if (!webMapInstanceRef.current || !webMapLoadedRef.current) return;
-      webMarkersRef.current.forEach((marker) => marker.remove());
-      webMarkersRef.current = [];
-      const firstCoord = route.features[0]?.geometry.coordinates[0];
-      if (firstCoord) {
-        const element = document.createElement('div');
-        element.textContent = '출발/도착 🐾';
-        Object.assign(element.style, { padding: '3px 8px', borderRadius: '10px', background: routeColors.startMarker, color: '#fff', fontSize: '10px', fontWeight: '800', border: '1.5px solid #fff', whiteSpace: 'nowrap' });
-        webMarkersRef.current.push(new maplibregl.Marker({ element }).setLngLat([...firstCoord]).addTo(map));
-      }
-      stepPins.forEach((pin) => {
-        const element = document.createElement(pin.title ? 'div' : 'button');
-        if (!pin.title) (element as HTMLButtonElement).type = 'button';
-        element.setAttribute('aria-label', pin.instruction);
-        element.textContent = pin.icon ?? (pin.kind === 'caution' ? '!' : pin.kind === 'safe' ? '🌿' : '↱');
-        Object.assign(element.style, { width: pin.title ? 'auto' : '28px', height: pin.title ? 'auto' : '28px', borderRadius: pin.title ? '10px' : '50%', border: '2px solid #fff', padding: pin.title ? '4px 6px' : '0', background: pin.title ? '#ffffffed' : pin.kind === 'caution' ? routeColors.caution : pin.kind === 'safe' ? routeColors.safe : routeColors.normal, color: pin.title ? '#1f2937' : '#fff', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 5px #0005', fontSize: pin.title ? '10px' : '13px', whiteSpace: 'nowrap', textAlign: 'center' });
-        if (pin.title) {
-          element.replaceChildren();
-          element.style.display = 'grid';
-          element.style.justifyItems = 'center';
-          element.style.gap = '2px';
-          const icon = document.createElement('span');
-          icon.textContent = pin.icon ?? '';
-          const title = document.createElement('strong');
-          title.textContent = pin.title;
-          element.append(icon, title);
-          if (pin.detail) {
-            const detail = document.createElement('small');
-            detail.textContent = pin.detail;
-            element.appendChild(detail);
-          }
-        }
-        element.addEventListener('click', () => onPinSelect?.(pin.instruction));
-        webMarkersRef.current.push(new maplibregl.Marker({ element, anchor: pin.title ? 'bottom' : 'center' }).setLngLat([...pin.position]).addTo(map));
-      });
+      // 동적 import 대기 중 지도가 교체/해제되었다면 이전 인스턴스에 마커를 붙이지 않음 (누수 방지)
+      if (webMapInstanceRef.current !== map || !webMapLoadedRef.current) return;
+      removeHandles(webMarkersRef.current);
+      webMarkersRef.current = renderWebMarkers(
+        map, maplibregl.Marker as MarkerConstructor, route, stepPins, routeColors,
+        (instruction) => onPinSelect?.(instruction),
+      );
     };
     void updateMarkers();
     if (routeBounds) map.fitBounds(routeBounds, { padding: 40, duration: 700 });
@@ -301,18 +256,20 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         webViewRef.current?.postMessage(JSON.stringify({
           action: 'UPDATE_ROUTE', route: latestRouteRef.current, stepPins: latestPinsRef.current,
         }));
+      } else if (data.type === 'STYLE_ERROR' || data.type === 'STYLE_TIMEOUT') {
+        degrade();
       }
     } catch {}
   };
 
-  // 모바일 환경에서 테마 변경 시 웹뷰로 새 스타일 전달
+  // 모바일 환경에서 테마 변경 또는 폴백 단계 전환 시 웹뷰로 새 스타일 전달
   useEffect(() => {
     if (!isWeb && webViewRef.current) {
       webViewRef.current.postMessage(
-        JSON.stringify({ action: 'SET_STYLE', styleUrl: mapStyleUrl })
+        JSON.stringify({ action: 'SET_STYLE', style: activeStyle })
       );
     }
-  }, [isWeb, mapStyleUrl]);
+  }, [isWeb, activeStyle]);
 
   useEffect(() => {
     if (!isWeb && mobileMapLoadedRef.current && webViewRef.current) {

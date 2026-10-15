@@ -114,3 +114,69 @@ describe('MapLibreMapView 및 인라인 템플릿 TDD 검증 (T-OFM-3, T-OFM-4)'
     }).not.toThrow();
   });
 });
+
+describe('MapLibre WebView 템플릿 폴백/성능 검증 (T-OFM-7, T-OFM-8)', () => {
+  const buildRoute = (pointCount: number): RouteFeatureCollection => ({
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { segmentType: 'safe', maxSlopePercent: 1.5, shaded: true },
+        geometry: {
+          type: 'LineString',
+          coordinates: Array.from({ length: pointCount }, (_, index): [number, number] => [
+            127.38 + index * 0.00001,
+            36.43 + index * 0.00001,
+          ]),
+        },
+      },
+    ],
+  });
+
+  const buildHtml = (route: RouteFeatureCollection) =>
+    buildMapLibreHtml({
+      styleUrl: 'https://tiles.openfreemap.org/styles/liberty',
+      route,
+      routeColors: THEME_MAP_ROUTE_COLORS.forest,
+      maskingCenter: [127.38, 36.43],
+    });
+
+  it('스타일 로드 실패/타임아웃을 React Native로 알리는 폴백 브릿지를 포함해야 한다', () => {
+    const html = buildHtml(buildRoute(3));
+
+    expect(html).toContain('STYLE_ERROR');
+    expect(html).toContain('STYLE_TIMEOUT');
+    expect(html).toContain('"styleLoadTimeoutMs":8000');
+    // 스타일 파싱 이후의 글리프/스프라이트 오류로 폴백되지 않도록 style.load 플래그를 사용
+    expect(html).toContain('styleParsed');
+  });
+
+  it('스타일 교체(SET_STYLE) 시 레이어를 재등록하고 동일 스타일 재전송은 무시해야 한다', () => {
+    const html = buildHtml(buildRoute(3));
+
+    expect(html).toContain("msg.action === 'SET_STYLE' && msg.style");
+    expect(html).toContain('diff: false');
+    expect(html).toContain("map.once('style.load', applyStyleLayers)");
+    expect(html).toContain('styleKey === currentStyleKey');
+  });
+
+  it('생성된 인라인 스크립트가 문법적으로 유효해야 한다', () => {
+    const html = buildHtml(buildRoute(3));
+    const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1];
+
+    expect(script).toBeDefined();
+    // Function 생성자는 코드를 실행하지 않고 구문만 검사한다.
+    expect(() => new Function(script as string)).not.toThrow();
+  });
+
+  it('좌표 1만 개 경로의 HTML 생성이 1초 이내에 완료되어야 한다', () => {
+    const route = buildRoute(10000);
+
+    const startedAt = performance.now();
+    const html = buildHtml(route);
+    const elapsedMs = performance.now() - startedAt;
+
+    expect(html).toContain('route-core');
+    expect(elapsedMs).toBeLessThan(1000);
+  });
+});
