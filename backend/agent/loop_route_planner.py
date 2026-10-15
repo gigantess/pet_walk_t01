@@ -197,9 +197,10 @@ def _plan_static_pilot_park(
     origin_lat: float,
     origin_lon: float,
     variant: int,
+    pilot_park_id: Optional[str] = None,
 ) -> Optional[LoopPlan]:
-    """출발지가 대전/세종 4대 거점 공원 2.5km 이내일 때 사용하는 실제 OSM 정밀 보행 도로망 코스."""
-    res = match_pilot_park_loop(origin_lat, origin_lon, variant=variant)
+    """출발지가 대전/세종 4대 거점 공원 2.5km 이내이거나 pilot_park_id가 지정되었을 때 실제 OSM 정밀 보행로 코스 반환."""
+    res = match_pilot_park_loop(origin_lat, origin_lon, variant=variant, pilot_park_id=pilot_park_id)
     if res is None:
         return None
     coords, source_name = res
@@ -288,15 +289,30 @@ def _plan_variant(
     target_distance_m: float,
     variant: int,
     deadline: float,
-    origin_mode: str = "park",
+    origin_mode: str = "current_location",
+    pilot_park_id: Optional[str] = None,
 ) -> LoopPlan:
-    """공원 모드 시 정밀 공원 보행로(1순위) → 실시간 OSRM → 정적 서울 도로망 → 오프라인 도로망 그래프 → 비상 폴백 순으로 후보 1개를 생성한다."""
+    """공원 모드 시 정밀 공원 보행로(1순위) → 실시간 OSRM 순으로 시도하며, 공원 경계 밖 직사각형 임의 대체는 차단한다."""
     # 🌟 공원 모드 또는 P&R 주차장 모드일 때 대전 3대 공원 & 세종호수공원 실제 OSM 보행로 적용
     if origin_mode in ("park", "parking_pnr"):
-        pilot_plan = _plan_static_pilot_park(origin_lat, origin_lon, variant)
+        pilot_plan = _plan_static_pilot_park(origin_lat, origin_lon, variant, pilot_park_id=pilot_park_id)
         if pilot_plan is not None:
             return pilot_plan
 
+        plan = _plan_live(origin_lat, origin_lon, target_distance_m, variant, deadline)
+        if plan is not None:
+            return plan
+
+        # 🛡️ 공원 모드 실패 가드레일: 임의의 건물/도로 관통 직사각형이나 서울광장으로 조용히 대체하지 않음
+        logger.warning("공원 모드 경로 탐색 실패(variant=%d): 공원 영역 밖 임의 직사각형 생성을 차단합니다.", variant)
+        return LoopPlan(
+            coords=[],
+            steps=[],
+            distance_m=0.0,
+            source="park_not_found",
+        )
+
+    # 📍 현위치 기반 모드 (current_location)
     plan = _plan_live(origin_lat, origin_lon, target_distance_m, variant, deadline)
     if plan is not None:
         return plan
@@ -317,7 +333,8 @@ def plan_loop_candidates(
     origin_lon: float,
     target_distance_m: float,
     time_budget_s: float = PLAN_TIME_BUDGET_S,
-    origin_mode: str = "park",
+    origin_mode: str = "current_location",
+    pilot_park_id: Optional[str] = None,
 ) -> Dict[int, LoopPlan]:
     """방향이 다른 순환 후보 3종을 병렬로 생성한다. 키는 후보 번호(1~3)."""
     deadline = time.monotonic() + time_budget_s
@@ -331,6 +348,7 @@ def plan_loop_candidates(
                 variant,
                 deadline,
                 origin_mode,
+                pilot_park_id,
             )
             for variant in VARIANT_BEARINGS
         }
