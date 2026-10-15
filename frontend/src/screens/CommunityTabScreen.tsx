@@ -374,7 +374,7 @@ export const CommunityTabScreen: React.FC<CommunityTabScreenProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingBottom: 32 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
   sectionHeader: { marginBottom: 12 },
   sectionSubtitle: { fontSize: 13, color: TOKENS.colors.textMuted },
   sectionTitle: { fontSize: 20, fontWeight: '800', color: TOKENS.colors.textMain, letterSpacing: -0.5 },
