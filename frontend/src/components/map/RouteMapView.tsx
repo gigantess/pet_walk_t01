@@ -30,9 +30,10 @@ import { RealOsmWebView } from './RealOsmWebView';
 import { RouteMapLegend, SEGMENT_COLORS } from './RouteMapLegend';
 import { AppIcon } from '../common/AppIcon';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MAP_WIDTH = Math.min(SCREEN_WIDTH - 40, 360);
-const MAP_HEIGHT = 380;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const MAP_WIDTH = Math.min(SCREEN_WIDTH - 32, 380);
+// 화면 높이에 따라 220~270px 범위로 지도 높이를 최적화하여 상/하단 카드 잘림 방지
+const MAP_HEIGHT = Math.max(220, Math.min(Math.round(SCREEN_HEIGHT * 0.32), 270));
 
 function getPinColor(kind: RouteStepPin['kind']): string {
   if (kind === 'caution') return TOKENS.colors.routeCaution;
@@ -52,6 +53,8 @@ export interface RouteMapViewProps {
   readonly speedKmH: number;
   readonly onStart?: () => void;
   readonly onPinSelect?: (instruction: string) => void;
+  /** 단독 뷰일 때만 요약 카드를 표시 (CourseRecommendationView 등 상위에서 별도 카드를 제공할 때는 false) */
+  readonly showSummaryCard?: boolean;
 }
 
 export const RouteMapView: React.FC<RouteMapViewProps> = ({
@@ -60,6 +63,7 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
   speedKmH,
   onStart,
   onPinSelect,
+  showSummaryCard = false,
 }) => {
   const [mapMode, setMapMode] = useState<'course' | 'real_osm'>('course');
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
@@ -75,18 +79,35 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
     const lons = allCoords.map((c) => c[0]), lats = allCoords.map((c) => c[1]);
     const minLon = Math.min(...lons), maxLon = Math.max(...lons);
     const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const padding = 40, innerW = MAP_WIDTH - padding * 2, innerH = MAP_HEIGHT - padding * 2;
-    const lonSpan = Math.max(maxLon - minLon, 1e-9), latSpan = Math.max(maxLat - minLat, 1e-9);
-    const scale = Math.min(innerW / lonSpan, innerH / latSpan);
-    const offsetX = padding + (innerW - lonSpan * scale) / 2, offsetY = padding + (innerH - latSpan * scale) / 2;
-    return ([lon, lat]: LonLat) => ({ x: offsetX + (lon - minLon) * scale, y: offsetY + (maxLat - lat) * scale });
+
+    const centerLon = (minLon + maxLon) / 2;
+    const centerLat = (minLat + maxLat) / 2;
+    const cosLat = Math.cos((centerLat * Math.PI) / 180);
+
+    const padding = 26;
+    const innerW = MAP_WIDTH - padding * 2;
+    const innerH = MAP_HEIGHT - padding * 2;
+
+    // 위경도 종횡비(Mercator cosLat)를 반영하여 왜곡 없는 1:1 축척 산출
+    const lonDistEquiv = Math.max((maxLon - minLon) * cosLat, 1e-7);
+    const latDistEquiv = Math.max(maxLat - minLat, 1e-7);
+    const scale = Math.min(innerW / lonDistEquiv, innerH / latDistEquiv);
+
+    // 캔버스 정중앙에 코스 중심점을 정확하게 일치시킴
+    const centerX = MAP_WIDTH / 2;
+    const centerY = MAP_HEIGHT / 2;
+
+    return ([lon, lat]: LonLat) => ({
+      x: centerX + (lon - centerLon) * cosLat * scale,
+      y: centerY - (lat - centerLat) * scale,
+    });
   }, [allCoords]);
 
   if (allCoords.length === 0) return null;
 
   const startPt = project(allCoords[0]);
   const selectedPin = stepPins.find((p) => p.id === selectedPinId);
-  const tiles = useMemo(() => calculateOsmTiles(allCoords, project, 16, 'osm'), [allCoords, project]);
+  const tiles = useMemo(() => calculateOsmTiles(allCoords, project, 16, 'osm', 1), [allCoords, project]);
 
   return (
     <View style={styles.container}>
@@ -190,9 +211,11 @@ export const RouteMapView: React.FC<RouteMapViewProps> = ({
         </View>
       )}
 
-      <View style={styles.summaryWrapper}>
-        <CourseSummaryCard summary={summary} onStart={onStart} />
-      </View>
+      {showSummaryCard && (
+        <View style={styles.summaryWrapper}>
+          <CourseSummaryCard summary={summary} onStart={onStart} />
+        </View>
+      )}
     </View>
   );
 };

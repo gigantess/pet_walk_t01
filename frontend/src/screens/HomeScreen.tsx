@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useAppTheme } from '../theme/themeManager';
 import { DogProfile } from '../types/dogProfile';
 import { HomeDogCard } from '../components/home/HomeDogCard';
@@ -103,7 +103,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   }, []);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scrollContainer}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {/* 1. 환영 인사 (02_home_screen.png 원형 복원) */}
       <View style={styles.greetingSection}>
         <Text style={[styles.greetingSub, { color: colors.textMuted }]}>오늘도 편안하게,</Text>
@@ -146,18 +150,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </Text>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flex: 1,
-    paddingHorizontal: 0,
-    paddingTop: 2,
-    paddingBottom: 2,
-    gap: 6,
-    justifyContent: 'space-between', // 스크롤 없이 한 화면에 균형 배치
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24, // 하단 탭바에 마지막 카드가 잘리지 않도록 안전 여백 확보
+    gap: 10,
   },
   greetingSection: {
     marginBottom: 2,
