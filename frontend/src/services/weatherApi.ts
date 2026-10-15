@@ -8,8 +8,8 @@
  */
 
 import { HeatRiskHourDTO, HeatRiskLevel, HeatRiskResponse, GoldenTimeWindowDay } from '../types/weather';
+import { fetchWithServerFallback } from './apiClient';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const API_TIMEOUT_MS = 3000;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1시간 TTL
 
@@ -207,6 +207,8 @@ export function generateFallbackHeatRisk(lat: number, lon: number): HeatRiskResp
     golden_time_window_day: goldenWindowDay,
     hourly_forecast: hourly,
     notice: '본 지수는 기상청 예보 모델 기반 추정치입니다.',
+    attribution: null,
+    insolation_source: 'sky_fallback',
     fetched_at: now.toISOString(),
   };
 }
@@ -243,8 +245,11 @@ export async function fetchHeatRiskForecast(
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    const url = `${API_BASE_URL}/api/v1/weather/heat-risk?lat=${lat}&lon=${lon}`;
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetchWithServerFallback(
+      `/api/v1/weather/heat-risk?lat=${lat}&lon=${lon}`,
+      { signal: controller.signal },
+      API_TIMEOUT_MS
+    );
     clearTimeout(timer);
 
     if (res.ok) {
@@ -264,12 +269,14 @@ export async function fetchHeatRiskForecast(
         golden_time_window_day: goldenWindowDay,
         hourly_forecast: data.hourly_forecast ?? [],
         notice: data.notice ?? '본 지수는 기상청 예보 모델 기반 추정치입니다.',
+        attribution: data.attribution ?? null,
+        insolation_source: data.insolation_source,
         fetched_at: new Date().toISOString(),
       };
       weatherMemoryCache.set(cacheKey, { timestamp: Date.now(), data: response });
       return response;
     }
-  } catch (_e) {
+  } catch {
     // 타임아웃 또는 서버 미연결 시 오프라인 폴백으로 전환
   } finally {
     clearTimeout(timer);

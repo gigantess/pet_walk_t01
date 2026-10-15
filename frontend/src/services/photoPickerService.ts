@@ -7,7 +7,7 @@
  * - 권한 체크 및 에러 복구 폴백
  */
 
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 export interface PickPhotoResult {

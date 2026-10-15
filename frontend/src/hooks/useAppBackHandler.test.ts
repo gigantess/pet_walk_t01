@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { determineBackAction } from './useAppBackHandler';
 
 describe('Android 뒤로가기 4단계 우선순위 전략 (determineBackAction)', () => {

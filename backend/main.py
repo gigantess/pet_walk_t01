@@ -11,6 +11,8 @@ FastAPI 메인 애플리케이션 엔트리포인트 (v1 REST API).
 - GET /health (헬스체크)
 """
 
+import os
+
 from dotenv import load_dotenv
 
 # .env 를 가장 먼저 읽어야 agent.* 모듈 import 시 os.getenv(SUPABASE_URL 등) 가 값을 본다.
@@ -78,6 +80,8 @@ def health_check():
         "status": "ok",
         "mode": "live",
         "supabase_connected": community_repo.is_connected(),
+        # 지금 서버에 올라가 있는 커밋(Render 가 자동으로 넣어 주는 값). 로컬 실행에서는 빈 문자열.
+        "commit": os.getenv("RENDER_GIT_COMMIT", "")[:7],
     }
 
 
@@ -159,16 +163,30 @@ def _build_step_pins(cand: Any, coords: List[List[float]]) -> List[Dict[str, Any
 @app.post(
     "/api/v1/walk/plan",
     responses={
-        500: {"description": "LangGraph AI Agent 오케스트레이션 내부 오류"}
+        400: {"description": "출발 좌표 범위 오류 또는 유효하지 않은 입력"},
+        422: {"description": "공원 영역 내 경로 탐색 실패"},
+        500: {"description": "LangGraph AI Agent 오케스트레이션 내부 오류"},
     },
 )
 def plan_walk_route(req: Dict[str, Any]):
     """[US-A1, US-A3, US-B1~B3, US-E3, US-F1, US-G1] LangGraph ReAct Walk Planning Agent 코어 연동 엔드포인트."""
     dog_name = req.get("dog_name", "아이")
     target_duration = req.get("target_duration_minutes", 30)
-    origin_lat = req.get("origin_lat", 37.5665)
-    origin_lon = req.get("origin_lon", 126.9780)
-    origin_mode = req.get("origin_mode", "park")
+
+    # 1. 출발 좌표 유효성 및 범위 검증
+    try:
+        origin_lat = float(req.get("origin_lat", 37.5665))
+        origin_lon = float(req.get("origin_lon", 126.9780))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="유효한 숫자 형식의 출발 좌표(origin_lat, origin_lon)가 필요합니다.")
+
+    if not (-90.0 <= origin_lat <= 90.0 and -180.0 <= origin_lon <= 180.0):
+        raise HTTPException(status_code=400, detail="위도(-90~90) 또는 경도(-180~180)의 허용 범위를 초과했습니다.")
+
+    pilot_park_id = req.get("pilot_park_id") or req.get("park_id")
+    origin_mode = req.get("origin_mode")
+    if not origin_mode:
+        origin_mode = "park" if pilot_park_id else "current_location"
     parking_lot_id = req.get("parking_lot_id") or req.get("parking_id")
 
     # 🚗 [US-G1] 공영주차장 P&R 모드 또는 parking_lot_id 지정 시 출입구 좌표로 강제 스냅 바인딩
@@ -233,9 +251,18 @@ def plan_walk_route(req: Dict[str, Any]):
             origin_lon=origin_lon,
             origin_mode=origin_mode,
             parking_lot_id=parking_lot_id,
+            pilot_park_id=pilot_park_id,
         )
 
         best = agent_result.best_route
+
+        # 🛡️ 공원 모드에서 유효한 보행 경로가 없는 경우 조용한 서울광장 대체 차단
+        if origin_mode == "park" and not best.geojson_coordinates:
+            raise HTTPException(
+                status_code=422,
+                detail=f"선택한 공원({pilot_park_id or '지정 공원'}) 영역 내에서 안전한 순환 보행로를 생성할 수 없습니다."
+            )
+
         coords = best.geojson_coordinates if best.geojson_coordinates else V1_ROAD_ALIGNED_COORDS
 
         geojson = _build_segmented_geojson(coords, best.max_slope_percent)
@@ -267,6 +294,8 @@ def plan_walk_route(req: Dict[str, Any]):
             resp_data["parking_lot"] = matched_parking
 
         return resp_data
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 

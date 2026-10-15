@@ -55,7 +55,7 @@ export default function App() {
   const [subScreen, setSubScreen] = useState<AppSubScreen>('main');
   const [dogs, setDogs] = useState<DogProfile[]>([...DEFAULT_DOGS]);
   const [selectedDogId, setSelectedDogId] = useState<string>('dog_choco');
-  const activeDog = dogs.find((d) => d.id === selectedDogId) ?? dogs[0];
+  const activeDog = dogs.find((d) => d.id === selectedDogId) ?? dogs[0] ?? DEFAULT_DOGS[0];
 
   const [preferences, setPreferences] = useState<WalkPreferences>({
     durationMinutes: 30, environments: ['soft', 'shade', 'stairs'], requestText: '',
@@ -74,12 +74,25 @@ export default function App() {
     async function loadData() {
       void themeManager.init();
       void SupabaseService.initSession();
-      const saved = await LocalStorageService.getItem<DogProfile>(STORAGE_KEYS.DOG_PROFILE);
-      if (saved) {
-        setDogs((prev) => (prev.some((d) => d.id === saved.id) ? prev.map((d) => (d.id === saved.id ? saved : d)) : [saved, ...prev]));
-        setSelectedDogId(saved.id);
+      const savedProfiles = await LocalStorageService.getItem<DogProfile[]>(STORAGE_KEYS.DOG_PROFILES);
+      if (savedProfiles !== null && Array.isArray(savedProfiles)) {
+        setDogs(savedProfiles);
+        const savedProfile = await LocalStorageService.getItem<DogProfile>(STORAGE_KEYS.DOG_PROFILE);
+        const initialDog = savedProfiles.find((dog) => dog.id === savedProfile?.id) ?? savedProfiles[0];
+        setSelectedDogId(initialDog?.id ?? '');
+        if (!initialDog) setSubScreen('dog_selection');
       } else {
-        await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, DEFAULT_DOGS[0]);
+        // Migrate the previous single-profile key while retaining the app's sample profiles.
+        const savedProfile = await LocalStorageService.getItem<DogProfile>(STORAGE_KEYS.DOG_PROFILE);
+        const migratedDogs = savedProfile
+          ? (DEFAULT_DOGS.some((dog) => dog.id === savedProfile.id)
+            ? DEFAULT_DOGS.map((dog) => dog.id === savedProfile.id ? savedProfile : dog)
+            : [savedProfile, ...DEFAULT_DOGS])
+          : [...DEFAULT_DOGS];
+        setDogs(migratedDogs);
+        setSelectedDogId(savedProfile?.id ?? migratedDogs[0].id);
+        await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILES, migratedDogs);
+        if (!savedProfile) await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, migratedDogs[0]);
       }
       setFeedbackSummary(await FeedbackContextService.buildRecentFeedbackContext());
       if (typeof window !== 'undefined') (window as any).__petWalkNav = { setSubScreen, setActiveTab, setCompletedRecord, handleStopWalkAndReport, consent };
@@ -91,13 +104,53 @@ export default function App() {
   const handleSaveActiveDog = async (fields: Partial<DogProfile>) => {
     const updated = { ...activeDog, ...fields, updatedAt: new Date().toISOString() };
     updated.speedKmH = calculateRecommendedSpeedKmH(updated.weightKg, updated.ageYears, updated.jointCareLevel);
-    setDogs(dogs.map((d) => (d.id === updated.id ? updated : d)));
+    const updatedDogs = dogs.map((d) => (d.id === updated.id ? updated : d));
+    setDogs(updatedDogs);
+    await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILES, updatedDogs);
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, updated);
   };
 
   const handleAddDog = async (newDog: DogProfile) => {
-    setDogs([...dogs, newDog]); setSelectedDogId(newDog.id);
+    const updatedDogs = [...dogs, newDog];
+    setDogs(updatedDogs); setSelectedDogId(newDog.id);
+    await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILES, updatedDogs);
     await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, newDog);
+    if (subScreen === 'dog_selection' && dogs.length === 0) setActiveTab('홈');
+  };
+
+  const handleDeleteDog = async (dogId: string) => {
+    const dogToDelete = dogs.find((dog) => dog.id === dogId);
+    if (!dogToDelete) return;
+
+    const updatedDogs = dogs.filter((dog) => dog.id !== dogId);
+    const nextSelectedDog = updatedDogs.find((dog) => dog.id === selectedDogId) ?? updatedDogs[0];
+    const profilesSaved = await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILES, updatedDogs);
+    if (!profilesSaved) {
+      const message = '기기 저장소에서 프로필을 갱신하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('삭제 실패', message);
+      return;
+    }
+
+    await SupabaseService.initSession();
+    const remoteDeleted = await SupabaseService.deleteDogProfile(dogId);
+    if (!remoteDeleted) {
+      await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILES, dogs);
+      const message = '계정에 저장된 반려견 프로필을 삭제하지 못했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('삭제 실패', message);
+      return;
+    }
+
+    if (nextSelectedDog) {
+      await LocalStorageService.setItem(STORAGE_KEYS.DOG_PROFILE, nextSelectedDog);
+    } else {
+      await LocalStorageService.removeItem(STORAGE_KEYS.DOG_PROFILE);
+    }
+
+    setDogs(updatedDogs);
+    setSelectedDogId(nextSelectedDog?.id ?? '');
+    if (updatedDogs.length === 0) setSubScreen('dog_selection');
   };
 
   const handleCompleteOnboarding = async (registeredDog?: DogProfile) => {
@@ -382,7 +435,7 @@ export default function App() {
                       setSubScreen('main');
                       setActiveTab('산책');
                     }}
-                    onBack={() => setSubScreen('main')}
+                    onBack={() => { if (dogs.length > 0) setSubScreen('main'); }}
                   />
                 )}
 
@@ -446,6 +499,7 @@ export default function App() {
                     onAddDog={handleAddDog}
                     feedbackSummary={feedbackSummary}
                     onSaveDog={handleSaveActiveDog}
+                    onDeleteDog={handleDeleteDog}
                     onInjectFeedback={handleInjectSampleWalk}
                     onResetFeedback={handleResetFeedback}
                     onStartBookmark={handleStartBookmark}
@@ -458,15 +512,17 @@ export default function App() {
               </ErrorBoundary>
             </View>
 
-            <BottomTabBar
-              activeTab={activeTab}
-              onTabChange={(tab) => {
-                if (subScreen !== 'main') {
-                  setSubScreen('main');
-                }
-                setActiveTab(tab);
-              }}
-            />
+            {dogs.length > 0 && (
+              <BottomTabBar
+                activeTab={activeTab}
+                onTabChange={(tab) => {
+                  if (subScreen !== 'main') {
+                    setSubScreen('main');
+                  }
+                  setActiveTab(tab);
+                }}
+              />
+            )}
           </View>
         )}
         <LocationConsentModal controller={consent} />
@@ -491,5 +547,5 @@ const styles = StyleSheet.create({
   logoIcon: { fontSize: 16 }, appTitle: { fontSize: 17, fontWeight: '700', color: TOKENS.colors.textMain, letterSpacing: -0.3 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 }, iconBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 18, color: TOKENS.colors.textMain },
-  tabContentContainer: { flex: 1, padding: 16, paddingBottom: 8 },
+  tabContentContainer: { flex: 1 },
 });

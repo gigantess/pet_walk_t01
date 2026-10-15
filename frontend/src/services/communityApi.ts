@@ -8,6 +8,8 @@
 
 import { detectLandmarkCategory } from './landmarkTagger';
 
+import { fetchWithServerFallback } from './apiClient';
+
 export interface CommunityFeedItem {
   readonly course_id: string;
   readonly title: string;
@@ -25,8 +27,6 @@ export interface CommunityFeedResponse {
   readonly feeds: readonly CommunityFeedItem[];
   readonly is_supabase?: boolean;
 }
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const DEFAULT_FEEDS: readonly CommunityFeedItem[] = [
   {
     course_id: 'feed_1',
@@ -126,9 +126,9 @@ export async function fetchCommunityFeeds(): Promise<CommunityFeedResponse> {
   const timeoutId = setTimeout(() => controller.abort(), 1200);
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/community/feed`, {
+    const res = await fetchWithServerFallback('/api/v1/community/feed', {
       signal: controller.signal,
-    });
+    }, 1500);
     clearTimeout(timeoutId);
 
     if (res.ok) {
@@ -149,7 +149,7 @@ export async function fetchCommunityFeeds(): Promise<CommunityFeedResponse> {
         is_supabase: Boolean(data.is_supabase),
       };
     }
-  } catch (_e) {
+  } catch {
     // 오프라인 자동 폴백
   } finally {
     clearTimeout(timeoutId);
@@ -165,7 +165,7 @@ export async function shareCommunityCourse(
   userId?: string,
 ): Promise<{ success: boolean; is_supabase?: boolean }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/community/share`, {
+    const res = await fetchWithServerFallback('/api/v1/community/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -179,7 +179,7 @@ export async function shareCommunityCourse(
       const data = await res.json();
       return { success: true, is_supabase: Boolean(data.is_supabase) };
     }
-  } catch (_e) {
+  } catch {
     // 오프라인 모드에서는 성공으로 처리
   }
   return { success: true, is_supabase: false };

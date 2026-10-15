@@ -6,7 +6,7 @@
  * 확대/축소/스크롤 및 로딩/오류 상태와 함께 안전하게 렌더링합니다.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Linking, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { TOKENS } from '../../theme/tokens';
@@ -23,8 +23,6 @@ export const RealOsmWebView: React.FC<RealOsmWebViewProps> = ({
   width = 360,
   height = 380,
 }) => {
-  const [hasError, setHasError] = useState(false);
-
   const { embedUrl, osmLinkUrl } = useMemo(() => {
     if (!coords || coords.length === 0) {
       return { embedUrl: '', osmLinkUrl: '' };
@@ -57,7 +55,6 @@ export const RealOsmWebView: React.FC<RealOsmWebViewProps> = ({
       <WebView
         source={{ uri: embedUrl }}
         style={styles.webView}
-        onError={() => setHasError(true)}
         startInLoadingState={true}
         renderLoading={() => (
           <View style={styles.loadingContainer}>

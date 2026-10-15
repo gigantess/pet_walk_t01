@@ -17,7 +17,7 @@ export interface BottomTabBarProps {
   onActionPress?: () => void;
 }
 
-const TABS: Array<{ key: TabKey; label: string; icon: AppIconName }> = [
+const TABS: { key: TabKey; label: string; icon: AppIconName }[] = [
   { key: '홈', label: '홈', icon: 'home' },
   { key: '산책', label: '산책', icon: 'map' },
   { key: '커뮤니티', label: '커뮤니티', icon: 'users' },
