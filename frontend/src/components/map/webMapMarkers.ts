@@ -14,7 +14,11 @@ export interface MarkerLike extends RemovableHandle {
   setLngLat(lngLat: [number, number]): MarkerLike;
   addTo(map: unknown): MarkerLike;
 }
-export type MarkerConstructor = new (options: { element: HTMLElement; anchor?: string }) => MarkerLike;
+export type MarkerConstructor = new (options: {
+  element: HTMLElement;
+  anchor?: string;
+  offset?: [number, number];
+}) => MarkerLike;
 
 const DEFAULT_PIN_ICON: Record<RouteStepPin['kind'], string> = { caution: '!', safe: '🌿', turn: '↱' };
 
@@ -81,7 +85,12 @@ export function renderWebMarkers(
 
   const firstCoord = route.features[0]?.geometry.coordinates[0];
   if (firstCoord) {
-    markers.push(new MarkerClass({ element: createStartElement(colors) }).setLngLat([...firstCoord]).addTo(map));
+    // 안내 핀이 출발점에 겹쳐도 배지 아래에서 가려지지 않도록 위쪽으로 분리합니다.
+    markers.push(new MarkerClass({
+      element: createStartElement(colors),
+      anchor: 'bottom',
+      offset: [0, -20],
+    }).setLngLat([...firstCoord]).addTo(map));
   }
 
   pins.forEach((pin) => {

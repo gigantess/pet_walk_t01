@@ -300,7 +300,8 @@ export function buildMapLibreHtml({
             const startEl = document.createElement('div');
             startEl.className = 'start-marker';
             startEl.innerText = '출발/도착 🐾';
-            const m = new maplibregl.Marker({ element: startEl })
+            // 출발점에 겹친 안내 핀이 출발/도착 배지에 가려지지 않게 위쪽으로 분리합니다.
+            const m = new maplibregl.Marker({ element: startEl, anchor: 'bottom', offset: [0, -20] })
               .setLngLat(firstCoord)
               .addTo(map);
             markers.push(m);
