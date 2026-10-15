@@ -127,11 +127,11 @@ graph TD
   - 편안하개 3대 테마(`themeManager.ts`)와 실시간 스타일 동기화 로직 구현.
 
 ### 📅 Sprint 2: MapLibre 하이브리드 컴포넌트 개발 (3~4일차)
-- [ ] **T-OFM-3: `MapLibreMapView.tsx` 신설 (`src/components/map/MapLibreMapView.tsx`)**:
+- [x] **T-OFM-3: `MapLibreMapView.tsx` 신설 (`src/components/map/MapLibreMapView.tsx`)**:
   - `Platform.select` 기반 분기:
     - 웹: `maplibre-gl.Map` 인스턴스 초기화 및 리사이즈 핸들러.
     - 모바일: 고속 로컬 HTML 템플릿 로드 및 양방향 postMessage 이벤트 브릿지.
-- [ ] **T-OFM-4: GeoJSON 벡터 소스 & 레이어 렌더링 파이프라인 구축**:
+- [x] **T-OFM-4: GeoJSON 벡터 소스 & 레이어 렌더링 파이프라인 구축**:
   - LineString 경로를 3색 세그먼트 스타일로 분기 렌더링 (`line-color`, `line-width: 6`).
   - 스텝 핀 및 배변 마킹 핀 심볼 레이어 탑재.
   - 200m 마스킹 영역 서클 폴리곤 레이어 추가.
