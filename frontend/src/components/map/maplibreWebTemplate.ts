@@ -270,7 +270,30 @@ export function buildMapLibreHtml({
           pins.forEach(function(pin) {
             const el = document.createElement('div');
             el.className = 'step-pin pin-' + pin.kind;
-            el.innerText = pin.kind === 'caution' ? '!' : (pin.kind === 'safe' ? '🌿' : '↱');
+            el.innerText = pin.icon || (pin.kind === 'caution' ? '!' : (pin.kind === 'safe' ? '🌿' : '↱'));
+            if (pin.title) {
+              el.innerText = '';
+              el.style.width = 'auto';
+              el.style.height = 'auto';
+              el.style.padding = '4px 6px';
+              el.style.borderRadius = '10px';
+              el.style.backgroundColor = '#ffffffed';
+              el.style.color = '#1f2937';
+              el.style.whiteSpace = 'nowrap';
+              el.style.display = 'grid';
+              el.style.gap = '2px';
+              const iconEl = document.createElement('span');
+              iconEl.innerText = pin.icon || '';
+              const titleEl = document.createElement('strong');
+              titleEl.innerText = pin.title;
+              el.appendChild(iconEl);
+              el.appendChild(titleEl);
+              if (pin.detail) {
+                const detailEl = document.createElement('small');
+                detailEl.innerText = pin.detail;
+                el.appendChild(detailEl);
+              }
+            }
             el.onclick = function() {
               postToReactNative('PIN_SELECT', { id: pin.id, instruction: pin.instruction });
             };

@@ -137,10 +137,10 @@ graph TD
   - 200m 마스킹 영역 서클 폴리곤 레이어 추가.
 
 ### 📅 Sprint 3: 기존 지도 컴포넌트 교체 및 통합 (5일차)
-- [ ] **T-OFM-5: `RouteMapView.tsx` 고도화**:
+- [x] **T-OFM-5: `RouteMapView.tsx` 고도화**:
   - 기존 래스터 타일 의존성을 `MapLibreMapView`로 전면 전환.
   - 안심 코스 3종 대안 루프 전환 시 부드러운 `flyTo` / `fitBounds` 카메라 트랜지션 적용.
-- [ ] **T-OFM-6: `NearbyExploreMapView.tsx` (온보딩 4단계) 고도화**:
+- [x] **T-OFM-6: `NearbyExploreMapView.tsx` (온보딩 4단계) 고도화**:
   - 온보딩 4단계 주변 탐색 지도에 OpenFreeMap 적용.
   - 대전/세종 거점 공원 및 이웃 산책견 아이콘 벡터 핀 렌더링.
 
