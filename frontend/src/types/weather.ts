@@ -33,6 +33,8 @@ export interface HeatRiskResponse {
   readonly golden_time_window_day?: GoldenTimeWindowDay;
   readonly hourly_forecast: readonly HeatRiskHourDTO[];
   readonly notice: string;
+  readonly attribution?: string | null;
+  readonly insolation_source?: string;
   readonly fetched_at: string;
 }
 
