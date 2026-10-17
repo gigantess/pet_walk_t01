@@ -5,8 +5,7 @@
  * 1. 상단 환영 인사: "오늘도 편안하게, 우리 아이와 걸어요. 🐾"
  * 2. 활성 반려견 카드: 프로필, 상태 뱃지, 30분/폭신한길 칩, 원터치 [산책 시작 →] 버튼
  * 3. 지면온도 골든타임 위젯: 실시간 기상청 예보 연동 지면온도 추천 바
- * 4. AI 산책 플래너 배너: "오늘 어디로 산책할까요?" 원터치 진입
- * 5. 최근 산책 요약 카드: 완주 기록 및 AI 피드백 보정 연동
+ * 4. 최근 피드백 AI 보정 브리핑 (선택)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,12 +14,12 @@ import { useAppTheme } from '../theme/themeManager';
 import { DogProfile } from '../types/dogProfile';
 import { HomeDogCard } from '../components/home/HomeDogCard';
 import { GoldenTimeWidget } from '../components/home/GoldenTimeWidget';
+import { TrailAccomplishmentWidget } from '../components/home/TrailAccomplishmentWidget';
 import { FeedbackContextService, FeedbackSummaryPayload } from '../services/feedbackContext';
 import { AppIcon } from '../components/common/AppIcon';
 import { fetchHeatRiskForecast } from '../services/weatherApi';
 import { HeatRiskResponse } from '../types/weather';
 import { LocalStorageService } from '../services/storage';
-import { WeeklyWalkReportCard } from '../components/home/WeeklyWalkReportCard';
 import { WalkStatisticsService, WeeklyWalkStats } from '../services/walkStatisticsService';
 
 export interface HomeScreenProps {
@@ -50,15 +49,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const { colors } = useAppTheme();
   const [weather, setWeather] = useState<HeatRiskResponse | null>(null);
-  const [weeklyStats, setWeeklyStats] = useState<WeeklyWalkStats>(() =>
-    WalkStatisticsService.getWeeklyStats([])
-  );
-  const [recentStats, setRecentStats] = useState({
-    title: '오늘의 산책',
-    distanceKm: 2.4,
-    durationMinutes: 38,
-    safeRatioPercent: 72,
-  });
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyWalkStats | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,35 +57,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       if (isMounted) setWeather(res);
     });
     void LocalStorageService.getWalkHistory().then((history) => {
-      if (!isMounted || history.length === 0) return;
-      setWeeklyStats(WalkStatisticsService.getWeeklyStats(history));
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const todayList = history.filter((r) => r.completedAt.slice(0, 10) === todayStr);
-
-      if (todayList.length > 0) {
-        const totalDist = todayList.reduce((acc, r) => acc + r.totalDistanceKm, 0);
-        const totalDur = todayList.reduce((acc, r) => acc + r.durationMinutes, 0);
-        const avgSafe = Math.round(
-          (todayList.reduce((acc, r) => acc + r.safeSurfaceRatio, 0) / todayList.length) * 100
-        );
-        setRecentStats({
-          title: `오늘의 완주 (${todayList.length}회)`,
-          distanceKm: Math.round(totalDist * 10) / 10,
-          durationMinutes: totalDur,
-          safeRatioPercent: avgSafe,
-        });
-      } else {
-        const latest = history[0];
-        const dateStr = new Date(latest.completedAt).toLocaleDateString('ko-KR', {
-          month: 'numeric',
-          day: 'numeric',
-        });
-        setRecentStats({
-          title: `직전 완주 (${dateStr})`,
-          distanceKm: Math.round(latest.totalDistanceKm * 10) / 10,
-          durationMinutes: latest.durationMinutes,
-          safeRatioPercent: Math.round(latest.safeSurfaceRatio * 100),
-        });
+      if (isMounted) {
+        setWeeklyStats(WalkStatisticsService.getWeeklyStats(history));
       }
     });
     return () => {
@@ -128,16 +92,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         onStartWalk={onStartWalk}
       />
 
-      {/* 3. 산책하기 좋은 시간 (지면온도 골든타임 위젯 실데이터 연동) */}
+      {/* 3. 오늘 강아지 산책지수 위젯 (지면온도/기상청 연동 산책지수, trail_quotient.jpg) */}
       <GoldenTimeWidget weather={weather} />
-
-      {/* 4. 이번 주 산책 달성도 & 직전 완주 통계 통합 위젯 (터치 시 통계 화면으로 이동) */}
-      <WeeklyWalkReportCard
-        stats={weeklyStats}
-        recentWalk={recentStats}
-        onPress={onOpenStats || onOpenPlanner}
-        onPressRecent={onOpenStats || onStartWalk}
-      />
 
       {/* (선택) 최근 피드백 AI 보정 브리핑 (전체 메시지 가독성 확보) */}
       {feedbackSummary && feedbackSummary.recent_walk_count > 0 && (
@@ -150,6 +106,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </Text>
         </View>
       )}
+
+      {/* 4. 이번 주 산책 달성도 위젯 (docs/reference/trail_ accomplishment.png 원형 디자인) */}
+      <TrailAccomplishmentWidget
+        stats={weeklyStats}
+        onPress={onOpenStats}
+      />
     </ScrollView>
   );
 };
