@@ -28,6 +28,7 @@ import NativeSvg, {
 } from 'react-native-svg';
 import { useAppTheme } from '../../theme/themeManager';
 import { WeeklyWalkStats } from '../../services/walkStatisticsService';
+import { useHomeResponsive } from '../../hooks/useHomeResponsive';
 
 const isWeb = Platform.OS === 'web';
 
@@ -43,11 +44,11 @@ const Circle: React.ComponentType<any> = isWeb ? (props: any) => <circle {...cle
 const Ellipse: React.ComponentType<any> = isWeb ? (props: any) => <ellipse {...cleanWebProps(props)} /> : NativeEllipse;
 const Line: React.ComponentType<any> = isWeb ? (props: any) => <line {...cleanWebProps(props)} /> : NativeLine;
 
-/** 귀여운 강아지 아바타 (docs/reference/trail_ accomplishment.png 원형 복원) */
-const PuppyAccomplishmentAvatar: React.FC = () => {
+/** 귀여운 강아지 아바타 (docs/reference/trail_ accomplishment.png 원형 복원 - 반응형 아바타) */
+const PuppyAccomplishmentAvatar: React.FC<{ size?: number }> = ({ size = 34 }) => {
   return (
-    <View style={styles.avatarWrap}>
-      <Svg width={54} height={54} viewBox="0 0 54 54" fill="none">
+    <View style={[styles.avatarWrap, { width: size, height: size }]}>
+      <Svg width={size} height={size} viewBox="0 0 54 54" fill="none">
         {/* 상단 우측 3개의 생기 넘치는 초록 스파클 대시 */}
         <Line x1="42" y1="12" x2="49" y2="8" stroke="#52B773" strokeWidth="2.4" strokeLinecap="round" />
         <Line x1="39" y1="6" x2="42" y2="1.5" stroke="#52B773" strokeWidth="2.4" strokeLinecap="round" />
@@ -119,19 +120,23 @@ interface AccomplishmentPawProps {
   filled: boolean;
   activeColor?: string;
   inactiveColor?: string;
+  width?: number;
+  height?: number;
 }
 
-/** 4개의 발가락 + 메인 패드로 구성된 둥근 강아지 발자국 아이콘 */
+/** 4개의 발가락 + 메인 패드로 구성된 둥근 강아지 발자국 아이콘 (반응형 벡터) */
 const AccomplishmentPaw: React.FC<AccomplishmentPawProps> = ({
   filled,
   activeColor = '#58B273',
   inactiveColor = '#E2E8F0',
+  width = 28,
+  height = 25,
 }) => {
   const color = filled ? activeColor : inactiveColor;
 
   return (
     <View style={styles.pawWrap}>
-      <Svg width={42} height={38} viewBox="0 0 42 38" fill="none">
+      <Svg width={width} height={height} viewBox="0 0 42 38" fill="none">
         <G fill={color}>
           {/* 발가락 1 (좌측 외곽) */}
           <Ellipse cx="7" cy="15" rx="3.4" ry="4.4" transform="rotate(-18 7 15)" />
@@ -152,6 +157,8 @@ const AccomplishmentPaw: React.FC<AccomplishmentPawProps> = ({
   );
 };
 
+const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'] as const;
+
 export interface TrailAccomplishmentWidgetProps {
   stats?: WeeklyWalkStats | null;
   totalSlots?: number;
@@ -159,57 +166,124 @@ export interface TrailAccomplishmentWidgetProps {
   style?: ViewStyle;
 }
 
+function getSlotTextColor(filled: boolean, isToday: boolean, defaultColor: string): string {
+  if (filled) {
+    return '#15803D';
+  }
+  if (isToday) {
+    return '#2563EB';
+  }
+  return defaultColor;
+}
+
 export const TrailAccomplishmentWidget: React.FC<TrailAccomplishmentWidgetProps> = ({
   stats,
-  totalSlots = 6,
+  totalSlots = 7,
   onPress,
   style,
 }) => {
   const { colors } = useAppTheme();
+  const responsive = useHomeResponsive();
 
-  // 실제 이번 주 산책 완료 횟수 (기록이 없을 때는 기본 4회 완주 표시하여 레퍼런스 디자인과 일치)
-  const completedCount =
-    stats && typeof stats.totalWalks === 'number'
-      ? Math.max(0, Math.min(stats.totalWalks, totalSlots))
-      : 4;
+  // 요일별 실제 산책 기록 매핑 (월: index 0 ~ 일: index 6)
+  const hasDailyStats = Array.isArray(stats?.dailyStats) && stats.dailyStats.length > 0;
 
-  const slots = Array.from({ length: totalSlots }, (_, i) => ({
-    id: `paw_slot_step_${i + 1}`,
-    filled: i < completedCount,
-  }));
+  const slots = Array.from({ length: totalSlots }, (_, i) => {
+    const dayStat = hasDailyStats ? stats.dailyStats[i] : null;
+    const isWalked = dayStat
+      ? Boolean(dayStat.hasWalked || (dayStat.walkCount && dayStat.walkCount > 0))
+      : false;
+    const isToday = Boolean(dayStat?.isToday);
+
+    return {
+      id: `paw_slot_step_${i + 1}`,
+      dayLabel: DAY_LABELS[i] ?? `${i + 1}`,
+      filled: isWalked,
+      isToday,
+      walkCount: dayStat?.walkCount ?? 0,
+    };
+  });
+
+  const completedDaysCount = slots.filter((s) => s.filled).length;
 
   return (
     <TouchableOpacity
       activeOpacity={onPress ? 0.88 : 1}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`이번 주 산책 달성도: ${totalSlots}회 중 ${completedCount}회 달성`}
+      accessibilityLabel={`이번 주 산책 달성도: ${totalSlots}일 중 ${completedDaysCount}일 달성`}
       style={[
         styles.card,
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
+          paddingVertical: responsive.trailCardPaddingV,
+          paddingHorizontal: responsive.trailCardPaddingH,
         },
         style,
       ]}
     >
-      {/* 1. 상단 아바타 & 타이틀 영역 */}
+      {/* 1. 상단 아바타 & 타이틀 및 실시간 달성 배지 */}
       <View style={styles.topHeader}>
-        <PuppyAccomplishmentAvatar />
-        <Text style={[styles.title, { color: colors.textMain }]}>
-          이번 주 산책 달성도
-        </Text>
+        <View style={styles.headerLeft}>
+          <PuppyAccomplishmentAvatar size={responsive.trailPuppyAvatarSize} />
+          <Text style={[styles.title, { color: colors.textMain, fontSize: responsive.trailTitleSize }]}>
+            이번 주 산책 달성도
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.countBadge,
+            {
+              paddingVertical: responsive.trailCountBadgePadV,
+              paddingHorizontal: responsive.trailCountBadgePadH,
+            },
+          ]}
+        >
+          <Text style={[styles.countBadgeText, { fontSize: responsive.trailCountBadgeFont }]}>
+            {completedDaysCount}/{totalSlots}일 완료
+          </Text>
+        </View>
       </View>
 
-      {/* 2. 하단 6개 강아지 발자국(Paw) 게이지 바 */}
-      <View style={styles.pawsRow}>
+      {/* 2. 하단 7개 강아지 발자국(Paw) & 요일별 1:1 실데이터 게이지 바 */}
+      <View style={[styles.pawsRow, { marginTop: responsive.trailPawsMarginTop }]}>
         {slots.map((slot) => (
-          <AccomplishmentPaw
-            key={slot.id}
-            filled={slot.filled}
-            activeColor="#58B273"
-            inactiveColor="#E2E8F0"
-          />
+          <View key={slot.id} style={styles.pawColumn}>
+            <AccomplishmentPaw
+              filled={slot.filled}
+              activeColor="#58B273"
+              inactiveColor="#E2E8F0"
+              width={responsive.trailPawWidth}
+              height={responsive.trailPawHeight}
+            />
+            <Text
+              style={[
+                styles.dayText,
+                {
+                  fontSize: responsive.trailDayFontSize,
+                  color: getSlotTextColor(slot.filled, slot.isToday, colors.textMuted),
+                  fontWeight: slot.isToday || slot.filled ? '800' : '600',
+                },
+              ]}
+            >
+              {slot.dayLabel}
+            </Text>
+            {slot.isToday && (
+              <View
+                style={[
+                  styles.todayIndicatorDot,
+                  {
+                    width: responsive.trailTodayDotSize,
+                    height: responsive.trailTodayDotSize,
+                    borderRadius: responsive.trailTodayDotSize / 2,
+                    backgroundColor: slot.filled ? '#15803D' : '#2563EB',
+                  },
+                ]}
+              />
+            )}
+          </View>
         ))}
       </View>
     </TouchableOpacity>
@@ -218,41 +292,74 @@ export const TrailAccomplishmentWidget: React.FC<TrailAccomplishmentWidgetProps>
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
     elevation: 2,
   },
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  countBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#15803D',
   },
   avatarWrap: {
-    width: 54,
-    height: 54,
+    width: 34,
+    height: 34,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 21,
+    fontSize: 15.5,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   pawsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    marginTop: 18,
-    paddingHorizontal: 4,
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  pawColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
   },
   pawWrap: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  dayText: {
+    fontSize: 10,
+    marginTop: 1,
+  },
+  todayIndicatorDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 1,
   },
 });

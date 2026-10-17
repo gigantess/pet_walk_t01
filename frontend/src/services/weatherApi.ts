@@ -262,15 +262,22 @@ export async function fetchHeatRiskForecast(
 
     if (res.ok) {
       const data = await res.json();
-      const current = data.current || {};
+      const rawCurrent = data.current || {};
+      const hourlyForecast: HeatRiskHourDTO[] = data.hourly_forecast ?? [];
+      const deviceHour = new Date().getHours();
+
+      // 시차(UTC vs KST) 또는 시간차 방어: 단말기 현재 시각에 일치하는 hourly 항목 매칭
+      const matchedHourItem = hourlyForecast.find((h) => h.hour === deviceHour);
+      const current = (rawCurrent.hour === deviceHour ? rawCurrent : matchedHourItem) || rawCurrent;
+
       const goldenWindow = data.golden_time_window ?? '18:00 ~ 20:00';
       const goldenWindowDay = resolveGoldenTimeWindowDay(data.golden_time_window_day, goldenWindow);
 
       const response: HeatRiskResponse = {
         isLiveServer: true,
-        current_hour: current.hour ?? new Date().getHours(),
-        current_air_temp: current.air_temp_celsius ?? 26.0,
-        current_surface_temp: current.estimated_surface_temp ?? 31.0,
+        current_hour: current.hour ?? deviceHour,
+        current_air_temp: current.air_temp_celsius ?? 17.5,
+        current_surface_temp: current.estimated_surface_temp ?? 17.5,
         current_risk_level: current.risk_level ?? 'SAFE',
         is_current_golden: current.is_golden_time ?? true,
         golden_time_window: goldenWindow,
